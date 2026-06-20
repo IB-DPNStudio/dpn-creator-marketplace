@@ -347,7 +347,7 @@ export function RankingsTable({ podcasts, isAuthenticated = false }: { podcasts:
                                     podcast.status === 'verified' ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400' :
                                     'bg-muted text-muted-foreground'
                                   }`}>
-                                    {podcast.status.replace('_', ' ')}
+                                    {podcast.status === 'featured_partner' ? 'FEATURED' : podcast.status.replace('_', ' ')}
                                   </span>
                                 )}
                                 {isAdminMode && (
