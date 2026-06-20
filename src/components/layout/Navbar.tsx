@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/utils/supabase/server";
+import { MobileNavMenu } from "./MobileNavMenu";
 
 export async function Navbar() {
   const supabase = await createClient();
@@ -37,11 +38,12 @@ export async function Navbar() {
               <Button variant="ghost" asChild className="hidden md:inline-flex">
                 <Link href="/login">Log In</Link>
               </Button>
-              <Button asChild className="bg-dentsu hover:bg-dentsu/90 text-white">
+              <Button asChild className="hidden md:inline-flex bg-dentsu hover:bg-dentsu/90 text-white">
                 <Link href="/agencies/apply">Request Access</Link>
               </Button>
             </>
           )}
+          <MobileNavMenu isLoggedIn={isLoggedIn} />
         </div>
       </div>
     </nav>
