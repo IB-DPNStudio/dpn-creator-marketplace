@@ -26,7 +26,7 @@ export default async function AdminPodcastsPage() {
   const { data: podcasts } = await adminClient
     .from("podcasts")
     .select("*")
-    .in("status", ["regular_podcaster", "verified", "approved_partner", "featured_partner"])
+    .in("status", ["seeded", "verified", "approved_partner", "featured_partner"])
     .order("created_at", { ascending: false });
 
   return (

@@ -157,7 +157,7 @@ export async function togglePodcastFeatured(id: string, currentlyFeatured: boole
     await getAdminUser();
     const adminDbClient = getAdminClient();
     
-    const newStatus = currentlyFeatured ? 'regular_podcaster' : 'featured_partner';
+    const newStatus = currentlyFeatured ? 'approved_partner' : 'featured_partner';
     
     const { error } = await adminDbClient
       .from("podcasts")
@@ -220,7 +220,7 @@ export async function adminSeedPodcast(youtubeUrl: string) {
     }
     
     const { error } = await adminDbClient.from("podcasts").insert({
-      status: 'regular_podcaster',
+      status: 'seeded',
       youtube_url: youtubeUrl,
       show_name: showName,
       description: description,

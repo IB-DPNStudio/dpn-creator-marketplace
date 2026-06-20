@@ -326,7 +326,7 @@ export function RankingsTable({ podcasts, isAuthenticated = false }: { podcasts:
                                   onChange={(e) => setTempStatus(e.target.value)}
                                   onClick={(e) => e.stopPropagation()}
                                 >
-                                  <option value="regular_podcaster">Regular Podcaster</option>
+                                  <option value="seeded">Seeded</option>
                                   <option value="verified">Verified</option>
                                   <option value="approved_partner">Approved Partner</option>
                                   <option value="featured_partner">Featured Partner</option>
@@ -340,7 +340,7 @@ export function RankingsTable({ podcasts, isAuthenticated = false }: { podcasts:
                               </div>
                             ) : (
                               <div className="flex items-center gap-2 mt-1">
-                                {(podcast.status && podcast.status !== 'regular_podcaster') && (
+                                {(podcast.status && podcast.status !== 'seeded') && (
                                   <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
                                     podcast.status === 'featured_partner' ? 'bg-dentsu text-white' : 
                                     podcast.status === 'approved_partner' ? 'bg-green-500/20 text-green-600 dark:text-green-400' : 
@@ -354,7 +354,7 @@ export function RankingsTable({ podcasts, isAuthenticated = false }: { podcasts:
                                   <button 
                                     onClick={(e) => { 
                                       e.stopPropagation(); 
-                                      setTempStatus(podcast.status || 'regular_podcaster'); 
+                                      setTempStatus(podcast.status || 'seeded'); 
                                       setEditingStatusId(podcast.id); 
                                     }}
                                     className="p-1 text-muted-foreground hover:text-foreground transition-colors"

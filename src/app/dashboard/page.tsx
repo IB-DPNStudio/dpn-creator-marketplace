@@ -16,7 +16,7 @@ export default async function DashboardPage({
   const { data: allFiltersData } = await supabase
     .from("podcasts")
     .select("genre, primary_language")
-    .in("status", ["regular_podcaster", "verified", "approved_partner", "featured_partner"]);
+    .in("status", ["seeded", "verified", "approved_partner", "featured_partner"]);
 
   const genres = Array.from(
     new Set((allFiltersData || []).map((p) => p.genre).filter(Boolean))
@@ -30,7 +30,7 @@ export default async function DashboardPage({
   let query = supabase
     .from("podcasts")
     .select("id, show_name, host_name, genre, primary_language, subscriber_count, dpn_score, thumbnail_url, status, description")
-    .in("status", ["regular_podcaster", "verified", "approved_partner", "featured_partner"]);
+    .in("status", ["seeded", "verified", "approved_partner", "featured_partner"]);
 
   if (resolvedSearchParams.q) {
     const q = resolvedSearchParams.q;

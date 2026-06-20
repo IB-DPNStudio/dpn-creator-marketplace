@@ -11,11 +11,11 @@ export default async function RankingsPage() {
   const { data: { session } } = await supabase.auth.getSession();
   const isAuthenticated = !!session;
   
-  // Fetch all approved and regular_podcaster podcasts, ordered by score
+  // Fetch all approved and seeded podcasts, ordered by score
   const { data: podcasts, error } = await supabase
     .from("podcasts")
     .select("*")
-    .in("status", ["regular_podcaster", "verified", "approved_partner", "featured_partner"])
+    .in("status", ["seeded", "verified", "approved_partner", "featured_partner"])
     .order("dpn_score", { ascending: false });
 
   if (error) {
@@ -24,7 +24,7 @@ export default async function RankingsPage() {
 
   const validPodcasts = podcasts || [];
   
-  // Filter new shows (featured_partner or regular_podcaster randomly to mock "new")
+  // Filter new shows (featured_partner or seeded randomly to mock "new")
   const newShows = validPodcasts.filter(p => p.status === "featured_partner" || p.subscriber_count > 500000).slice(0, 15);
   
   // Calculate the current week for the "auto-published" feel
