@@ -56,9 +56,14 @@ export default async function AdminPodcastsPage() {
                   </td>
                   <td className="p-4">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                      isFeatured ? 'bg-dentsu text-white' : 'bg-green-500/10 text-green-600'
+                      isFeatured ? 'bg-dentsu text-white' : 
+                      podcast.status === 'approved_partner' ? 'bg-green-500/10 text-green-600' :
+                      podcast.status === 'verified' ? 'bg-blue-500/10 text-blue-600' :
+                      'bg-muted text-muted-foreground'
                     }`}>
-                      {isFeatured ? 'Featured' : 'Approved'}
+                      {isFeatured ? 'Featured' : 
+                       podcast.status === 'approved_partner' ? 'Approved Partner' : 
+                       podcast.status === 'verified' ? 'Verified' : 'Regular Podcaster'}
                     </span>
                   </td>
                   <td className="p-4 text-right">

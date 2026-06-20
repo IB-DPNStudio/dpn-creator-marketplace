@@ -157,7 +157,7 @@ export async function togglePodcastFeatured(id: string, currentlyFeatured: boole
     await getAdminUser();
     const adminDbClient = getAdminClient();
     
-    const newStatus = currentlyFeatured ? 'approved_partner' : 'featured_partner';
+    const newStatus = currentlyFeatured ? 'seeded' : 'featured_partner';
     
     const { error } = await adminDbClient
       .from("podcasts")

@@ -326,7 +326,7 @@ export function RankingsTable({ podcasts, isAuthenticated = false }: { podcasts:
                                   onChange={(e) => setTempStatus(e.target.value)}
                                   onClick={(e) => e.stopPropagation()}
                                 >
-                                  <option value="seeded">Seeded</option>
+                                  <option value="seeded">Regular Podcaster</option>
                                   <option value="verified">Verified</option>
                                   <option value="approved_partner">Approved Partner</option>
                                   <option value="featured_partner">Featured Partner</option>
