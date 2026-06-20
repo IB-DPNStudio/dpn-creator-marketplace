@@ -57,11 +57,14 @@ export async function GET(request: Request) {
             email: user.email,
           })
         }
+        }
       }
-      return NextResponse.redirect(`${origin}${next}`)
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dpnranker.com'
+      return NextResponse.redirect(`${siteUrl}${next === '/' ? '' : next}`)
     }
   }
 
   // return the user to an error page with instructions
-  return NextResponse.redirect(`${origin}/auth/auth-code-error`)
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dpnranker.com'
+  return NextResponse.redirect(`${siteUrl}/auth/auth-code-error`)
 }
