@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server";
+import { createClient, createAdminClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -15,21 +15,45 @@ export default async function EOIsPage({
 
   if (!user) redirect("/login");
 
-  // Get agency ID
-  const { data: agency } = await supabase
-    .from("agencies")
-    .select("id")
-    .eq("owner_id", user.id)
+  // Use adminClient to reliably fetch profile regardless of RLS
+  const adminClient = createAdminClient();
+  const { data: profile } = await adminClient
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
     .single();
 
+  const isAgency = profile?.role === "agency_user";
+  const isAdmin = profile?.role === "dpn_sales" || profile?.role === "super_admin";
+
+  if (!isAgency && !isAdmin) {
+    redirect("/dashboard");
+  }
+
   let eois: any[] = [];
-  if (agency) {
-    const { data } = await supabase
+
+  if (isAdmin) {
+    const { data } = await adminClient
       .from("eois")
       .select("*")
-      .eq("agency_id", agency.id)
       .order("created_at", { ascending: false });
     if (data) eois = data;
+  } else if (isAgency) {
+    // Only attempt to fetch agency if the user is an agency user
+    const { data: agency } = await supabase
+      .from("agencies")
+      .select("id")
+      .eq("owner_id", user.id)
+      .maybeSingle(); // Use maybeSingle to prevent PGRST116 errors
+
+    if (agency) {
+      const { data } = await supabase
+        .from("eois")
+        .select("*")
+        .eq("agency_id", agency.id)
+        .order("created_at", { ascending: false });
+      if (data) eois = data;
+    }
   }
 
   return (

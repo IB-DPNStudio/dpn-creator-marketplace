@@ -1,0 +1,98 @@
+import { createClient, createAdminClient } from "@/utils/supabase/server";
+import { redirect } from "next/navigation";
+import { Star, StarOff } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { togglePodcastFeatured } from "@/app/actions/admin";
+
+export default async function AdminPodcastsPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login");
+
+  const adminClient = createAdminClient();
+  const { data: profile } = await adminClient
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== 'super_admin' && profile?.role !== 'dpn_sales') {
+    redirect("/dashboard");
+  }
+
+
+  // Fetch approved/featured podcasts using adminClient
+  const { data: podcasts } = await adminClient
+    .from("podcasts")
+    .select("*")
+    .in("status", ["seeded", "verified", "approved_partner", "featured_partner"])
+    .order("created_at", { ascending: false });
+
+  return (
+    <div className="space-y-8 max-w-5xl">
+      <div>
+        <h1 className="text-3xl font-bold font-heading">Manage Podcasts</h1>
+        <p className="text-muted-foreground mt-2">Manage all active podcasts on the platform and set Featured status.</p>
+      </div>
+
+      <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-muted/30 border-b border-border text-xs uppercase tracking-wider text-muted-foreground">
+              <th className="p-4 font-bold">Podcast Name</th>
+              <th className="p-4 font-bold">Status</th>
+              <th className="p-4 font-bold text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {podcasts?.map(podcast => {
+              const isFeatured = podcast.status === 'featured_partner';
+              return (
+                <tr key={podcast.id} className="hover:bg-muted/30 transition-colors">
+                  <td className="p-4">
+                    <div className="font-bold text-foreground">{podcast.show_name}</div>
+                    <div className="text-xs text-muted-foreground">{podcast.genre} • {podcast.primary_language}</div>
+                  </td>
+                  <td className="p-4">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                      isFeatured ? 'bg-dentsu text-white' : 'bg-green-500/10 text-green-600'
+                    }`}>
+                      {isFeatured ? 'Featured' : 'Approved'}
+                    </span>
+                  </td>
+                  <td className="p-4 text-right">
+                    <form action={async () => {
+                      "use server";
+                      await togglePodcastFeatured(podcast.id, isFeatured);
+                    }}>
+                      <Button 
+                        type="submit" 
+                        variant={isFeatured ? "outline" : "default"}
+                        size="sm"
+                        className={!isFeatured ? "bg-dentsu hover:bg-dentsu/90 text-white" : ""}
+                      >
+                        {isFeatured ? (
+                          <><StarOff className="w-4 h-4 mr-2" /> Remove Feature</>
+                        ) : (
+                          <><Star className="w-4 h-4 mr-2" /> Feature Show</>
+                        )}
+                      </Button>
+                    </form>
+                  </td>
+                </tr>
+              );
+            })}
+            {(!podcasts || podcasts.length === 0) && (
+              <tr>
+                <td colSpan={3} className="p-8 text-center text-muted-foreground">
+                  No approved podcasts found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}

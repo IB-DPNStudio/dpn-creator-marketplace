@@ -4,11 +4,12 @@ import { RankingsTable } from "@/components/rankings/RankingsTable";
 import { CalendarDays } from "lucide-react";
 import { format, startOfWeek } from "date-fns";
 
-// For caching/ISR
-export const revalidate = 3600; // 1 hour
+export const dynamic = 'force-dynamic';
 
 export default async function RankingsPage() {
   const supabase = await createClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  const isAuthenticated = !!session;
   
   // Fetch all approved and seeded podcasts, ordered by score
   const { data: podcasts, error } = await supabase
@@ -54,7 +55,7 @@ export default async function RankingsPage() {
 
       {/* Main Rankings Area */}
       <div className="container mx-auto px-4 max-w-7xl mt-12">
-        <RankingsTable podcasts={validPodcasts} />
+        <RankingsTable podcasts={validPodcasts} isAuthenticated={isAuthenticated} />
       </div>
     </div>
   );

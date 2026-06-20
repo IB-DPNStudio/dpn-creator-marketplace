@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server";
+import { createClient, createAdminClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { LayoutDashboard, Users, FileText, Activity, LogOut } from "lucide-react";
@@ -14,7 +14,8 @@ export default async function AdminLayout({
 
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
+  const adminClient = createAdminClient();
+  const { data: profile } = await adminClient
     .from("profiles")
     .select("role")
     .eq("id", user.id)
@@ -23,6 +24,7 @@ export default async function AdminLayout({
   if (profile?.role !== 'super_admin' && profile?.role !== 'dpn_sales') {
     redirect("/dashboard");
   }
+
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -46,9 +48,13 @@ export default async function AdminLayout({
             <Users className="w-5 h-5 mr-3 text-muted-foreground" />
             User Management
           </Link>
-          <Link href="/admin/eois" className="flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-secondary transition-colors">
+          <Link href="/admin/entities/new" className="flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-secondary transition-colors">
             <FileText className="w-5 h-5 mr-3 text-muted-foreground" />
-            Campaigns (EOIs)
+            White Glove Onboarding
+          </Link>
+          <Link href="/admin/podcasts" className="flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-secondary transition-colors">
+            <Activity className="w-5 h-5 mr-3 text-muted-foreground" />
+            Manage Podcasts
           </Link>
         </nav>
         <div className="p-4 border-t border-border">

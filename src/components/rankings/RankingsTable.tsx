@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
+import Link from "next/link";
 import { TrendingUp, Award, Search, Info, ChevronDown, ChevronUp, Loader2, Edit2, Check, X, Eye, EyeOff, Lock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
@@ -12,8 +13,9 @@ import {
 } from "@/components/ui/tooltip";
 import { updatePodcastGenre, updatePodcastLanguage, updatePodcastStatus, togglePodcastScoreVisibility, swapPodcastRanks, toggleAllPodcastScoresVisibility } from "@/app/actions/podcasts";
 import { calculateDPNScoreBreakdown } from "@/lib/score";
+import { createClient } from "@/utils/supabase/client";
 
-export function RankingsTable({ podcasts }: { podcasts: any[] }) {
+export function RankingsTable({ podcasts, isAuthenticated = false }: { podcasts: any[], isAuthenticated?: boolean }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [languageFilter, setLanguageFilter] = useState("All");
   const [genreFilter, setGenreFilter] = useState("All");
@@ -29,6 +31,27 @@ export function RankingsTable({ podcasts }: { podcasts: any[] }) {
   const [tempStatus, setTempStatus] = useState("");
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [gravitonData, setGravitonData] = useState<Record<string, any>>({});
+  const [isAuth, setIsAuth] = useState(isAuthenticated);
+
+  useEffect(() => {
+    const supabase = createClient();
+    
+    // Unconditionally fetch and set session on mount to prevent caching issues
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuth(!!session);
+    };
+    checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsAuth(!!session);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     fetch('/graviton_data.json?t=' + Date.now())
@@ -160,9 +183,6 @@ export function RankingsTable({ podcasts }: { podcasts: any[] }) {
         return matchesSearch && matchesLanguage && matchesGenre;
       })
       .sort((a, b) => {
-        const rankA = gravitonData[a.id]?.manual_rank ?? 1000;
-        const rankB = gravitonData[b.id]?.manual_rank ?? 1000;
-        if (rankA !== rankB) return rankA - rankB;
         return (b.dpn_score || 0) - (a.dpn_score || 0);
       });
   }, [podcasts, searchTerm, languageFilter, genreFilter, gravitonData]);
@@ -240,12 +260,13 @@ export function RankingsTable({ podcasts }: { podcasts: any[] }) {
                         <TooltipTrigger>
                           <Info className="w-4 h-4 text-muted-foreground hover:text-foreground transition-colors" />
                         </TooltipTrigger>
-                        <TooltipContent className="max-w-xs text-sm">
-                          <p>
-                            <strong>DPN Score</strong> is an advanced index out of 100 based on:<br/>
-                            1. Cumulative 7-Day Views (50%) - Logarithmic<br/>
-                            2. Engagement Rate (50%)<br/>
-                          </p>
+                        <TooltipContent className="max-w-sm p-4 bg-slate-950 border border-slate-800 shadow-2xl rounded-xl animate-in fade-in zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:zoom-out-95">
+                          <div className="space-y-2">
+                            <h4 className="font-bold text-dentsu font-heading tracking-wide uppercase text-xs">The DPN Index</h4>
+                            <p className="text-slate-300 text-xs leading-relaxed">
+                              A proprietary, non-linear algorithmic matrix synthesizing <strong className="text-white">logarithmic scaling</strong> of 7-day cumulative audience penetration with relative <strong className="text-white">engagement density vectors</strong>, delivering a normalized, un-gamed impact index.
+                            </p>
+                          </div>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -256,19 +277,21 @@ export function RankingsTable({ podcasts }: { podcasts: any[] }) {
             <tbody className="divide-y divide-border">
               {sortedPodcasts.map((podcast, index) => {
                 const rank = index + 1;
+                const isGated = rank > 10 && !isAuth;
                 return (
                   <React.Fragment key={podcast.id}>
                     <tr 
-                      className="hover:bg-muted/30 transition-colors group cursor-pointer"
-                      onClick={() => setExpandedId(expandedId === podcast.id ? null : podcast.id)}
+                      className={`transition-colors group ${isGated ? 'opacity-70 hover:bg-muted/10 cursor-pointer' : 'hover:bg-muted/30 cursor-pointer'}`}
+                      onClick={() => {
+                        if (isGated) {
+                          window.location.href = "/login";
+                        } else {
+                          setExpandedId(expandedId === podcast.id ? null : podcast.id);
+                        }
+                      }}
                     >
                     <td className="p-4 text-center">
                       <div className="flex flex-col items-center justify-center gap-1">
-                        {isAdminMode && index > 0 && (
-                          <button onClick={(e) => handleMoveUp(e, index)} className="p-0.5 text-muted-foreground hover:text-foreground rounded hover:bg-muted/50 transition-colors">
-                            <ChevronUp className="w-4 h-4" />
-                          </button>
-                        )}
                         {rank <= 3 ? (
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
                             rank === 1 ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400' :
@@ -280,15 +303,10 @@ export function RankingsTable({ podcasts }: { podcasts: any[] }) {
                         ) : (
                           <span className="font-mono font-bold text-lg text-muted-foreground">{rank}</span>
                         )}
-                        {isAdminMode && index < sortedPodcasts.length - 1 && (
-                          <button onClick={(e) => handleMoveDown(e, index)} className="p-0.5 text-muted-foreground hover:text-foreground rounded hover:bg-muted/50 transition-colors">
-                            <ChevronDown className="w-4 h-4" />
-                          </button>
-                        )}
                       </div>
                     </td>
                     <td className="p-4">
-                      <div className="flex items-center space-x-4">
+                      <div className={`flex items-center space-x-4 transition-all duration-300 ${isGated ? 'blur-[5px] select-none pointer-events-none' : ''}`}>
                         <div className="relative w-12 h-12 rounded-full overflow-hidden border border-border shadow-sm group-hover:border-dentsu transition-colors flex-shrink-0">
                           <Image 
                             src={podcast.thumbnail_url || 'https://via.placeholder.com/150'} 
@@ -360,15 +378,17 @@ export function RankingsTable({ podcasts }: { podcasts: any[] }) {
                       </div>
                     </td>
                     <td className="p-4">
-                      <div className="font-mono font-bold">
-                        {podcast.subscriber_count > 1000000 
-                          ? (podcast.subscriber_count / 1000000).toFixed(1) + 'M' 
-                          : (podcast.subscriber_count / 1000).toFixed(1) + 'k'}
+                      <div className={`transition-all duration-300 ${isGated ? 'blur-[5px] select-none pointer-events-none' : ''}`}>
+                        <div className="font-mono font-bold">
+                          {podcast.subscriber_count > 1000000 
+                            ? (podcast.subscriber_count / 1000000).toFixed(1) + 'M' 
+                            : (podcast.subscriber_count / 1000).toFixed(1) + 'k'}
+                        </div>
+                        <div className="text-xs text-muted-foreground">Subscribers</div>
                       </div>
-                      <div className="text-xs text-muted-foreground">Subscribers</div>
                     </td>
                     <td className="p-4">
-                      <div className="flex flex-col space-y-1 items-start">
+                      <div className={`flex flex-col space-y-1 items-start transition-all duration-300 ${isGated ? 'blur-[5px] select-none pointer-events-none' : ''}`}>
                         {editingGenreId === podcast.id ? (
                           <div className="flex items-center gap-1">
                             <input 
@@ -459,18 +479,30 @@ export function RankingsTable({ podcasts }: { podcasts: any[] }) {
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end space-x-3">
-                        <div className={`inline-flex items-center space-x-1 px-3 py-1 rounded-lg ${gravitonData[podcast.id]?.is_score_hidden && !isAdminMode ? 'bg-transparent' : gravitonData[podcast.id]?.is_score_hidden ? 'bg-muted/50' : 'bg-spotify/10'}`}>
-                          {gravitonData[podcast.id]?.is_score_hidden && !isAdminMode ? (
-                            <Lock className="w-4 h-4 text-muted-foreground/50" />
-                          ) : (
-                            <>
-                              <TrendingUp className={`w-4 h-4 ${gravitonData[podcast.id]?.is_score_hidden ? 'text-muted-foreground' : 'text-spotify'}`} />
-                              <span className={`${gravitonData[podcast.id]?.is_score_hidden ? 'text-muted-foreground line-through opacity-70' : 'text-spotify'} font-mono font-bold text-lg`}>
-                                {podcast.dpn_score || 'N/A'}
-                              </span>
-                            </>
-                          )}
-                        </div>
+                        {isGated ? (
+                          <Link 
+                            href="/login"
+                            className="flex items-center gap-1.5 bg-dentsu hover:bg-dentsu/90 text-white text-xs font-bold uppercase tracking-wider px-3.5 py-2 rounded-lg shadow-md transition-all hover:scale-105"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                            }}
+                          >
+                            <Lock className="w-3.5 h-3.5 text-white" /> Login to view
+                          </Link>
+                        ) : (
+                          <div className={`inline-flex items-center space-x-1 px-3 py-1 rounded-lg ${gravitonData[podcast.id]?.is_score_hidden && !isAdminMode ? 'bg-transparent' : gravitonData[podcast.id]?.is_score_hidden ? 'bg-muted/50' : 'bg-spotify/10'}`}>
+                            {gravitonData[podcast.id]?.is_score_hidden && !isAdminMode ? (
+                              <Lock className="w-4 h-4 text-muted-foreground/50" />
+                            ) : (
+                              <>
+                                <TrendingUp className={`w-4 h-4 ${gravitonData[podcast.id]?.is_score_hidden ? 'text-muted-foreground' : 'text-spotify'}`} />
+                                <span className={`${gravitonData[podcast.id]?.is_score_hidden ? 'text-muted-foreground line-through opacity-70' : 'text-spotify'} font-mono font-bold text-lg`}>
+                                  {podcast.dpn_score || 'N/A'}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        )}
                         {isAdminMode && (
                           <button 
                             onClick={(e) => handleToggleScore(e, podcast.id)} 
@@ -480,15 +512,17 @@ export function RankingsTable({ podcasts }: { podcasts: any[] }) {
                             {gravitonData[podcast.id]?.is_score_hidden ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                           </button>
                         )}
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setExpandedId(expandedId === podcast.id ? null : podcast.id);
-                          }}
-                          className="p-1 hover:bg-muted rounded-full transition-colors"
-                        >
-                          {expandedId === podcast.id ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
-                        </button>
+                        {!isGated && (
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setExpandedId(expandedId === podcast.id ? null : podcast.id);
+                            }}
+                            className="p-1 hover:bg-muted rounded-full transition-colors"
+                          >
+                            {expandedId === podcast.id ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -507,7 +541,7 @@ export function RankingsTable({ podcasts }: { podcasts: any[] }) {
                           {podcast.channel_id && (
                             <div>
                               <h4 className="font-bold text-lg mb-4 text-foreground font-heading">Latest Content</h4>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                              <div className={`grid grid-cols-1 ${gravitonData[podcast.id]?.latest_short_id && gravitonData[podcast.id].latest_short_id !== 'null' ? 'md:grid-cols-2' : ''} gap-6 items-start`}>
                                 <div className="aspect-video w-full rounded-xl overflow-hidden border border-border bg-black relative">
                                   <iframe 
                                     className="w-full h-full"
@@ -521,8 +555,8 @@ export function RankingsTable({ podcasts }: { podcasts: any[] }) {
                                     loading="lazy"
                                   ></iframe>
                                 </div>
-                                <div className="aspect-[9/16] w-full max-w-[240px] rounded-xl overflow-hidden border border-border bg-black mx-auto md:mx-0 relative">
-                                  {gravitonData[podcast.id]?.latest_short_id ? (
+                                {gravitonData[podcast.id]?.latest_short_id && gravitonData[podcast.id].latest_short_id !== 'null' && (
+                                  <div className="aspect-[9/16] w-full max-w-[240px] rounded-xl overflow-hidden border border-border bg-black mx-auto md:mx-0 relative">
                                     <iframe 
                                       className="w-full h-full"
                                       src={`https://www.youtube.com/embed/${gravitonData[podcast.id].latest_short_id}`} 
@@ -532,13 +566,8 @@ export function RankingsTable({ podcasts }: { podcasts: any[] }) {
                                       allowFullScreen
                                       loading="lazy"
                                     ></iframe>
-                                  ) : (
-                                    <div className="w-full h-full flex flex-col items-center justify-center bg-muted text-muted-foreground p-4 text-center">
-                                      <Info className="w-6 h-6 mb-2 opacity-50" />
-                                      <span className="text-xs font-medium">No recent shorts found for this creator.</span>
-                                    </div>
-                                  )}
-                                </div>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           )}

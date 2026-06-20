@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import Link from "next/link";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -64,6 +65,23 @@ export default function LoginPage() {
             )}
             Continue with Google
           </Button>
+          
+          <div className="pt-6 border-t border-border/50 text-center space-y-2">
+            <p className="text-sm text-muted-foreground">New to DPN?</p>
+            <div className="flex justify-center items-center flex-wrap gap-4 text-sm mt-2">
+              <button onClick={handleGoogleLogin} className="text-dentsu hover:underline font-bold">
+                General User Signup
+              </button>
+              <span className="text-muted-foreground/30 hidden md:inline">|</span>
+              <Link href="/creators/apply" className="text-dentsu hover:underline font-bold">
+                Creator Signup
+              </Link>
+              <span className="text-muted-foreground/30 hidden md:inline">|</span>
+              <Link href="/agencies/apply" className="text-dentsu hover:underline font-bold">
+                Agency Signup
+              </Link>
+            </div>
+          </div>
         </div>
         
         <p className="text-center text-sm text-muted-foreground">

@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server";
+import { createClient, createAdminClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { UsersTable } from "@/components/admin/UsersTable";
 
@@ -8,8 +8,10 @@ export default async function UsersAdminPage() {
 
   if (!user) redirect("/login");
 
+  const adminClient = createAdminClient();
+
   // Get current user role
-  const { data: currentUserProfile } = await supabase
+  const { data: currentUserProfile } = await adminClient
     .from("profiles")
     .select("role")
     .eq("id", user.id)
@@ -22,7 +24,7 @@ export default async function UsersAdminPage() {
   }
 
   // Fetch all profiles
-  const { data: profiles, error } = await supabase
+  const { data: profiles, error } = await adminClient
     .from("profiles")
     .select("id, email, full_name, role, created_at")
     .order("created_at", { ascending: false });
@@ -30,6 +32,7 @@ export default async function UsersAdminPage() {
   if (error) {
     console.error("Error fetching profiles:", error);
   }
+
 
   return (
     <div className="space-y-8 max-w-5xl">

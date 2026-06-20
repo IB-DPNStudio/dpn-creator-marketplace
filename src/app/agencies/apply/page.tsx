@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { switchUserCategory } from "@/app/actions/users";
 
 export default async function AgencyApplyPage() {
   const supabase = await createClient();
@@ -14,36 +15,20 @@ export default async function AgencyApplyPage() {
 
   async function submitApplication(formData: FormData) {
     "use server";
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
     
-    if (!user) return;
-
-    // First ensure profile exists
-    await supabase.from("profiles").upsert({
-      id: user.id,
-      role: 'agency_user',
-      full_name: formData.get("name") as string,
-      email: user.email,
-      phone: formData.get("phone") as string,
-    });
-
-    // Then insert agency application
-    const { error } = await supabase.from("agencies").insert({
-      owner_id: user.id,
-      status: 'pending',
+    const result = await switchUserCategory("agency", {
       name: formData.get("name") as string,
-      company_name: formData.get("company") as string,
-      job_title: formData.get("jobTitle") as string,
-      email: user.email,
+      jobTitle: formData.get("jobTitle") as string,
+      company: formData.get("company") as string,
       phone: formData.get("phone") as string,
-      annual_media_spend: formData.get("spend") as string,
-      agency_type: formData.get("type") as string,
+      type: formData.get("type") as string,
+      spend: formData.get("spend") as string,
     });
 
-    if (!error) {
-      revalidatePath("/dashboard");
+    if (result.success) {
       redirect("/agencies/apply/success");
+    } else {
+      console.error("Agency application error:", result.error);
     }
   }
 

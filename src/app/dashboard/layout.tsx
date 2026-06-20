@@ -1,7 +1,9 @@
-import { createClient } from "@/utils/supabase/server";
+import { createClient, createAdminClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, Mic2, FileText, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, Mic2, FileText, Settings, LogOut, User } from "lucide-react";
+
+export const dynamic = "force-dynamic";
 
 export default async function DashboardLayout({
   children,
@@ -15,15 +17,22 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  // Get user profile to check roles
-  const { data: profile } = await supabase
+  // Get user profile using admin client to bypass RLS blocks
+  const adminClient = createAdminClient();
+  const { data: profile, error } = await adminClient
     .from("profiles")
     .select("*")
     .eq("id", user.id)
     .single();
 
+
+  if (error) {
+    console.error("DASHBOARD LAYOUT PROFILE ERROR:", error);
+  }
+
   const isAgency = profile?.role === 'agency_user';
   const isAdmin = profile?.role === 'dpn_sales' || profile?.role === 'super_admin';
+  console.log("DASHBOARD LAYOUT DEBUG:", { userId: user.id, profileRole: profile?.role, isAdmin });
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -35,19 +44,27 @@ export default async function DashboardLayout({
           </span>
         </div>
         <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-2">
-          <Link href="/dashboard" className="flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-secondary text-foreground hover:bg-secondary/80 transition-colors">
-            <LayoutDashboard className="w-5 h-5 mr-3 text-muted-foreground" />
+          <Link href="/dashboard" className="flex items-center px-4 py-3 text-sm font-medium rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors">
+            <LayoutDashboard className="w-5 h-5 mr-3" />
             Catalogue
           </Link>
-          <Link href="/dashboard/eois" className="flex items-center px-4 py-3 text-sm font-medium rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors">
-            <FileText className="w-5 h-5 mr-3" />
-            Campaigns (EOIs)
+          {(isAgency || isAdmin) && (
+            <Link href="/dashboard/eois" className="flex items-center px-4 py-3 text-sm font-medium rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors">
+              <FileText className="w-5 h-5 mr-3" />
+              Campaigns (EOIs)
+            </Link>
+          )}
+          <Link href="/dashboard/profile" className="flex items-center px-4 py-3 text-sm font-medium rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors">
+            <User className="w-5 h-5 mr-3" />
+            My Profile
           </Link>
           {isAdmin && (
-            <Link href="/admin" className="flex items-center px-4 py-3 text-sm font-medium rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors">
-              <Settings className="w-5 h-5 mr-3" />
-              Admin Settings
-            </Link>
+            <>
+              <Link href="/admin" className="flex items-center px-4 py-3 text-sm font-medium rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors">
+                <Settings className="w-5 h-5 mr-3" />
+                DPN Admin
+              </Link>
+            </>
           )}
         </nav>
         <div className="p-4 border-t border-border">

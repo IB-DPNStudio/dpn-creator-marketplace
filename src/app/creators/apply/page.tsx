@@ -4,6 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { switchUserCategory } from "@/app/actions/users";
 
 export default async function CreatorApplyPage() {
   const supabase = await createClient();
@@ -15,33 +16,19 @@ export default async function CreatorApplyPage() {
 
   async function submitApplication(formData: FormData) {
     "use server";
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
     
-    if (!user) return;
-
-    // First ensure profile exists
-    await supabase.from("profiles").upsert({
-      id: user.id,
-      role: 'creator',
-      full_name: formData.get("fullName") as string,
-      email: user.email,
+    const result = await switchUserCategory("creator", {
+      fullName: formData.get("fullName") as string,
       phone: formData.get("phone") as string,
-    });
-
-    // Then insert podcast application
-    const { error } = await supabase.from("podcasts").insert({
-      owner_id: user.id,
-      status: 'verified', // Technically should be 'under_review' but using our enums
-      show_name: formData.get("showName") as string,
+      showName: formData.get("showName") as string,
       description: formData.get("description") as string,
-      primary_language: formData.get("language") as string,
       genre: formData.get("genre") as string,
-      youtube_url: formData.get("youtubeUrl") as string,
-      spotify_url: formData.get("spotifyUrl") as string,
-      instagram_url: formData.get("instagramUrl") as string,
-      linkedin_url: formData.get("linkedinUrl") as string,
-      inventory_availability: {
+      language: formData.get("language") as string,
+      youtubeUrl: formData.get("youtubeUrl") as string,
+      spotifyUrl: formData.get("spotifyUrl") as string,
+      instagramUrl: formData.get("instagramUrl") as string,
+      linkedinUrl: formData.get("linkedinUrl") as string,
+      inventoryAvailability: {
         sponsorship: formData.get("sponsorship") === "on",
         host_read: formData.get("hostRead") === "on",
         pre_roll: formData.get("preRoll") === "on",
@@ -51,10 +38,10 @@ export default async function CreatorApplyPage() {
       }
     });
 
-    if (!error) {
-      revalidatePath("/dashboard");
-      revalidatePath("/rankings");
+    if (result.success) {
       redirect("/creators/apply/success");
+    } else {
+      console.error("Creator application error:", result.error);
     }
   }
 

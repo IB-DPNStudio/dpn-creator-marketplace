@@ -62,7 +62,7 @@ export default async function PodcastDetailsPage({ params }: { params: Promise<{
             </div>
             <div className="space-y-1">
               <div className="text-sm text-muted-foreground flex items-center"><Users className="w-4 h-4 mr-1"/> Subscribers</div>
-              <div className="text-2xl font-bold font-mono">{podcast.subscriber_count ? (podcast.subscriber_count / 1000).toFixed(1) + 'k' : 'N/A'}</div>
+              <div className="text-2xl font-bold font-mono">{podcast.subscriber_count ? (podcast.subscriber_count >= 1000000 ? (podcast.subscriber_count / 1000000).toFixed(1) + 'M' : (podcast.subscriber_count / 1000).toFixed(1) + 'k') : 'N/A'}</div>
             </div>
             <div className="space-y-1">
               <div className="text-sm text-muted-foreground flex items-center"><PlayCircle className="w-4 h-4 mr-1"/> Episodes</div>
@@ -70,7 +70,7 @@ export default async function PodcastDetailsPage({ params }: { params: Promise<{
             </div>
             <div className="space-y-1">
               <div className="text-sm text-muted-foreground flex items-center"><BarChart className="w-4 h-4 mr-1"/> Est. Reach</div>
-              <div className="text-2xl font-bold font-mono">{podcast.estimated_reach ? (podcast.estimated_reach / 1000).toFixed(1) + 'k' : 'N/A'}</div>
+              <div className="text-2xl font-bold font-mono">{podcast.estimated_reach ? (podcast.estimated_reach >= 1000000 ? (podcast.estimated_reach / 1000000).toFixed(1) + 'M' : (podcast.estimated_reach / 1000).toFixed(1) + 'k') : 'N/A'}</div>
             </div>
           </div>
 

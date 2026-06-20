@@ -35,9 +35,28 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     
     if (!error) {
-      const isLocalEnv = process.env.NODE_ENV === 'development'
-      if (isLocalEnv) {
-        return NextResponse.redirect(`${origin}${next}`)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        // Use admin client to bypass RLS for profile creation
+        const { createAdminClient } = await import('@/utils/supabase/server')
+        const adminClient = createAdminClient()
+        
+        // Check if profile exists
+        const { data: profile } = await adminClient
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .single()
+
+        if (!profile) {
+          // Create default profile as General User
+          await adminClient.from("profiles").insert({
+            id: user.id,
+            role: "general_user",
+            full_name: user.user_metadata.full_name || user.email?.split("@")[0],
+            email: user.email,
+          })
+        }
       }
       return NextResponse.redirect(`${origin}${next}`)
     }

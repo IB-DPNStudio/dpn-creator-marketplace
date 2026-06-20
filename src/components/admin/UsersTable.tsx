@@ -85,6 +85,7 @@ export function UsersTable({ profiles, currentUserRole }: { profiles: any[], cur
               onChange={(e) => setInviteRole(e.target.value)}
             >
               <option value="agency_user">Agency Partner</option>
+              <option value="creator">Creator</option>
               {currentUserRole === 'super_admin' && <option value="dpn_sales">DPN Sales</option>}
               {currentUserRole === 'super_admin' && <option value="super_admin">Super Admin</option>}
             </select>
@@ -139,6 +140,7 @@ export function UsersTable({ profiles, currentUserRole }: { profiles: any[], cur
                           onChange={(e) => setTempRole(e.target.value)}
                         >
                           <option value="agency_user">Agency Partner</option>
+                          <option value="creator">Creator</option>
                           <option value="dpn_sales">DPN Sales</option>
                           {currentUserRole === 'super_admin' && <option value="super_admin">Super Admin</option>}
                         </select>

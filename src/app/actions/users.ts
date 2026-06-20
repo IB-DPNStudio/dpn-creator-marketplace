@@ -28,8 +28,9 @@ export async function inviteUser(email: string, role: string) {
     
     if (!user) throw new Error("Unauthorized");
 
-    // Verify inviter is super_admin or dpn_sales
-    const { data: profile } = await supabase
+    // Verify inviter is super_admin or dpn_sales using adminDbClient to bypass RLS
+    const adminDbClient = getAdminClient();
+    const { data: profile } = await adminDbClient
       .from("profiles")
       .select("role")
       .eq("id", user.id)
@@ -78,7 +79,9 @@ export async function updateUserRole(userId: string, newRole: string) {
     
     if (!user) throw new Error("Unauthorized");
 
-    const { data: profile } = await supabase
+    // Verify updater is admin using adminDbClient to bypass RLS
+    const adminDbClient = getAdminClient();
+    const { data: profile } = await adminDbClient
       .from("profiles")
       .select("role")
       .eq("id", user.id)
@@ -88,12 +91,11 @@ export async function updateUserRole(userId: string, newRole: string) {
       throw new Error("Unauthorized: Only admins can change roles");
     }
 
-    const adminDbClient = getAdminClient();
-
     const { error } = await adminDbClient
       .from("profiles")
       .update({ role: newRole })
       .eq("id", userId);
+
 
     if (error) {
       return { success: false, error: error.message };
@@ -104,6 +106,147 @@ export async function updateUserRole(userId: string, newRole: string) {
 
   } catch (err: any) {
     console.error("Error updating role:", err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function switchUserCategory(targetCategory: 'general' | 'creator' | 'agency', additionalData?: any) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) throw new Error("Unauthorized");
+
+    const adminDbClient = getAdminClient();
+
+    // 1. Clean up associated data for the categories they are NOT switching to
+    if (targetCategory === 'general' || targetCategory === 'agency') {
+      // Clean up Creator data (podcasts owned by user)
+      const { error: deletePodcastsErr } = await adminDbClient
+        .from("podcasts")
+        .delete()
+        .eq("owner_id", user.id);
+      if (deletePodcastsErr) console.error("Error cleaning up podcasts:", deletePodcastsErr);
+    }
+
+    if (targetCategory === 'general' || targetCategory === 'creator') {
+      // Clean up Agency data
+      const { data: agencies } = await adminDbClient
+        .from("agencies")
+        .select("id")
+        .eq("owner_id", user.id);
+
+      if (agencies && agencies.length > 0) {
+        const agencyIds = agencies.map(a => a.id);
+        // Delete associated EOIs first
+        await adminDbClient
+          .from("eois")
+          .delete()
+          .in("agency_id", agencyIds);
+
+        // Delete agencies
+        await adminDbClient
+          .from("agencies")
+          .delete()
+          .in("id", agencyIds);
+      }
+    }
+
+    // 2. Perform target category logic
+    if (targetCategory === 'general') {
+      // Update profile role
+      const { error: profileErr } = await adminDbClient
+        .from("profiles")
+        .upsert({
+          id: user.id,
+          role: 'general_user',
+          email: user.email,
+          updated_at: new Date().toISOString()
+        });
+
+      if (profileErr) throw profileErr;
+    } 
+    else if (targetCategory === 'creator') {
+      if (!additionalData || !additionalData.showName || !additionalData.youtubeUrl) {
+        throw new Error("Missing mandatory creator show information");
+      }
+
+      // Update profile
+      const { error: profileErr } = await adminDbClient
+        .from("profiles")
+        .upsert({
+          id: user.id,
+          role: 'creator',
+          full_name: additionalData.fullName,
+          phone: additionalData.phone,
+          email: user.email,
+          updated_at: new Date().toISOString()
+        });
+
+      if (profileErr) throw profileErr;
+
+      // Insert podcast
+      const { error: podcastErr } = await adminDbClient
+        .from("podcasts")
+        .insert({
+          owner_id: user.id,
+          status: 'verified',
+          show_name: additionalData.showName,
+          description: additionalData.description,
+          primary_language: additionalData.language,
+          genre: additionalData.genre,
+          youtube_url: additionalData.youtubeUrl,
+          spotify_url: additionalData.spotifyUrl,
+          instagram_url: additionalData.instagramUrl,
+          linkedin_url: additionalData.linkedinUrl,
+          inventory_availability: additionalData.inventoryAvailability || {}
+        });
+
+      if (podcastErr) throw podcastErr;
+    } 
+    else if (targetCategory === 'agency') {
+      if (!additionalData || !additionalData.name || !additionalData.company) {
+        throw new Error("Missing mandatory agency company information");
+      }
+
+      // Update profile
+      const { error: profileErr } = await adminDbClient
+        .from("profiles")
+        .upsert({
+          id: user.id,
+          role: 'agency_user',
+          full_name: additionalData.name,
+          phone: additionalData.phone,
+          email: user.email,
+          updated_at: new Date().toISOString()
+        });
+
+      if (profileErr) throw profileErr;
+
+      // Insert agency
+      const { error: agencyErr } = await adminDbClient
+        .from("agencies")
+        .insert({
+          owner_id: user.id,
+          status: 'approved',
+          name: additionalData.name,
+          company_name: additionalData.company,
+          job_title: additionalData.jobTitle,
+          email: user.email,
+          phone: additionalData.phone,
+          annual_media_spend: additionalData.spend,
+          agency_type: additionalData.type
+        });
+
+      if (agencyErr) throw agencyErr;
+    }
+
+    revalidatePath("/dashboard");
+    revalidatePath("/rankings");
+    return { success: true };
+
+  } catch (err: any) {
+    console.error("Error switching category:", err);
     return { success: false, error: err.message };
   }
 }

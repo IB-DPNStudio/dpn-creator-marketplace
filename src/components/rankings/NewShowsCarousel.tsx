@@ -55,7 +55,11 @@ export function NewShowsCarousel({ podcasts }: { podcasts: any[] }) {
                       {podcast.show_name}
                     </h3>
                     <p className="text-white/80 text-sm mt-1 flex items-center">
-                      <span className="font-mono font-medium">{(podcast.subscriber_count / 1000).toFixed(0)}k</span>
+                      <span className="font-mono font-medium">
+                        {podcast.subscriber_count > 1000000 
+                          ? (podcast.subscriber_count / 1000000).toFixed(1) + 'M' 
+                          : (podcast.subscriber_count / 1000).toFixed(0) + 'k'}
+                      </span>
                       <span className="ml-1 text-xs uppercase tracking-wider opacity-70">Subs</span>
                     </p>
                   </div>

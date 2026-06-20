@@ -1,18 +1,18 @@
-import { createClient } from "@/utils/supabase/server";
+import { createClient, createAdminClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { revalidatePath } from "next/cache";
 
 export default async function AdminApprovalsPage() {
-  const supabase = await createClient();
+  const adminClient = createAdminClient();
   
-  const { data: pendingPodcasts } = await supabase
+  const { data: pendingPodcasts } = await adminClient
     .from("podcasts")
     .select("*")
     .in("status", ["under_review", "verified"]) // including verified since they need to be approved_partner
     .order("created_at", { ascending: false });
 
-  const { data: pendingAgencies } = await supabase
+  const { data: pendingAgencies } = await adminClient
     .from("agencies")
     .select("*, profiles(full_name)")
     .eq("status", "pending")
@@ -21,18 +21,19 @@ export default async function AdminApprovalsPage() {
   async function approvePodcast(formData: FormData) {
     "use server";
     const id = formData.get("id") as string;
-    const supabase = await createClient();
-    await supabase.from("podcasts").update({ status: 'approved_partner' }).eq("id", id);
+    const adminClient = createAdminClient();
+    await adminClient.from("podcasts").update({ status: 'approved_partner' }).eq("id", id);
     revalidatePath("/admin/approvals");
   }
 
   async function approveAgency(formData: FormData) {
     "use server";
     const id = formData.get("id") as string;
-    const supabase = await createClient();
-    await supabase.from("agencies").update({ status: 'approved' }).eq("id", id);
+    const adminClient = createAdminClient();
+    await adminClient.from("agencies").update({ status: 'approved' }).eq("id", id);
     revalidatePath("/admin/approvals");
   }
+
 
   return (
     <div className="space-y-8">

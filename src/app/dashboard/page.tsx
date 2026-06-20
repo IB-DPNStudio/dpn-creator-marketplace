@@ -113,7 +113,7 @@ export default async function DashboardPage({
                     <div className="flex items-center justify-between pt-4 border-t border-border">
                       <div className="text-xs text-muted-foreground">
                         <span className="font-bold text-foreground">
-                          {podcast.subscriber_count ? (podcast.subscriber_count / 1000).toFixed(1) + 'k' : 'N/A'}
+                          {podcast.subscriber_count ? (podcast.subscriber_count >= 1000000 ? (podcast.subscriber_count / 1000000).toFixed(1) + 'M' : (podcast.subscriber_count / 1000).toFixed(1) + 'k') : 'N/A'}
                         </span> subs
                       </div>
                       <div className="flex items-center space-x-1 text-spotify font-mono font-bold text-sm">
