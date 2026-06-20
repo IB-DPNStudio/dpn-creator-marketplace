@@ -201,15 +201,6 @@ export function RankingsTable({ podcasts, isAuthenticated = false }: { podcasts:
           />
         </div>
         <div className="flex gap-4">
-          <label className="flex items-center gap-2 text-sm text-muted-foreground border border-input rounded-md px-3 py-2 cursor-pointer hover:bg-muted/50 transition-colors">
-            <input 
-              type="checkbox" 
-              checked={isAdminMode} 
-              onChange={(e) => setIsAdminMode(e.target.checked)} 
-              className="rounded"
-            />
-            Admin Mode
-          </label>
           <select 
             className="flex h-10 w-full md:w-48 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             value={languageFilter}
