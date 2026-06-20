@@ -57,7 +57,6 @@ export async function GET(request: Request) {
             email: user.email,
           })
         }
-        }
       }
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dpnranker.com'
       return NextResponse.redirect(`${siteUrl}${next === '/' ? '' : next}`)
