@@ -95,9 +95,9 @@ export function CatalogueFilters({
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
-      <div className="flex gap-4 items-center">
+      <div className="grid grid-cols-2 sm:flex gap-3 sm:gap-4 items-center w-full md:w-auto">
         <select
-          className="flex h-12 w-full md:w-48 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex h-12 w-full sm:w-48 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           value={lang}
           onChange={handleLangChange}
         >
@@ -109,7 +109,7 @@ export function CatalogueFilters({
           ))}
         </select>
         <select
-          className="flex h-12 w-full md:w-48 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex h-12 w-full sm:w-48 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           value={genre}
           onChange={handleGenreChange}
         >
@@ -123,7 +123,7 @@ export function CatalogueFilters({
         <Button 
           type="submit" 
           disabled={isPending} 
-          className="h-12 px-6 bg-dentsu hover:bg-dentsu/90 text-white font-semibold"
+          className="col-span-2 sm:col-span-1 h-12 px-6 bg-dentsu hover:bg-dentsu/90 text-white font-semibold w-full sm:w-auto mt-2 sm:mt-0"
         >
           {isPending ? "Filtering..." : "Search"}
         </Button>

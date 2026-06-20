@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { LayoutDashboard, Mic2, FileText, Settings, LogOut, User } from "lucide-react";
 
+import { DashboardMobileNav } from "@/components/dashboard/DashboardMobileNav";
+
 export const dynamic = "force-dynamic";
 
 export default async function DashboardLayout({
@@ -78,9 +80,10 @@ export default async function DashboardLayout({
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col">
-        <header className="h-16 border-b border-border bg-card/50 backdrop-blur flex items-center justify-end px-8 sticky top-0 z-10">
-          <div className="flex items-center space-x-4">
+      <main className="flex-1 flex flex-col min-w-0">
+        <header className="h-16 border-b border-border bg-card/50 backdrop-blur flex items-center justify-between px-4 md:justify-end md:px-8 sticky top-0 z-10">
+          <DashboardMobileNav isAdmin={isAdmin} isAgency={isAgency} />
+          <div className="flex items-center space-x-4 ml-auto">
             <div className="text-sm font-medium">{profile?.full_name || user.email}</div>
             <div className="w-8 h-8 rounded-full bg-dentsu text-white flex items-center justify-center font-bold text-xs uppercase">
               {(profile?.full_name || user.email || 'U')[0]}

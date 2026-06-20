@@ -34,8 +34,8 @@ export default async function PodcastDetailsPage({ params }: { params: Promise<{
 
       <div className="bg-card border border-border rounded-2xl p-8 flex flex-col md:flex-row gap-8">
         <div className="w-full md:w-1/3 aspect-square bg-muted rounded-xl flex items-center justify-center relative overflow-hidden">
-          {podcast.cover_art_url ? (
-            <img src={podcast.cover_art_url} alt={podcast.show_name} className="object-cover w-full h-full" />
+          {podcast.cover_art_url || podcast.thumbnail_url ? (
+            <img src={podcast.cover_art_url || podcast.thumbnail_url} alt={podcast.show_name} className="object-cover w-full h-full" />
           ) : (
             <span className="text-muted-foreground font-medium">Cover Art</span>
           )}

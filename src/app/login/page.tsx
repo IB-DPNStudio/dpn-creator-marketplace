@@ -8,7 +8,30 @@ import Link from "next/link";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [isEmailLoading, setIsEmailLoading] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
   const supabase = createClient();
+
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    setIsEmailLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (error) throw error;
+      setEmailSent(true);
+    } catch (error) {
+      console.error("Error sending magic link:", error);
+    } finally {
+      setIsEmailLoading(false);
+    }
+  };
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
@@ -35,7 +58,45 @@ export default function LoginPage() {
         </div>
         
         <div className="space-y-4">
+          <form onSubmit={handleEmailLogin} className="space-y-4">
+            <div className="space-y-2 text-left">
+              <label htmlFor="email" className="text-sm font-medium">Email Address</label>
+              <input
+                id="email"
+                type="email"
+                placeholder="name@example.com"
+                className="flex h-12 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <Button 
+              type="submit" 
+              className="w-full h-12 bg-foreground text-background hover:bg-foreground/90 font-medium"
+              disabled={isEmailLoading || emailSent}
+            >
+              {isEmailLoading ? (
+                <Loader2 className="w-5 h-5 animate-spin mr-2" />
+              ) : emailSent ? (
+                "Magic Link Sent! Check your email"
+              ) : (
+                "Send Magic Link"
+              )}
+            </Button>
+          </form>
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-card text-muted-foreground">Or continue with</span>
+            </div>
+          </div>
+
           <Button 
+            type="button"
             variant="outline" 
             className="w-full h-12 relative flex items-center justify-center font-medium" 
             onClick={handleGoogleLogin}
