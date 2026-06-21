@@ -10,6 +10,7 @@ export default async function RankingsPage() {
   const supabase = await createClient();
   const { data: { session } } = await supabase.auth.getSession();
   const isAuthenticated = !!session;
+  const isSuperAdmin = session?.user?.email === 'studio@ideabrews.com';
   
   // Fetch all approved and seeded podcasts, ordered by score
   const { data: podcasts, error } = await supabase
@@ -55,7 +56,7 @@ export default async function RankingsPage() {
 
       {/* Main Rankings Area */}
       <div className="container mx-auto px-4 max-w-7xl mt-12">
-        <RankingsTable podcasts={validPodcasts} isAuthenticated={isAuthenticated} />
+        <RankingsTable podcasts={validPodcasts} isAuthenticated={isAuthenticated} isSuperAdmin={isSuperAdmin} />
       </div>
     </div>
   );

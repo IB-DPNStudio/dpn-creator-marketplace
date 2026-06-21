@@ -15,12 +15,12 @@ import { updatePodcastGenre, updatePodcastLanguage, updatePodcastStatus, toggleP
 import { calculateDPNScoreBreakdown } from "@/lib/score";
 import { createClient } from "@/utils/supabase/client";
 
-export function RankingsTable({ podcasts, isAuthenticated = false }: { podcasts: any[], isAuthenticated?: boolean }) {
+export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin = false }: { podcasts: any[], isAuthenticated?: boolean, isSuperAdmin?: boolean }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [languageFilter, setLanguageFilter] = useState("All");
   const [genreFilter, setGenreFilter] = useState("All");
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [isAdminMode, setIsAdminMode] = useState(false);
+  const [isAdminMode, setIsAdminMode] = useState(isSuperAdmin);
   const [editingGenreId, setEditingGenreId] = useState<string | null>(null);
   const [tempGenre, setTempGenre] = useState("");
   const [isUpdatingGenre, setIsUpdatingGenre] = useState(false);

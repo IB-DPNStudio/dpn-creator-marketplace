@@ -11,6 +11,9 @@ export const revalidate = 3600;
 
 export default async function Home() {
   const supabase = await createClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  const isAuthenticated = !!session;
+  const isSuperAdmin = session?.user?.email === 'studio@ideabrews.com';
   
   const { data: podcasts } = await supabase
     .from("podcasts")
@@ -38,7 +41,7 @@ export default async function Home() {
             </p>
           </div>
           
-          <RankingsTable podcasts={topPodcasts} />
+          <RankingsTable podcasts={topPodcasts} isAuthenticated={isAuthenticated} isSuperAdmin={isSuperAdmin} />
           
           <div className="mt-12 text-center">
             <Button asChild size="lg" className="bg-dentsu hover:bg-dentsu/90 text-white font-semibold">

@@ -187,25 +187,28 @@ export async function adminSeedPodcast(youtubeUrl: string) {
     let description = "";
     let coverArt = "";
     let subscriberCount = 0;
+    let genre = "General";
     
     if (apiKey) {
+      let channelId = '';
       let channelIdOrHandle = youtubeUrl.split('/').pop()?.split('?')[0] || '';
+      
       if (channelIdOrHandle.startsWith('@')) {
-        // search by handle
-        const searchRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(channelIdOrHandle)}&key=${apiKey}`);
+        // search by handle to get channelId
+        const searchRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=id&type=channel&q=${encodeURIComponent(channelIdOrHandle)}&key=${apiKey}`);
         if (searchRes.ok) {
            const searchData = await searchRes.json();
            if (searchData.items && searchData.items.length > 0) {
-              const ch = searchData.items[0];
-              showName = ch.snippet.title;
-              description = ch.snippet.description;
-              coverArt = ch.snippet.thumbnails?.high?.url || ch.snippet.thumbnails?.default?.url;
+              channelId = searchData.items[0].id.channelId;
            }
         }
       } else if (youtubeUrl.includes('/channel/')) {
-        // fetch by id
-        const id = youtubeUrl.split('/channel/')[1].split('?')[0];
-        const res = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${id}&key=${apiKey}`);
+        channelId = youtubeUrl.split('/channel/')[1].split('?')[0];
+      }
+
+      if (channelId) {
+        // fetch channel details including topicDetails
+        const res = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics,topicDetails&id=${channelId}&key=${apiKey}`);
         if (res.ok) {
            const data = await res.json();
            if (data.items && data.items.length > 0) {
@@ -214,6 +217,23 @@ export async function adminSeedPodcast(youtubeUrl: string) {
               description = ch.snippet.description;
               coverArt = ch.snippet.thumbnails?.high?.url || ch.snippet.thumbnails?.default?.url;
               subscriberCount = parseInt(ch.statistics?.subscriberCount || '0');
+              
+              if (ch.topicDetails?.topicCategories?.length > 0) {
+                const topicUrl = ch.topicDetails.topicCategories[0];
+                const topicRaw = topicUrl.split('/').pop()?.replace(/_/g, ' ').replace(/\(sociology\)/g, '').trim() || 'General';
+                // Simple mapping
+                const lowerTopic = topicRaw.toLowerCase();
+                if (lowerTopic.includes('music')) genre = 'Music';
+                else if (lowerTopic.includes('game') || lowerTopic.includes('gaming')) genre = 'Gaming';
+                else if (lowerTopic.includes('lifestyle')) genre = 'Lifestyle';
+                else if (lowerTopic.includes('entertainment')) genre = 'Entertainment';
+                else if (lowerTopic.includes('technology')) genre = 'Technology';
+                else if (lowerTopic.includes('business')) genre = 'Business';
+                else if (lowerTopic.includes('society')) genre = 'Society & Culture';
+                else if (lowerTopic.includes('sports')) genre = 'Sports';
+                else if (lowerTopic.includes('knowledge') || lowerTopic.includes('education')) genre = 'Education';
+                else genre = topicRaw;
+              }
            }
         }
       }
@@ -228,7 +248,7 @@ export async function adminSeedPodcast(youtubeUrl: string) {
       thumbnail_url: coverArt,
       subscriber_count: subscriberCount,
       primary_language: 'Unknown',
-      genre: 'General'
+      genre: genre
     });
     
     if (error) throw error;
