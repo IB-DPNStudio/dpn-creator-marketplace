@@ -11,7 +11,7 @@ import Link from "next/link";
 export default function AdminDataEntryPage() {
   const [activeTab, setActiveTab] = useState<'creator' | 'agency' | 'seed'>('creator');
   const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
+  const [message, setMessage] = useState<{type: 'success' | 'error' | 'info', text: string} | null>(null);
 
   const handleCreatorSubmit = async (formData: FormData) => {
     setIsLoading(true);
