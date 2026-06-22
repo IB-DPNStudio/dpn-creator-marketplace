@@ -1,8 +1,8 @@
 import { createClient, createAdminClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-import { Star, StarOff } from "lucide-react";
+import { Star, StarOff, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { togglePodcastFeatured } from "@/app/actions/admin";
+import { togglePodcastFeatured, deletePodcast } from "@/app/actions/admin";
 
 export default async function AdminPodcastsPage() {
   const supabase = await createClient();
@@ -67,23 +67,38 @@ export default async function AdminPodcastsPage() {
                     </span>
                   </td>
                   <td className="p-4 text-right">
-                    <form action={async () => {
-                      "use server";
-                      await togglePodcastFeatured(podcast.id, isFeatured);
-                    }}>
-                      <Button 
-                        type="submit" 
-                        variant={isFeatured ? "outline" : "default"}
-                        size="sm"
-                        className={!isFeatured ? "bg-dentsu hover:bg-dentsu/90 text-white" : ""}
-                      >
-                        {isFeatured ? (
-                          <><StarOff className="w-4 h-4 mr-2" /> Remove Feature</>
-                        ) : (
-                          <><Star className="w-4 h-4 mr-2" /> Feature Show</>
-                        )}
-                      </Button>
-                    </form>
+                    <div className="flex justify-end items-center gap-2">
+                      <form action={async () => {
+                        "use server";
+                        await togglePodcastFeatured(podcast.id, isFeatured);
+                      }}>
+                        <Button 
+                          type="submit" 
+                          variant={isFeatured ? "outline" : "default"}
+                          size="sm"
+                          className={!isFeatured ? "bg-dentsu hover:bg-dentsu/90 text-white" : ""}
+                        >
+                          {isFeatured ? (
+                            <><StarOff className="w-4 h-4 mr-2" /> Remove Feature</>
+                          ) : (
+                            <><Star className="w-4 h-4 mr-2" /> Feature Show</>
+                          )}
+                        </Button>
+                      </form>
+                      <form action={async () => {
+                        "use server";
+                        await deletePodcast(podcast.id);
+                      }}>
+                        <Button 
+                          type="submit" 
+                          variant="destructive"
+                          size="sm"
+                          title="Delete Podcast"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </form>
+                    </div>
                   </td>
                 </tr>
               );

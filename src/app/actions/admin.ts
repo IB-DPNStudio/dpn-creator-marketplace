@@ -177,6 +177,29 @@ export async function togglePodcastFeatured(id: string, currentlyFeatured: boole
   }
 }
 
+export async function deletePodcast(id: string) {
+  try {
+    await getAdminUser();
+    const adminDbClient = getAdminClient();
+    
+    const { error } = await adminDbClient
+      .from("podcasts")
+      .delete()
+      .eq("id", id);
+      
+    if (error) throw error;
+    
+    revalidatePath("/admin/podcasts");
+    revalidatePath("/dashboard");
+    revalidatePath("/rankings");
+    
+    return { success: true };
+  } catch (err: any) {
+    console.error("Error deleting podcast:", err);
+    return { success: false, error: err.message };
+  }
+}
+
 export async function adminSeedPodcast(youtubeUrl: string) {
   try {
     await getAdminUser();
