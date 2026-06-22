@@ -322,9 +322,13 @@ export async function adminSeedPodcast(youtubeUrl: string) {
       latest_short_url: latestShortUrl
     });
     
+    if (!apiKey) {
+      throw new Error("Missing YouTube API Key");
+    }
+
     if (error) throw error;
     revalidatePath("/admin/podcasts");
-    return { success: true };
+    return { success: true, data: { dpnScore, genre, showName } };
   } catch(e:any) {
     console.error("Error seeding podcast:", e);
     return { success: false, error: e.message };

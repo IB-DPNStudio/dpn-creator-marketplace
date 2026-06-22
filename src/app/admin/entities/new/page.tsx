@@ -73,12 +73,12 @@ export default function AdminDataEntryPage() {
 
   const handleSeedSubmit = async (formData: FormData) => {
     setIsLoading(true);
-    setMessage(null);
+    setMessage({ type: 'info', text: 'Fetching YouTube metadata and analyzing channel...' });
     const youtubeUrl = formData.get("youtubeUrl") as string;
     const result = await adminSeedPodcast(youtubeUrl);
     setIsLoading(false);
-    if (result.success) {
-      setMessage({ type: 'success', text: 'Podcast successfully seeded!' });
+    if (result.success && result.data) {
+      setMessage({ type: 'success', text: `Podcast successfully seeded! Initial DPN Score: ${result.data.dpnScore}, Genre: ${result.data.genre}` });
       (document.getElementById("seed-form") as HTMLFormElement).reset();
     } else {
       setMessage({ type: 'error', text: result.error || 'Failed to seed podcast.' });
@@ -114,7 +114,12 @@ export default function AdminDataEntryPage() {
       </div>
 
       {message && (
-        <div className={`p-4 rounded-xl font-medium ${message.type === 'success' ? 'bg-green-500/10 text-green-600 border border-green-500/20' : 'bg-red-500/10 text-red-600 border border-red-500/20'}`}>
+        <div className={`p-4 rounded-xl font-medium flex items-center gap-3 ${
+          message.type === 'success' ? 'bg-green-500/10 text-green-600 border border-green-500/20' : 
+          message.type === 'info' ? 'bg-blue-500/10 text-blue-600 border border-blue-500/20' :
+          'bg-red-500/10 text-red-600 border border-red-500/20'
+        }`}>
+          {message.type === 'info' && <Loader2 className="w-5 h-5 animate-spin" />}
           {message.text}
         </div>
       )}
