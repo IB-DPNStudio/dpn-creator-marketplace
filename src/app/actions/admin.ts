@@ -207,8 +207,23 @@ export async function adminSeedPodcast(youtubeUrl: string) {
     const adminDbClient = getAdminClient();
     
     const apiKey = process.env.YOUTUBE_API_KEY;
-    const cleanUrl = youtubeUrl.trim().replace(/\/+$/, '');
-    let showName = cleanUrl.split('/').pop() || youtubeUrl;
+    if (!apiKey) {
+      throw new Error("Missing YouTube API Key configuration.");
+    }
+
+    let cleanUrl = youtubeUrl.trim().replace(/\/+$/, '');
+    
+    // Remove standard YouTube subpages if present at the end
+    const subpages = ['/videos', '/shorts', '/featured', '/playlists', '/about', '/streams', '/community'];
+    for (const subpage of subpages) {
+      if (cleanUrl.toLowerCase().endsWith(subpage)) {
+        cleanUrl = cleanUrl.substring(0, cleanUrl.length - subpage.length);
+      }
+    }
+
+    // Clean query parameters from URL for display name fallback
+    let fallbackShowName = cleanUrl.split('/').pop()?.split('?')[0] || youtubeUrl;
+    let showName = fallbackShowName;
     let description = "";
     let coverArt = "";
     let subscriberCount = 0;
@@ -219,119 +234,160 @@ export async function adminSeedPodcast(youtubeUrl: string) {
     let latestVideoUrl = "";
     let latestShortUrl = "";
     
-    if (apiKey) {
-      let channelIdOrHandle = cleanUrl.split('/').pop()?.split('?')[0] || '';
-      let endpoint = '';
-      
-      if (channelIdOrHandle.startsWith('@')) {
-        endpoint = `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics,topicDetails,contentDetails&forHandle=${encodeURIComponent(channelIdOrHandle)}&key=${apiKey}`;
-      } else if (youtubeUrl.includes('/channel/')) {
-        const id = youtubeUrl.split('/channel/')[1].split('?')[0];
-        endpoint = `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics,topicDetails,contentDetails&id=${id}&key=${apiKey}`;
-      }
+    let channelIdOrHandle = cleanUrl.split('/').pop()?.split('?')[0] || '';
+    if (cleanUrl.includes('/c/')) {
+      channelIdOrHandle = cleanUrl.split('/c/')[1].split('?')[0];
+    } else if (cleanUrl.includes('/user/')) {
+      channelIdOrHandle = cleanUrl.split('/user/')[1].split('?')[0];
+    }
+    
+    let endpoint = '';
+    if (channelIdOrHandle.startsWith('UC') && channelIdOrHandle.length === 24) {
+      endpoint = `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics,topicDetails,contentDetails&id=${channelIdOrHandle}&key=${apiKey}`;
+    } else {
+      const handle = channelIdOrHandle.startsWith('@') ? channelIdOrHandle : `@${channelIdOrHandle}`;
+      endpoint = `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics,topicDetails,contentDetails&forHandle=${encodeURIComponent(handle)}&key=${apiKey}`;
+    }
 
-      if (endpoint) {
-        const res = await fetch(endpoint);
-        if (res.ok) {
-           const data = await res.json();
-           if (data.items && data.items.length > 0) {
-              const ch = data.items[0];
-              showName = ch.snippet.title;
-              description = ch.snippet.description;
-              coverArt = ch.snippet.thumbnails?.high?.url || ch.snippet.thumbnails?.default?.url;
-              subscriberCount = parseInt(ch.statistics?.subscriberCount || '0');
-              totalViews = parseInt(ch.statistics?.viewCount || '0');
-              totalVideos = parseInt(ch.statistics?.videoCount || '0');
-              
-              const calc = calculateDPNScoreBreakdown(subscriberCount, totalViews, totalVideos);
-              dpnScore = calc.score;
-              
-              if (ch.topicDetails?.topicCategories?.length > 0) {
-                const topicUrl = ch.topicDetails.topicCategories[0];
-                const topicRaw = topicUrl.split('/').pop()?.replace(/_/g, ' ').replace(/\(sociology\)/g, '').trim() || 'General';
-                const lowerTopic = topicRaw.toLowerCase();
-                if (lowerTopic.includes('music')) genre = 'Music';
-                else if (lowerTopic.includes('game') || lowerTopic.includes('gaming')) genre = 'Gaming';
-                else if (lowerTopic.includes('lifestyle')) genre = 'Lifestyle';
-                else if (lowerTopic.includes('entertainment')) genre = 'Entertainment';
-                else if (lowerTopic.includes('technology')) genre = 'Technology';
-                else if (lowerTopic.includes('business')) genre = 'Business';
-                else if (lowerTopic.includes('society')) genre = 'Society & Culture';
-                else if (lowerTopic.includes('sports')) genre = 'Sports';
-                else if (lowerTopic.includes('knowledge') || lowerTopic.includes('education')) genre = 'Education';
-                else genre = topicRaw;
-              }
+    let fetchedSuccessfully = false;
+    if (endpoint) {
+      const res = await fetch(endpoint);
+      if (res.ok) {
+         const data = await res.json();
+         if (data.items && data.items.length > 0) {
+            fetchedSuccessfully = true;
+            const ch = data.items[0];
+            showName = ch.snippet.title;
+            description = ch.snippet.description;
+            coverArt = ch.snippet.thumbnails?.high?.url || ch.snippet.thumbnails?.default?.url;
+            subscriberCount = parseInt(ch.statistics?.subscriberCount || '0');
+            totalViews = parseInt(ch.statistics?.viewCount || '0');
+            totalVideos = parseInt(ch.statistics?.videoCount || '0');
+            
+            const calc = calculateDPNScoreBreakdown(subscriberCount, totalViews, totalVideos);
+            dpnScore = calc.score;
+            
+            if (ch.topicDetails?.topicCategories?.length > 0) {
+              const topicUrl = ch.topicDetails.topicCategories[0];
+              const topicRaw = topicUrl.split('/').pop()?.replace(/_/g, ' ').replace(/\(sociology\)/g, '').trim() || 'General';
+              const lowerTopic = topicRaw.toLowerCase();
+              if (lowerTopic.includes('music')) genre = 'Music';
+              else if (lowerTopic.includes('game') || lowerTopic.includes('gaming')) genre = 'Gaming';
+              else if (lowerTopic.includes('lifestyle')) genre = 'Lifestyle';
+              else if (lowerTopic.includes('entertainment')) genre = 'Entertainment';
+              else if (lowerTopic.includes('technology')) genre = 'Technology';
+              else if (lowerTopic.includes('business')) genre = 'Business';
+              else if (lowerTopic.includes('society')) genre = 'Society & Culture';
+              else if (lowerTopic.includes('sports')) genre = 'Sports';
+              else if (lowerTopic.includes('knowledge') || lowerTopic.includes('education')) genre = 'Education';
+              else genre = topicRaw;
+            }
 
-              // Fetch latest shorts and longs
-              try {
-                const uploadsId = ch.contentDetails?.relatedPlaylists?.uploads;
-                if (uploadsId) {
-                  const pRes = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails&playlistId=${uploadsId}&maxResults=20&key=${apiKey}`);
-                  const pData = await pRes.json();
-                  if (pData.items && pData.items.length > 0) {
-                    const videoIds = pData.items.map((i:any) => i.contentDetails.videoId).join(',');
-                    const vRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoIds}&key=${apiKey}`);
-                    const vData = await vRes.json();
-                    
-                    if (vData.items) {
-                      for (const v of vData.items) {
-                        const durationStr = v.contentDetails?.duration || '';
-                        const title = v.snippet?.title || '';
-                        
-                        const parseDuration = (d: string) => {
-                          const match = d.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-                          if (!match) return 0;
-                          return parseInt(match[1] || '0') * 3600 + parseInt(match[2] || '0') * 60 + parseInt(match[3] || '0');
-                        };
-                        
-                        const durationSec = parseDuration(durationStr);
-                        const isShort = durationSec <= 180 || title.toLowerCase().includes('#shorts');
-                        
-                        if (isShort && !latestShortUrl) {
-                          latestShortUrl = `https://www.youtube.com/watch?v=${v.id}`;
-                        } else if (!isShort && !latestVideoUrl) {
-                          latestVideoUrl = `https://www.youtube.com/watch?v=${v.id}`;
-                        }
-                        if (latestShortUrl && latestVideoUrl) break;
+            // Fetch latest shorts and longs
+            try {
+              const uploadsId = ch.contentDetails?.relatedPlaylists?.uploads;
+              if (uploadsId) {
+                const pRes = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails&playlistId=${uploadsId}&maxResults=20&key=${apiKey}`);
+                const pData = await pRes.json();
+                if (pData.items && pData.items.length > 0) {
+                  const videoIds = pData.items.map((i:any) => i.contentDetails.videoId).join(',');
+                  const vRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoIds}&key=${apiKey}`);
+                  const vData = await vRes.json();
+                  
+                  if (vData.items) {
+                    for (const v of vData.items) {
+                      const durationStr = v.contentDetails?.duration || '';
+                      const title = v.snippet?.title || '';
+                      
+                      const parseDuration = (d: string) => {
+                        const match = d.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+                        if (!match) return 0;
+                        return parseInt(match[1] || '0') * 3600 + parseInt(match[2] || '0') * 60 + parseInt(match[3] || '0');
+                      };
+                      
+                      const durationSec = parseDuration(durationStr);
+                      const isShort = durationSec <= 180 || title.toLowerCase().includes('#shorts');
+                      
+                      if (isShort && !latestShortUrl) {
+                        latestShortUrl = `https://www.youtube.com/watch?v=${v.id}`;
+                      } else if (!isShort && !latestVideoUrl) {
+                        latestVideoUrl = `https://www.youtube.com/watch?v=${v.id}`;
                       }
+                      if (latestShortUrl && latestVideoUrl) break;
                     }
                   }
                 }
-              } catch (err) {
-                console.error("Failed to fetch latest videos", err);
               }
-           }
-        }
+            } catch (err) {
+              console.error("Failed to fetch latest videos", err);
+            }
+         }
       }
     }
     
-    const { error } = await adminDbClient.from("podcasts").insert({
-      status: 'seeded',
-      youtube_url: youtubeUrl,
-      show_name: showName,
-      description: description,
-      cover_art_url: coverArt,
-      thumbnail_url: coverArt,
-      subscriber_count: subscriberCount,
-      total_views: totalViews,
-      total_videos: totalVideos,
-      dpn_score: dpnScore,
-      primary_language: 'Unknown',
-      genre: genre,
-      latest_video_url: latestVideoUrl,
-      latest_short_url: latestShortUrl
-    });
+    if (!fetchedSuccessfully) {
+      throw new Error("YouTube channel not found. Please verify the URL.");
+    }
     
-    if (!apiKey) {
-      throw new Error("Missing YouTube API Key");
+    // Check if the podcast already exists by checking both youtubeUrl and cleanUrl
+    const { data: existingPodcasts } = await adminDbClient
+      .from("podcasts")
+      .select("id, status, owner_id, show_name, youtube_url")
+      .or(`youtube_url.eq.${youtubeUrl},youtube_url.eq.${cleanUrl}`);
+    
+    const existing = existingPodcasts && existingPodcasts.length > 0 ? existingPodcasts[0] : null;
+    
+    let error;
+    if (existing) {
+      const { error: updateErr } = await adminDbClient
+        .from("podcasts")
+        .update({
+          show_name: showName,
+          description: description,
+          cover_art_url: coverArt,
+          thumbnail_url: coverArt,
+          subscriber_count: subscriberCount,
+          total_views: totalViews,
+          total_videos: totalVideos,
+          dpn_score: dpnScore,
+          genre: genre,
+          latest_video_url: latestVideoUrl,
+          latest_short_url: latestShortUrl,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", existing.id);
+      error = updateErr;
+    } else {
+      const { error: insertErr } = await adminDbClient
+        .from("podcasts")
+        .insert({
+          status: 'seeded',
+          youtube_url: youtubeUrl,
+          show_name: showName,
+          description: description,
+          cover_art_url: coverArt,
+          thumbnail_url: coverArt,
+          subscriber_count: subscriberCount,
+          total_views: totalViews,
+          total_videos: totalVideos,
+          dpn_score: dpnScore,
+          primary_language: 'Unknown',
+          genre: genre,
+          latest_video_url: latestVideoUrl,
+          latest_short_url: latestShortUrl
+        });
+      error = insertErr;
     }
 
     if (error) throw error;
+    
     revalidatePath("/admin/podcasts");
+    revalidatePath("/rankings");
+    revalidatePath("/dashboard");
     return { success: true, data: { dpnScore, genre, showName } };
   } catch(e:any) {
     console.error("Error seeding podcast:", e);
-    return { success: false, error: e.message };
+    return { success: false, error: e.message || "An unexpected error occurred." };
   }
 }
 
