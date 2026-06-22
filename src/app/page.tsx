@@ -34,7 +34,7 @@ export default async function Home() {
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="text-center mb-8 md:mb-12">
             <h2 className="font-heading text-2xl md:text-5xl font-bold mb-3 md:mb-4">
-              Top 20 Creators on DPN
+              India's Top 20 Podcasts
             </h2>
             <p className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
               Get a glimpse of the most influential voices currently dominating the network.

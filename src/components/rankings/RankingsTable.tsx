@@ -242,6 +242,7 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
                 <th className="p-4 w-20 text-center font-bold">Rank</th>
                 <th className="p-4 font-bold">Creator</th>
                 <th className="p-4 font-bold">Audience / Subs</th>
+                <th className="p-4 font-bold text-right">7-Day Views</th>
                 <th className="p-4 font-bold">Category</th>
                 <th className="p-4 font-bold text-right">
                   <div className="flex items-center justify-end gap-2">
@@ -376,6 +377,14 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
                             : (podcast.subscriber_count / 1000).toFixed(1) + 'k'}
                         </div>
                         <div className="text-xs text-muted-foreground">Subscribers</div>
+                      </div>
+                    </td>
+                    <td className="p-4 text-right">
+                      <div className={`transition-all duration-300 ${isGated ? 'blur-[5px] select-none pointer-events-none' : ''}`}>
+                        <div className="font-mono font-bold text-green-600 flex items-center justify-end gap-1">
+                          <TrendingUp className="w-3 h-3" />
+                          {(podcast as any).views_last_7_days !== null && (podcast as any).views_last_7_days !== undefined ? ((podcast as any).views_last_7_days > 1000000 ? ((podcast as any).views_last_7_days / 1000000).toFixed(1) + 'M' : ((podcast as any).views_last_7_days / 1000).toFixed(1) + 'k') : 'N/A'}
+                        </div>
                       </div>
                     </td>
                     <td className="p-4">
@@ -643,6 +652,13 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
                     {podcast.subscriber_count > 1000000 
                       ? (podcast.subscriber_count / 1000000).toFixed(1) + 'M' 
                       : (podcast.subscriber_count / 1000).toFixed(1) + 'k'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground text-[11px] uppercase tracking-wider">7D Views: </span>
+                  <span className="font-mono font-bold text-green-600 flex items-center gap-1">
+                    <TrendingUp className="w-3 h-3" />
+                    {(podcast as any).views_last_7_days !== null && (podcast as any).views_last_7_days !== undefined ? ((podcast as any).views_last_7_days > 1000000 ? ((podcast as any).views_last_7_days / 1000000).toFixed(1) + 'M' : ((podcast as any).views_last_7_days / 1000).toFixed(1) + 'k') : 'N/A'}
                   </span>
                 </div>
                 <div>

@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
+import { calculateDPNScoreBreakdown } from "@/lib/score";
 
 // Admin client using service role key
 const getAdminClient = () => {
@@ -206,14 +207,18 @@ export async function adminSeedPodcast(youtubeUrl: string) {
     const adminDbClient = getAdminClient();
     
     const apiKey = process.env.YOUTUBE_API_KEY;
-    let showName = youtubeUrl.split('/').pop() || youtubeUrl;
+    const cleanUrl = youtubeUrl.trim().replace(/\/+$/, '');
+    let showName = cleanUrl.split('/').pop() || youtubeUrl;
     let description = "";
     let coverArt = "";
     let subscriberCount = 0;
+    let totalViews = 0;
+    let totalVideos = 0;
+    let dpnScore = 0;
     let genre = "General";
     
     if (apiKey) {
-      let channelIdOrHandle = youtubeUrl.split('/').pop()?.split('?')[0] || '';
+      let channelIdOrHandle = cleanUrl.split('/').pop()?.split('?')[0] || '';
       let endpoint = '';
       
       if (channelIdOrHandle.startsWith('@')) {
@@ -233,6 +238,11 @@ export async function adminSeedPodcast(youtubeUrl: string) {
               description = ch.snippet.description;
               coverArt = ch.snippet.thumbnails?.high?.url || ch.snippet.thumbnails?.default?.url;
               subscriberCount = parseInt(ch.statistics?.subscriberCount || '0');
+              totalViews = parseInt(ch.statistics?.viewCount || '0');
+              totalVideos = parseInt(ch.statistics?.videoCount || '0');
+              
+              const calc = calculateDPNScoreBreakdown(subscriberCount, totalViews, totalVideos);
+              dpnScore = calc.score;
               
               if (ch.topicDetails?.topicCategories?.length > 0) {
                 const topicUrl = ch.topicDetails.topicCategories[0];
@@ -263,6 +273,9 @@ export async function adminSeedPodcast(youtubeUrl: string) {
       cover_art_url: coverArt,
       thumbnail_url: coverArt,
       subscriber_count: subscriberCount,
+      total_views: totalViews,
+      total_videos: totalVideos,
+      dpn_score: dpnScore,
       primary_language: 'Unknown',
       genre: genre
     });
@@ -272,6 +285,86 @@ export async function adminSeedPodcast(youtubeUrl: string) {
     return { success: true };
   } catch(e:any) {
     console.error("Error seeding podcast:", e);
+    return { success: false, error: e.message };
+  }
+}
+
+export async function refreshSevenDayViews() {
+  try {
+    await getAdminUser();
+    const adminDbClient = getAdminClient();
+    const apiKey = process.env.YOUTUBE_API_KEY;
+    if (!apiKey) throw new Error("Missing YouTube API Key");
+
+    const { data: podcasts } = await adminDbClient.from("podcasts").select("id, youtube_url, show_name");
+    if (!podcasts) return { success: true };
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const lastWeek = new Date();
+    lastWeek.setDate(lastWeek.getDate() - 7);
+    const lastWeekStr = lastWeek.toISOString().split('T')[0];
+
+    for (const podcast of podcasts) {
+      if (!podcast.youtube_url) continue;
+      
+      const cleanUrl = podcast.youtube_url.trim().replace(/\/+$/, '');
+      let channelIdOrHandle = cleanUrl.split('/').pop()?.split('?')[0] || '';
+      let endpoint = '';
+      if (channelIdOrHandle.startsWith('@')) {
+        endpoint = `https://www.googleapis.com/youtube/v3/channels?part=statistics&forHandle=${encodeURIComponent(channelIdOrHandle)}&key=${apiKey}`;
+      } else if (cleanUrl.includes('/channel/')) {
+        endpoint = `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${channelIdOrHandle}&key=${apiKey}`;
+      }
+
+      if (endpoint) {
+        const res = await fetch(endpoint);
+        if (res.ok) {
+           const data = await res.json();
+           if (data.items && data.items.length > 0) {
+              const ch = data.items[0];
+              const totalViews = parseInt(ch.statistics?.viewCount || '0');
+              const subCount = parseInt(ch.statistics?.subscriberCount || '0');
+              
+              // Upsert today's snapshot
+              await adminDbClient.from("channel_stats_history").upsert({
+                podcast_id: podcast.id,
+                recorded_date: todayStr,
+                total_views: totalViews,
+                subscriber_count: subCount
+              }, { onConflict: 'podcast_id, recorded_date' });
+
+              // Fetch the oldest snapshot within the last 7 days window
+              const { data: pastSnapshots } = await adminDbClient
+                .from("channel_stats_history")
+                .select("total_views")
+                .eq("podcast_id", podcast.id)
+                .lt("recorded_date", todayStr)
+                .gte("recorded_date", lastWeekStr)
+                .order("recorded_date", { ascending: true })
+                .limit(1);
+
+              let viewsLast7Days = 0;
+              if (pastSnapshots && pastSnapshots.length > 0) {
+                viewsLast7Days = totalViews - pastSnapshots[0].total_views;
+                if (viewsLast7Days < 0) viewsLast7Days = 0;
+              }
+
+              // Update podcasts table
+              await adminDbClient.from("podcasts").update({
+                total_views: totalViews,
+                subscriber_count: subCount,
+                views_last_7_days: viewsLast7Days
+              }).eq("id", podcast.id);
+           }
+        }
+      }
+    }
+    
+    revalidatePath("/admin/podcasts");
+    revalidatePath("/rankings");
+    return { success: true };
+  } catch(e:any) {
+    console.error("Error refreshing views:", e);
     return { success: false, error: e.message };
   }
 }

@@ -2,7 +2,8 @@ import { createClient, createAdminClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { Star, StarOff, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { togglePodcastFeatured, deletePodcast } from "@/app/actions/admin";
+import { togglePodcastFeatured, deletePodcast, refreshSevenDayViews } from "@/app/actions/admin";
+import { DeletePodcastButton } from "@/components/admin/DeletePodcastButton";
 
 export default async function AdminPodcastsPage() {
   const supabase = await createClient();
@@ -31,9 +32,19 @@ export default async function AdminPodcastsPage() {
 
   return (
     <div className="space-y-8 max-w-5xl">
-      <div>
-        <h1 className="text-3xl font-bold font-heading">Manage Podcasts</h1>
-        <p className="text-muted-foreground mt-2">Manage all active podcasts on the platform and set Featured status.</p>
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold font-heading">Manage Podcasts</h1>
+          <p className="text-muted-foreground mt-2">Manage all active podcasts on the platform and set Featured status.</p>
+        </div>
+        <form action={async () => {
+          "use server";
+          await refreshSevenDayViews();
+        }}>
+          <Button type="submit" variant="outline">
+            Refresh 7-Day Views
+          </Button>
+        </form>
       </div>
 
       <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
@@ -85,19 +96,10 @@ export default async function AdminPodcastsPage() {
                           )}
                         </Button>
                       </form>
-                      <form action={async () => {
+                      <DeletePodcastButton onDelete={async () => {
                         "use server";
                         await deletePodcast(podcast.id);
-                      }}>
-                        <Button 
-                          type="submit" 
-                          variant="destructive"
-                          size="sm"
-                          title="Delete Podcast"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </form>
+                      }} />
                     </div>
                   </td>
                 </tr>
