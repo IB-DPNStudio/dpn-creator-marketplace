@@ -31,8 +31,8 @@ export function RefreshSevenDayViewsButton({ onRefresh }: { onRefresh: () => Pro
   };
 
   return (
-    <TooltipProvider>
-      <Tooltip delayDuration={300}>
+    <TooltipProvider delayDuration={300}>
+      <Tooltip>
         <TooltipTrigger asChild>
           <Button onClick={handleRefresh} variant="outline" disabled={isPending}>
             {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
