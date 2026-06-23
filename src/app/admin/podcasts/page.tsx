@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { togglePodcastFeatured, deletePodcast, refreshSevenDayViews } from "@/app/actions/admin";
 import { DeletePodcastButton } from "@/components/admin/DeletePodcastButton";
 import { PodcastEmailActions } from "@/components/admin/PodcastEmailActions";
+import { RefreshSevenDayViewsButton } from "@/components/admin/RefreshSevenDayViewsButton";
 
 export default async function AdminPodcastsPage() {
   const supabase = await createClient();
@@ -38,14 +39,10 @@ export default async function AdminPodcastsPage() {
           <h1 className="text-3xl font-bold font-heading">Manage Podcasts</h1>
           <p className="text-muted-foreground mt-2">Manage all active podcasts on the platform and set Featured status.</p>
         </div>
-        <form action={async () => {
+        <RefreshSevenDayViewsButton onRefresh={async () => {
           "use server";
           await refreshSevenDayViews();
-        }}>
-          <Button type="submit" variant="outline">
-            Refresh 7-Day Views
-          </Button>
-        </form>
+        }} />
       </div>
 
       <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
