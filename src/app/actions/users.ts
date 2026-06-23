@@ -110,7 +110,7 @@ export async function updateUserRole(userId: string, newRole: string) {
   }
 }
 
-export async function switchUserCategory(targetCategory: 'general' | 'creator' | 'agency', additionalData?: any) {
+export async function switchUserCategory(targetCategory: 'general' | 'creator' | 'agency', additionalData?: any, claimToken?: string) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -167,7 +167,7 @@ export async function switchUserCategory(targetCategory: 'general' | 'creator' |
       if (profileErr) throw profileErr;
     } 
     else if (targetCategory === 'creator') {
-      if (!additionalData || !additionalData.showName || !additionalData.youtubeUrl) {
+      if (!claimToken && (!additionalData || !additionalData.showName || !additionalData.youtubeUrl)) {
         throw new Error("Missing mandatory creator show information");
       }
 
@@ -185,24 +185,39 @@ export async function switchUserCategory(targetCategory: 'general' | 'creator' |
 
       if (profileErr) throw profileErr;
 
-      // Insert podcast
-      const { error: podcastErr } = await adminDbClient
-        .from("podcasts")
-        .insert({
-          owner_id: user.id,
-          status: 'verified',
-          show_name: additionalData.showName,
-          description: additionalData.description,
-          primary_language: additionalData.language,
-          genre: additionalData.genre,
-          youtube_url: additionalData.youtubeUrl,
-          spotify_url: additionalData.spotifyUrl,
-          instagram_url: additionalData.instagramUrl,
-          linkedin_url: additionalData.linkedinUrl,
-          inventory_availability: additionalData.inventoryAvailability || {}
-        });
+      if (claimToken) {
+        // Update existing podcast
+        const { error: podcastErr } = await adminDbClient
+          .from("podcasts")
+          .update({
+            owner_id: user.id,
+            primary_language: additionalData.language || undefined,
+            genre: additionalData.genre || undefined,
+            inventory_availability: additionalData.inventoryAvailability || {}
+          })
+          .eq("id", claimToken);
 
-      if (podcastErr) throw podcastErr;
+        if (podcastErr) throw podcastErr;
+      } else {
+        // Insert new podcast
+        const { error: podcastErr } = await adminDbClient
+          .from("podcasts")
+          .insert({
+            owner_id: user.id,
+            status: 'verified',
+            show_name: additionalData.showName,
+            description: additionalData.description,
+            primary_language: additionalData.language,
+            genre: additionalData.genre,
+            youtube_url: additionalData.youtubeUrl,
+            spotify_url: additionalData.spotifyUrl,
+            instagram_url: additionalData.instagramUrl,
+            linkedin_url: additionalData.linkedinUrl,
+            inventory_availability: additionalData.inventoryAvailability || {}
+          });
+
+        if (podcastErr) throw podcastErr;
+      }
     } 
     else if (targetCategory === 'agency') {
       if (!additionalData || !additionalData.name || !additionalData.company) {

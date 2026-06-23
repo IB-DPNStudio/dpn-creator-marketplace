@@ -37,7 +37,27 @@ export function PodcastEmailActions({
   };
 
   if (isClaimed) {
-    return <span className="text-xs text-green-600 font-medium">Claimed by Owner</span>;
+    return (
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-green-600 font-medium">Claimed by Owner</span>
+        <Button 
+          size="sm" 
+          variant="destructive" 
+          className="h-6 px-2 text-[10px]"
+          onClick={async () => {
+            if (confirm("Are you sure you want to revoke access? The podcast will become unclaimed.")) {
+              setIsLoading(true);
+              const { unclaimPodcast } = await import('@/app/actions/admin');
+              await unclaimPodcast(podcastId);
+              setIsLoading(false);
+            }
+          }}
+          disabled={isLoading}
+        >
+          {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : "Revoke"}
+        </Button>
+      </div>
+    );
   }
 
   return (

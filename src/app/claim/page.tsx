@@ -67,38 +67,50 @@ export default async function ClaimPodcastPage({
     }
   }
 
-  // If unowned but user is logged in, claim it automatically
+  // If unowned but user is logged in
   if (user) {
-    const { error: claimErr } = await adminClient
-      .from("podcasts")
-      .update({ owner_id: user.id })
-      .eq("id", podcast.id);
+    const { data: profile } = await adminClient
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
 
-    if (claimErr) {
+    if (profile?.role !== 'creator') {
+      // Redirect to formal onboarding to capture inventory info
+      redirect(`/creators/apply?claim_token=${podcast.id}`);
+    } else {
+      // They are already a creator, just claim it
+      const { error: claimErr } = await adminClient
+        .from("podcasts")
+        .update({ owner_id: user.id })
+        .eq("id", podcast.id);
+
+      if (claimErr) {
+        return (
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="bg-card p-8 rounded-xl shadow-sm text-center max-w-md">
+              <h1 className="text-2xl font-bold mb-4 text-red-500">Error Claiming Podcast</h1>
+              <p className="text-muted-foreground mb-6">There was an error claiming your podcast. Please try again or contact support.</p>
+            </div>
+          </div>
+        );
+      }
+
       return (
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="bg-card p-8 rounded-xl shadow-sm text-center max-w-md">
-            <h1 className="text-2xl font-bold mb-4 text-red-500">Error Claiming Podcast</h1>
-            <p className="text-muted-foreground mb-6">There was an error claiming your podcast. Please try again or contact support.</p>
+        <div className="min-h-screen flex items-center justify-center bg-muted/20">
+          <div className="bg-card p-10 rounded-2xl shadow-sm text-center max-w-lg border border-border">
+            <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-6" />
+            <h1 className="text-3xl font-bold font-heading mb-4 text-dentsu">Podcast Claimed!</h1>
+            <p className="text-lg text-muted-foreground mb-8">
+              Congratulations! You are now the official owner of <strong>{podcast.show_name}</strong> on the DPN Platform.
+            </p>
+            <Button asChild className="w-full h-12 text-lg bg-dentsu text-white hover:bg-dentsu/90">
+              <Link href="/dashboard">Access Creator Dashboard</Link>
+            </Button>
           </div>
         </div>
       );
     }
-
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/20">
-        <div className="bg-card p-10 rounded-2xl shadow-sm text-center max-w-lg border border-border">
-          <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-6" />
-          <h1 className="text-3xl font-bold font-heading mb-4 text-dentsu">Podcast Claimed!</h1>
-          <p className="text-lg text-muted-foreground mb-8">
-            Congratulations! You are now the official owner of <strong>{podcast.show_name}</strong> on the DPN Platform.
-          </p>
-          <Button asChild className="w-full h-12 text-lg bg-dentsu text-white hover:bg-dentsu/90">
-            <Link href="/dashboard">Access Creator Dashboard</Link>
-          </Button>
-        </div>
-      </div>
-    );
   }
 
   // Not logged in - Show Immersive Landing Page

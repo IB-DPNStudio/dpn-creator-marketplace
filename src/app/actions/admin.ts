@@ -540,3 +540,25 @@ export async function adminSendClaimEmail(id: string) {
     return { success: false, error: err.message };
   }
 }
+
+export async function unclaimPodcast(id: string) {
+  try {
+    await getAdminUser();
+    const adminDbClient = getAdminClient();
+    
+    const { error } = await adminDbClient
+      .from("podcasts")
+      .update({ 
+        owner_id: null
+      })
+      .eq("id", id);
+      
+    if (error) throw error;
+    
+    revalidatePath("/admin/podcasts");
+    return { success: true };
+  } catch (err: any) {
+    console.error("Error unclaiming podcast:", err);
+    return { success: false, error: err.message };
+  }
+}

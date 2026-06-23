@@ -6,12 +6,19 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { switchUserCategory } from "@/app/actions/users";
 
-export default async function CreatorApplyPage() {
+export default async function CreatorApplyPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ claim_token?: string }>;
+}) {
+  const params = await searchParams;
+  const claimToken = params.claim_token;
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login?next=/creators/apply");
+    redirect(`/login?next=/creators/apply${claimToken ? `?claim_token=${claimToken}` : ''}`);
   }
 
   async function submitApplication(formData: FormData) {
@@ -36,10 +43,14 @@ export default async function CreatorApplyPage() {
         l_band: formData.get("lBand") === "on",
         lower_third: formData.get("lowerThird") === "on",
       }
-    });
+    }, claimToken);
 
     if (result.success) {
-      redirect("/creators/apply/success");
+      if (claimToken) {
+        redirect("/dashboard");
+      } else {
+        redirect("/creators/apply/success");
+      }
     } else {
       console.error("Creator application error:", result.error);
     }
@@ -74,22 +85,28 @@ export default async function CreatorApplyPage() {
             {/* Show Details */}
             <div className="space-y-4">
               <h2 className="text-xl font-bold font-heading border-b border-border pb-2">Show Information</h2>
-              <div className="space-y-2">
-                <label htmlFor="showName" className="text-sm font-medium">Podcast Name *</label>
-                <Input id="showName" name="showName" required />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="description" className="text-sm font-medium">Brief Description</label>
-                <Textarea id="description" name="description" rows={3} />
-              </div>
+              {!claimToken && (
+                <>
+                  <div className="space-y-2">
+                    <label htmlFor="showName" className="text-sm font-medium">Podcast Name *</label>
+                    <Input id="showName" name="showName" required />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="description" className="text-sm font-medium">Brief Description</label>
+                    <Textarea id="description" name="description" rows={3} />
+                  </div>
+                </>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {!claimToken && (
+                  <div className="space-y-2">
+                    <label htmlFor="genre" className="text-sm font-medium">Primary Genre *</label>
+                    <Input id="genre" name="genre" placeholder="e.g. Business, Comedy, News" required={!claimToken} />
+                  </div>
+                )}
                 <div className="space-y-2">
-                  <label htmlFor="genre" className="text-sm font-medium">Primary Genre *</label>
-                  <Input id="genre" name="genre" placeholder="e.g. Business, Comedy, News" required />
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="language" className="text-sm font-medium">Language *</label>
-                  <Input id="language" name="language" placeholder="e.g. English, Hindi" required />
+                  <label htmlFor="language" className="text-sm font-medium">Language {!claimToken && "*"}</label>
+                  <Input id="language" name="language" placeholder="e.g. English, Hindi" required={!claimToken} />
                 </div>
               </div>
             </div>
@@ -98,10 +115,12 @@ export default async function CreatorApplyPage() {
             <div className="space-y-4">
               <h2 className="text-xl font-bold font-heading border-b border-border pb-2">Links & Socials</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label htmlFor="youtubeUrl" className="text-sm font-medium">YouTube Channel URL *</label>
-                  <Input id="youtubeUrl" name="youtubeUrl" type="url" placeholder="https://youtube.com/..." required />
-                </div>
+                {!claimToken && (
+                  <div className="space-y-2">
+                    <label htmlFor="youtubeUrl" className="text-sm font-medium">YouTube Channel URL *</label>
+                    <Input id="youtubeUrl" name="youtubeUrl" type="url" placeholder="https://youtube.com/..." required />
+                  </div>
+                )}
                 <div className="space-y-2">
                   <label htmlFor="spotifyUrl" className="text-sm font-medium">Spotify Podcast URL</label>
                   <Input id="spotifyUrl" name="spotifyUrl" type="url" placeholder="https://open.spotify.com/..." />
