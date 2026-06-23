@@ -510,7 +510,7 @@ export async function adminSendClaimEmail(id: string) {
     
     const { data: podcast, error: fetchErr } = await adminDbClient
       .from("podcasts")
-      .select("id, contact_email, show_name, cover_art_url, claim_emails_sent")
+      .select("id, contact_email, show_name, cover_art_url, thumbnail_url, claim_emails_sent")
       .eq("id", id)
       .single();
       
@@ -518,7 +518,7 @@ export async function adminSendClaimEmail(id: string) {
     if (!podcast.contact_email) throw new Error("No contact email associated with this podcast");
     
     const { sendClaimEmail } = await import('@/lib/email');
-    await sendClaimEmail(podcast.contact_email, podcast.show_name, podcast.cover_art_url || '', podcast.id);
+    await sendClaimEmail(podcast.contact_email, podcast.show_name, podcast.thumbnail_url || podcast.cover_art_url || '', podcast.id);
     
     const { error: updateErr } = await adminDbClient
       .from("podcasts")

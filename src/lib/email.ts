@@ -39,7 +39,7 @@ export async function sendClaimEmail(toEmail: string, showName: string, coverUrl
         ` : ''}
 
         <p style="font-size: 16px; line-height: 1.6; color: #4a4a4a; margin-bottom: 24px;">
-          By claiming your podcast, you will unlock your exclusive <strong>Creator Dashboard</strong>. This opens the door to lucrative sponsorship opportunities to work and earn with major brands and agencies within the Dentsu network.
+          By claiming your podcast, you will unlock your exclusive <strong>Creator Dashboard</strong>. This opens the door to lucrative sponsorship opportunities to work and earn with major brands and agencies across India.
         </p>
 
         <!-- CTA Button -->
