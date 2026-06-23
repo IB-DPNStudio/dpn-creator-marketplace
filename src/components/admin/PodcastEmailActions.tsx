@@ -47,6 +47,12 @@ export function PodcastEmailActions({
           <Input 
             value={emailValue} 
             onChange={e => setEmailValue(e.target.value)} 
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleSaveEmail();
+              }
+            }}
             placeholder="Email..."
             className="h-8 text-xs"
           />
