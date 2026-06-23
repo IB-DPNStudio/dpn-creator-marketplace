@@ -186,6 +186,23 @@ export async function switchUserCategory(targetCategory: 'general' | 'creator' |
       if (profileErr) throw profileErr;
 
       if (claimToken) {
+        // Verify user is authorized to claim this podcast
+        const { data: podcast } = await adminDbClient
+          .from("podcasts")
+          .select("contact_email, owner_id")
+          .eq("id", claimToken)
+          .single();
+
+        if (!podcast) {
+          throw new Error("Podcast not found");
+        }
+        if (podcast.owner_id && podcast.owner_id !== user.id) {
+          throw new Error("Podcast is already claimed by another user");
+        }
+        if (podcast.contact_email?.toLowerCase() !== user.email?.toLowerCase()) {
+          throw new Error("Unauthorized: Your email does not match the podcast contact email");
+        }
+
         // Update existing podcast
         const { error: podcastErr } = await adminDbClient
           .from("podcasts")

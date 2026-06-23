@@ -31,24 +31,11 @@ export function RefreshSevenDayViewsButton({ onRefresh }: { onRefresh: () => Pro
   };
 
   return (
-    <TooltipProvider delayDuration={300}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button onClick={handleRefresh} variant="outline" disabled={isPending}>
-            {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            Refresh 7-Day Views
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="left" className="max-w-sm text-sm p-3 leading-relaxed">
-          <p>
-            <strong>Caution:</strong> The Ranker relies on calculating (Views Today) - (Views from 7 Days Ago). 
-            When you press this, the server loops through every approved podcast to get their exact view count right now.
-          </p>
-          <p className="mt-2">
-            <strong>When to use it:</strong> Press this right before you want the Ranker to be fully updated for the public (e.g., every Monday morning).
-          </p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <div title="Caution: The Ranker relies on calculating (Views Today) - (Views from 7 Days Ago). Press this right before you want the Ranker to be fully updated for the public (e.g., every Monday morning).">
+      <Button onClick={handleRefresh} variant="outline" disabled={isPending}>
+        {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+        Refresh 7-Day Views
+      </Button>
+    </div>
   );
 }

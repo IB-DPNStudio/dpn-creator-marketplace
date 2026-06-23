@@ -13,7 +13,7 @@ const getAdminClient = () => {
   return createSupabaseClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 };
 
-async function getAdminUser() {
+export async function getAdminUser() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");

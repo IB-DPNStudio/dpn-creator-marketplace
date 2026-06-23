@@ -7,6 +7,8 @@ import path from 'path';
 
 export async function updatePodcastGenre(podcastId: string, newGenre: string) {
   try {
+    const { getAdminUser } = await import("./admin");
+    await getAdminUser();
     const supabase = await createClient();
 
     const { error } = await supabase
@@ -31,6 +33,8 @@ export async function updatePodcastGenre(podcastId: string, newGenre: string) {
 
 export async function updatePodcastLanguage(podcastId: string, newLanguage: string) {
   try {
+    const { getAdminUser } = await import("./admin");
+    await getAdminUser();
     const supabase = await createClient();
 
     const { error } = await supabase
@@ -55,6 +59,8 @@ export async function updatePodcastLanguage(podcastId: string, newLanguage: stri
 
 export async function updatePodcastStatus(podcastId: string, newStatus: string) {
   try {
+    const { getAdminUser } = await import("./admin");
+    await getAdminUser();
     const supabase = await createClient();
 
     const { error } = await supabase
@@ -80,6 +86,8 @@ export async function updatePodcastStatus(podcastId: string, newStatus: string) 
 
 export async function togglePodcastScoreVisibility(podcastId: string, currentStatus: boolean) {
   try {
+    const { getAdminUser } = await import("./admin");
+    await getAdminUser();
     const filepath = path.join(process.cwd(), 'public', 'graviton_data.json');
     let data: any = {};
     try {
@@ -99,6 +107,8 @@ export async function togglePodcastScoreVisibility(podcastId: string, currentSta
 
 export async function toggleAllPodcastScoresVisibility(hideAll: boolean) {
   try {
+    const { getAdminUser } = await import("./admin");
+    await getAdminUser();
     const filepath = path.join(process.cwd(), 'public', 'graviton_data.json');
     let data: any = {};
     try {
@@ -122,6 +132,8 @@ export async function toggleAllPodcastScoresVisibility(hideAll: boolean) {
 
 export async function swapPodcastRanks(podcast1: { id: string, rank: number }, podcast2: { id: string, rank: number }) {
   try {
+    const { getAdminUser } = await import("./admin");
+    await getAdminUser();
     const filepath = path.join(process.cwd(), 'public', 'graviton_data.json');
     let data: any = {};
     try {

@@ -26,7 +26,7 @@ export default async function ClaimPodcastPage({
   // Fetch the podcast immediately, regardless of auth status
   const { data: podcast, error: pErr } = await adminClient
     .from("podcasts")
-    .select("id, show_name, description, thumbnail_url, cover_art_url, subscriber_count, owner_id")
+    .select("id, show_name, description, thumbnail_url, cover_art_url, subscriber_count, owner_id, contact_email")
     .eq("id", token)
     .single();
 
@@ -74,6 +74,18 @@ export default async function ClaimPodcastPage({
       .select("role")
       .eq("id", user.id)
       .single();
+
+    // Check email matches to prevent IDOR hijacking
+    if (podcast.contact_email?.toLowerCase() !== user.email?.toLowerCase()) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="bg-card p-8 rounded-xl shadow-sm text-center max-w-md">
+            <h1 className="text-2xl font-bold mb-4 text-red-500">Unauthorized</h1>
+            <p className="text-muted-foreground mb-6">Your email address does not match the invited contact email for this podcast.</p>
+          </div>
+        </div>
+      );
+    }
 
     if (profile?.role !== 'creator') {
       // Redirect to formal onboarding to capture inventory info
