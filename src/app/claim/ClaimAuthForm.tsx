@@ -46,7 +46,11 @@ export function ClaimAuthForm({ token }: ClaimAuthFormProps) {
       if (error.status === 429 || error.message?.toLowerCase().includes("rate limit") || error.message?.toLowerCase().includes("limit exceeded")) {
         setRateLimitMessage("We are experiencing high traffic. Please try again after some time.");
       } else {
-        setRateLimitMessage(error.message || "An error occurred. Please try again.");
+        let msg = error?.message || error?.error_description || "An error occurred. Please try again.";
+        if (typeof msg === 'object' || msg === "{}") {
+          msg = "Please enter a valid email address.";
+        }
+        setRateLimitMessage(msg);
       }
     } finally {
       setIsEmailLoading(false);

@@ -125,7 +125,7 @@ export default async function ClaimPodcastPage({
       />
       <div className="absolute inset-0 bg-black/40 z-0" />
       
-      <div className="relative z-10 container mx-auto max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-center">
+      <div className="relative z-10 container mx-auto max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
         {/* Left Side: Podcast Info */}
         <div className="text-white space-y-6 flex flex-col items-center lg:items-start text-center lg:text-left">
           <img 
@@ -148,7 +148,7 @@ export default async function ClaimPodcastPage({
         </div>
 
         {/* Right Side: Auth Form */}
-        <div className="flex justify-center lg:justify-end w-full">
+        <div className="flex justify-center lg:justify-center w-full">
           <ClaimAuthForm token={token} />
         </div>
       </div>
