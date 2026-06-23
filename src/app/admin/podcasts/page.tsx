@@ -28,7 +28,7 @@ export default async function AdminPodcastsPage() {
     .from("podcasts")
     .select("*")
     .in("status", ["seeded", "verified", "approved_partner", "featured_partner"])
-    .order("created_at", { ascending: false });
+    .order("dpn_score", { ascending: false });
 
   return (
     <div className="space-y-8 max-w-5xl">
@@ -51,18 +51,25 @@ export default async function AdminPodcastsPage() {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-muted/30 border-b border-border text-xs uppercase tracking-wider text-muted-foreground">
+              <th className="p-4 font-bold w-16">Rank</th>
               <th className="p-4 font-bold">Podcast Name</th>
               <th className="p-4 font-bold">Status</th>
               <th className="p-4 font-bold text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {podcasts?.map(podcast => {
+            {podcasts?.map((podcast, index) => {
               const isFeatured = podcast.status === 'featured_partner';
+              const handle = podcast.youtube_url ? podcast.youtube_url.trim().replace(/\/+$/, '').split('/').pop() : '';
               return (
                 <tr key={podcast.id} className="hover:bg-muted/30 transition-colors">
+                  <td className="p-4 font-bold text-muted-foreground">
+                    #{index + 1}
+                  </td>
                   <td className="p-4">
-                    <div className="font-bold text-foreground">{podcast.show_name}</div>
+                    <div className="font-bold text-foreground">
+                      {podcast.show_name} {handle && <span className="font-normal text-muted-foreground">({handle})</span>}
+                    </div>
                     <div className="text-xs text-muted-foreground">{podcast.genre} • {podcast.primary_language}</div>
                   </td>
                   <td className="p-4">
