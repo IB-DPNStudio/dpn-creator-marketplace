@@ -201,7 +201,7 @@ export async function deletePodcast(id: string) {
   }
 }
 
-export async function adminSeedPodcast(youtubeUrl: string) {
+export async function adminSeedPodcast(youtubeUrl: string, creatorEmail?: string) {
   try {
     await getAdminUser();
     const adminDbClient = getAdminClient();
@@ -385,18 +385,6 @@ export async function adminSeedPodcast(youtubeUrl: string) {
             }
 
             if (error) throw error;
-            
-            // Send Claim Email via Brevo SMTP if requested
-            if (creatorEmail && podcastId) {
-              try {
-                // Dynamically import to prevent edge runtime errors if not supported, 
-                // though server actions usually run in node runtime
-                const { sendClaimEmail } = await import('@/lib/email');
-                await sendClaimEmail(creatorEmail, showName, coverArt, podcastId);
-              } catch (mailErr) {
-                console.error("Failed to send claim email via Brevo:", mailErr);
-              }
-            }
          }
       }
     }
@@ -492,5 +480,60 @@ export async function refreshSevenDayViews() {
   } catch(e:any) {
     console.error("Error refreshing views:", e);
     return { success: false, error: e.message };
+  }
+}
+
+export async function updatePodcastEmail(id: string, email: string) {
+  try {
+    await getAdminUser();
+    const adminDbClient = getAdminClient();
+    
+    const { error } = await adminDbClient
+      .from("podcasts")
+      .update({ contact_email: email })
+      .eq("id", id);
+      
+    if (error) throw error;
+    
+    revalidatePath("/admin/podcasts");
+    return { success: true };
+  } catch (err: any) {
+    console.error("Error updating email:", err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function adminSendClaimEmail(id: string) {
+  try {
+    await getAdminUser();
+    const adminDbClient = getAdminClient();
+    
+    const { data: podcast, error: fetchErr } = await adminDbClient
+      .from("podcasts")
+      .select("id, contact_email, show_name, cover_art_url, claim_emails_sent")
+      .eq("id", id)
+      .single();
+      
+    if (fetchErr || !podcast) throw new Error("Podcast not found");
+    if (!podcast.contact_email) throw new Error("No contact email associated with this podcast");
+    
+    const { sendClaimEmail } = await import('@/lib/email');
+    await sendClaimEmail(podcast.contact_email, podcast.show_name, podcast.cover_art_url || '', podcast.id);
+    
+    const { error: updateErr } = await adminDbClient
+      .from("podcasts")
+      .update({ 
+        claim_emails_sent: (podcast.claim_emails_sent || 0) + 1,
+        last_claim_email_sent_at: new Date().toISOString()
+      })
+      .eq("id", id);
+      
+    if (updateErr) throw updateErr;
+    
+    revalidatePath("/admin/podcasts");
+    return { success: true };
+  } catch (err: any) {
+    console.error("Error sending claim email:", err);
+    return { success: false, error: err.message };
   }
 }

@@ -4,6 +4,7 @@ import { Star, StarOff, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { togglePodcastFeatured, deletePodcast, refreshSevenDayViews } from "@/app/actions/admin";
 import { DeletePodcastButton } from "@/components/admin/DeletePodcastButton";
+import { PodcastEmailActions } from "@/components/admin/PodcastEmailActions";
 
 export default async function AdminPodcastsPage() {
   const supabase = await createClient();
@@ -53,7 +54,7 @@ export default async function AdminPodcastsPage() {
             <tr className="bg-muted/30 border-b border-border text-xs uppercase tracking-wider text-muted-foreground">
               <th className="p-4 font-bold w-16">Rank</th>
               <th className="p-4 font-bold">Podcast Name</th>
-              <th className="p-4 font-bold">Creator Email</th>
+              <th className="p-4 font-bold w-48">Creator Email</th>
               <th className="p-4 font-bold">Status</th>
               <th className="p-4 font-bold text-right">Actions</th>
             </tr>
@@ -62,21 +63,25 @@ export default async function AdminPodcastsPage() {
             {podcasts?.map((podcast, index) => {
               const isFeatured = podcast.status === 'featured_partner';
               const handle = podcast.youtube_url ? podcast.youtube_url.trim().replace(/\/+$/, '').split('/').pop() : '';
-              const displayEmail = podcast.profiles?.email || podcast.contact_email || 'Unclaimed';
               
               return (
                 <tr key={podcast.id} className="hover:bg-muted/30 transition-colors">
-                  <td className="p-4 font-bold text-muted-foreground">
+                  <td className="p-4 font-bold text-muted-foreground align-top pt-5">
                     #{index + 1}
                   </td>
-                  <td className="p-4">
+                  <td className="p-4 align-top pt-5">
                     <div className="font-bold text-foreground">
                       {podcast.show_name} {handle && <span className="font-normal text-muted-foreground">({handle})</span>}
                     </div>
-                    <div className="text-xs text-muted-foreground">{podcast.genre} • {podcast.primary_language}</div>
+                    <div className="text-xs text-muted-foreground mt-1">{podcast.genre} • {podcast.primary_language}</div>
                   </td>
-                  <td className="p-4 text-sm text-muted-foreground">
-                    {displayEmail}
+                  <td className="p-4 align-top pt-4">
+                    <PodcastEmailActions 
+                      podcastId={podcast.id}
+                      currentEmail={podcast.profiles?.email || podcast.contact_email}
+                      isClaimed={!!podcast.owner_id}
+                      emailsSentCount={podcast.claim_emails_sent || 0}
+                    />
                   </td>
                   <td className="p-4">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
