@@ -32,7 +32,7 @@ export async function sendClaimEmail(toEmail: string, showName: string, coverUrl
   `;
 
   const info = await transporter.sendMail({
-    from: '"DPN Team" <no-reply@dpn.com>', 
+    from: '"DPN Team" <studio@ideabrews.com>', 
     to: toEmail,
     subject: `Congratulations your podcast was successful`,
     html: htmlContent,
