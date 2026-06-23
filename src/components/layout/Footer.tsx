@@ -7,9 +7,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="col-span-1 md:col-span-1">
             <Link href="/" className="flex items-center space-x-2 mb-4">
-              <span className="font-heading font-bold text-xl tracking-tight">
-                <span className="text-dentsu">Dentsu</span> Podcast Network
-              </span>
+              <img src="/dentsu-logo.png" alt="Dentsu Podcast Network" className="h-20 w-auto dark:invert" />
             </Link>
             <p className="text-sm text-muted-foreground">
               Audience = Revenue. Connect with top podcast creators through Dentsu's premium ecosystem.

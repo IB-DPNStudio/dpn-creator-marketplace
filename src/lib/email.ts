@@ -28,7 +28,7 @@ export async function sendClaimEmail(toEmail: string, showName: string, coverUrl
         <h2 style="margin-top: 0; color: #000000; font-size: 22px;">You've been featured, ${showName}!</h2>
         
         <p style="font-size: 16px; line-height: 1.6; color: #4a4a4a; margin-bottom: 24px;">
-          Congratulations! <strong>${showName}</strong> has been officially indexed and featured on the <strong>DPN Ranker</strong> — the premier platform connecting top podcast creators with global brands.
+          Congratulations! <strong>${showName}</strong> has been officially indexed and featured on the <strong>DPN Ranker</strong>, India's premier platform connecting top podcast creators with global brands.
         </p>
 
         <!-- Cover Art -->
