@@ -8,9 +8,11 @@ import { ClaimAuthForm } from "./ClaimAuthForm";
 export default async function ClaimPodcastPage({
   searchParams,
 }: {
-  searchParams: { token?: string };
+  searchParams: Promise<{ token?: string }>;
 }) {
-  const token = searchParams.token;
+  const params = await searchParams;
+  const token = params.token;
+  
   if (!token) {
     redirect("/");
   }
