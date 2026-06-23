@@ -490,7 +490,10 @@ export async function updatePodcastEmail(id: string, email: string) {
     
     const { error } = await adminDbClient
       .from("podcasts")
-      .update({ contact_email: email })
+      .update({ 
+        contact_email: email,
+        claim_emails_sent: 0
+      })
       .eq("id", id);
       
     if (error) throw error;
