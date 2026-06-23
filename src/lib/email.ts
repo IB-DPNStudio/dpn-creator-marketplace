@@ -12,14 +12,15 @@ const transporter = nodemailer.createTransport({
 });
 
 export async function sendClaimEmail(toEmail: string, showName: string, coverUrl: string, claimToken: string) {
-  const claimUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/claim?token=${claimToken}`;
+  const logoUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://dpnranker.com'}/dentsu-logo.png`;
+  const claimUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://dpnranker.com'}/claim?token=${claimToken}`;
   
   const htmlContent = `
     <div style="font-family: 'Helvetica Neue', Arial, sans-serif; color: #1a1a1a; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #eaeaef; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
       
       <!-- Header Area -->
-      <div style="background-color: #000000; padding: 30px; text-align: center;">
-        <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: 1px;">DPN RANKER</h1>
+      <div style="background-color: #ffffff; padding: 30px; text-align: center; border-bottom: 1px solid #eaeaef;">
+        <img src="${logoUrl}" alt="Dentsu Podcast Network" style="max-height: 80px; width: auto;" />
       </div>
 
       <!-- Main Content Area -->
@@ -38,7 +39,7 @@ export async function sendClaimEmail(toEmail: string, showName: string, coverUrl
         ` : ''}
 
         <p style="font-size: 16px; line-height: 1.6; color: #4a4a4a; margin-bottom: 24px;">
-          By claiming your podcast, you will unlock your exclusive <strong>Creator Dashboard</strong>. Here, you'll gain access to deep audience analytics and open the door to lucrative sponsorship opportunities to work and earn with major brands and agencies.
+          By claiming your podcast, you will unlock your exclusive <strong>Creator Dashboard</strong>. This opens the door to lucrative sponsorship opportunities to work and earn with major brands and agencies within the Dentsu network.
         </p>
 
         <!-- CTA Button -->
@@ -56,7 +57,7 @@ export async function sendClaimEmail(toEmail: string, showName: string, coverUrl
       <!-- Footer Area -->
       <div style="background-color: #f8f8fa; padding: 20px; text-align: center; border-top: 1px solid #eaeaef;">
         <p style="margin: 0; font-size: 12px; color: #888888;">
-          © ${new Date().getFullYear()} DPN Studio. All rights reserved.<br/>
+          © ${new Date().getFullYear()} Dentsu Podcast Network. All rights reserved.<br/>
           Empowering creators globally.
         </p>
       </div>
