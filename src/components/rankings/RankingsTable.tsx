@@ -390,87 +390,49 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
                     </td>
                     <td className="p-4">
                       <div className={`flex flex-col space-y-1 items-start transition-all duration-300 ${isGated ? 'blur-[5px] select-none pointer-events-none' : ''}`}>
-                        {editingGenreId === podcast.id ? (
-                          <div className="flex items-center gap-1">
-                            <select 
-                              className="text-xs px-2 py-1 rounded border border-input bg-background w-24 focus:outline-none focus:ring-1 focus:ring-ring"
-                              value={tempGenre}
-                              onChange={(e) => setTempGenre(e.target.value)}
-                              onClick={(e) => e.stopPropagation()}
-                              autoFocus
-                            >
-                              <option value="" disabled>Select...</option>
-                              {PODCAST_GENRES.map((g) => (
-                                <option key={g} value={g}>{g}</option>
-                              ))}
-                            </select>
-                            <button disabled={isUpdatingGenre} onClick={(e) => { e.stopPropagation(); saveGenre(podcast.id); }} className="p-1 text-green-500 hover:bg-green-500/10 rounded">
-                              {isUpdatingGenre ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-                            </button>
-                            <button disabled={isUpdatingGenre} onClick={(e) => { e.stopPropagation(); setEditingGenreId(null); }} className="p-1 text-red-500 hover:bg-red-500/10 rounded">
-                              <X className="w-3 h-3" />
-                            </button>
-                          </div>
+                        {isAdminMode ? (
+                          <select
+                            className="text-xs px-2 py-1 rounded border border-input bg-background max-w-[120px] focus:outline-none focus:ring-1 focus:ring-ring"
+                            value={podcast.genre || 'General'}
+                            onChange={async (e) => {
+                              const newGenre = e.target.value;
+                              // Optimistically update or just let the server action revalidate
+                              await updatePodcastGenre(podcast.id, newGenre);
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <option value="" disabled>Select...</option>
+                            {PODCAST_GENRES.map((g) => (
+                              <option key={g} value={g}>{g}</option>
+                            ))}
+                          </select>
                         ) : (
-                          <div className="flex items-center gap-2">
-                            <span className="bg-secondary text-secondary-foreground px-2 py-0.5 rounded text-xs font-medium">
-                              {podcast.genre || 'General'}
-                            </span>
-                            {isAdminMode && (
-                              <button 
-                                onClick={(e) => { 
-                                  e.stopPropagation(); 
-                                  setTempGenre(podcast.genre || 'General'); 
-                                  setEditingGenreId(podcast.id); 
-                                }}
-                                className="p-1 text-muted-foreground hover:text-foreground transition-colors"
-                              >
-                                <Edit2 className="w-3 h-3" />
-                              </button>
-                            )}
-                          </div>
+                          <span className="bg-secondary text-secondary-foreground px-2 py-0.5 rounded text-xs font-medium">
+                            {podcast.genre || 'General'}
+                          </span>
                         )}
-                        {editingLanguageId === podcast.id ? (
-                          <div className="flex items-center gap-1 mt-1">
-                            <input 
-                              type="text" 
-                              className="text-xs px-2 py-1 rounded border border-input bg-background w-24 focus:outline-none focus:ring-1 focus:ring-ring"
-                              value={tempLanguage}
-                              onChange={(e) => setTempLanguage(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.stopPropagation();
-                                  saveLanguage(podcast.id);
-                                } else if (e.key === 'Escape') {
-                                  e.stopPropagation();
-                                  setEditingLanguageId(null);
-                                }
-                              }}
-                              autoFocus
-                            />
-                            <button disabled={isUpdatingLanguage} onClick={(e) => { e.stopPropagation(); saveLanguage(podcast.id); }} className="p-1 text-green-500 hover:bg-green-500/10 rounded">
-                              {isUpdatingLanguage ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-                            </button>
-                            <button disabled={isUpdatingLanguage} onClick={(e) => { e.stopPropagation(); setEditingLanguageId(null); }} className="p-1 text-red-500 hover:bg-red-500/10 rounded">
-                              <X className="w-3 h-3" />
-                            </button>
-                          </div>
+                        {isAdminMode ? (
+                          <input
+                            type="text"
+                            className="text-xs px-2 py-1 rounded border border-input bg-background w-24 mt-1 focus:outline-none focus:ring-1 focus:ring-ring"
+                            defaultValue={podcast.primary_language || 'English'}
+                            onBlur={async (e) => {
+                              if (e.target.value !== podcast.primary_language) {
+                                await updatePodcastLanguage(podcast.id, e.target.value);
+                              }
+                            }}
+                            onKeyDown={async (e) => {
+                              if (e.key === 'Enter') {
+                                e.stopPropagation();
+                                (e.target as HTMLInputElement).blur();
+                              }
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                          />
                         ) : (
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-xs text-muted-foreground">{podcast.primary_language || 'English'}</span>
-                            {isAdminMode && (
-                              <button 
-                                onClick={(e) => { 
-                                  e.stopPropagation(); 
-                                  setTempLanguage(podcast.primary_language || 'English'); 
-                                  setEditingLanguageId(podcast.id); 
-                                }}
-                                className="p-1 text-muted-foreground hover:text-foreground transition-colors"
-                              >
-                                <Edit2 className="w-3 h-3" />
-                              </button>
-                            )}
-                          </div>
+                          <span className="text-xs text-muted-foreground mt-1">
+                            {podcast.primary_language || 'English'}
+                          </span>
                         )}
                       </div>
                     </td>
