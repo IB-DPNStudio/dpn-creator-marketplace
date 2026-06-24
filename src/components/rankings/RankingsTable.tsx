@@ -14,6 +14,7 @@ import {
 import { updatePodcastGenre, updatePodcastLanguage, updatePodcastStatus, togglePodcastScoreVisibility, swapPodcastRanks, toggleAllPodcastScoresVisibility } from "@/app/actions/podcasts";
 import { calculateDPNScoreBreakdown } from "@/lib/score";
 import { createClient } from "@/utils/supabase/client";
+import { PODCAST_GENRES } from "@/lib/constants";
 
 export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin = false }: { podcasts: any[], isAuthenticated?: boolean, isSuperAdmin?: boolean }) {
   const [searchTerm, setSearchTerm] = useState("");
@@ -391,22 +392,18 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
                       <div className={`flex flex-col space-y-1 items-start transition-all duration-300 ${isGated ? 'blur-[5px] select-none pointer-events-none' : ''}`}>
                         {editingGenreId === podcast.id ? (
                           <div className="flex items-center gap-1">
-                            <input 
-                              type="text" 
+                            <select 
                               className="text-xs px-2 py-1 rounded border border-input bg-background w-24 focus:outline-none focus:ring-1 focus:ring-ring"
                               value={tempGenre}
                               onChange={(e) => setTempGenre(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.stopPropagation();
-                                  saveGenre(podcast.id);
-                                } else if (e.key === 'Escape') {
-                                  e.stopPropagation();
-                                  setEditingGenreId(null);
-                                }
-                              }}
+                              onClick={(e) => e.stopPropagation()}
                               autoFocus
-                            />
+                            >
+                              <option value="" disabled>Select...</option>
+                              {PODCAST_GENRES.map((g) => (
+                                <option key={g} value={g}>{g}</option>
+                              ))}
+                            </select>
                             <button disabled={isUpdatingGenre} onClick={(e) => { e.stopPropagation(); saveGenre(podcast.id); }} className="p-1 text-green-500 hover:bg-green-500/10 rounded">
                               {isUpdatingGenre ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
                             </button>

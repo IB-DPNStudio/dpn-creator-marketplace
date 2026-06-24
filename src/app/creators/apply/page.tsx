@@ -5,6 +5,7 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { switchUserCategory } from "@/app/actions/users";
+import { PODCAST_GENRES } from "@/lib/constants";
 
 export default async function CreatorApplyPage({
   searchParams,
@@ -101,7 +102,12 @@ export default async function CreatorApplyPage({
                 {!claimToken && (
                   <div className="space-y-2">
                     <label htmlFor="genre" className="text-sm font-medium">Primary Genre *</label>
-                    <Input id="genre" name="genre" placeholder="e.g. Business, Comedy, News" required={!claimToken} />
+                    <select id="genre" name="genre" required={!claimToken} defaultValue="" className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50">
+                      <option value="" disabled>Select a genre...</option>
+                      {PODCAST_GENRES.map(g => (
+                        <option key={g} value={g}>{g}</option>
+                      ))}
+                    </select>
                   </div>
                 )}
                 <div className="space-y-2">

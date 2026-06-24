@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { adminCreateCreator, adminCreateAgency, adminSeedPodcast } from "@/app/actions/admin";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
+import { PODCAST_GENRES } from "@/lib/constants";
 
 export default function AdminDataEntryPage() {
   const [activeTab, setActiveTab] = useState<'creator' | 'agency' | 'seed'>('creator');
@@ -159,7 +160,12 @@ export default function AdminDataEntryPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Primary Genre *</label>
-                  <Input name="genre" placeholder="e.g. Business, Comedy" required />
+                  <select name="genre" required defaultValue="" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                    <option value="" disabled>Select a genre...</option>
+                    {PODCAST_GENRES.map(g => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Language *</label>
