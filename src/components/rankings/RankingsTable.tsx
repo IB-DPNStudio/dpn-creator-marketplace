@@ -389,14 +389,13 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
                       </div>
                     </td>
                     <td className="p-4">
-                      <div className={`flex flex-col space-y-1 items-start transition-all duration-300 ${isGated ? 'blur-[5px] select-none pointer-events-none' : ''}`}>
+                      <div className={`flex flex-col gap-2 items-start transition-all duration-300 ${isGated ? 'blur-[5px] select-none pointer-events-none' : ''}`}>
                         {isAdminMode ? (
                           <select
-                            className="text-xs px-2 py-1 rounded border border-input bg-background max-w-[120px] focus:outline-none focus:ring-1 focus:ring-ring"
+                            className="text-xs px-2 py-1.5 rounded border border-input bg-background max-w-[140px] focus:outline-none focus:ring-1 focus:ring-ring shadow-sm"
                             value={podcast.genre || 'General'}
                             onChange={async (e) => {
                               const newGenre = e.target.value;
-                              // Optimistically update or just let the server action revalidate
                               await updatePodcastGenre(podcast.id, newGenre);
                             }}
                             onClick={(e) => e.stopPropagation()}
@@ -407,14 +406,14 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
                             ))}
                           </select>
                         ) : (
-                          <span className="bg-secondary text-secondary-foreground px-2 py-0.5 rounded text-xs font-medium">
+                          <div className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20 shadow-sm">
                             {podcast.genre || 'General'}
-                          </span>
+                          </div>
                         )}
                         {isAdminMode ? (
                           <input
                             type="text"
-                            className="text-xs px-2 py-1 rounded border border-input bg-background w-24 mt-1 focus:outline-none focus:ring-1 focus:ring-ring"
+                            className="text-xs px-2 py-1.5 rounded border border-input bg-background w-[140px] focus:outline-none focus:ring-1 focus:ring-ring shadow-sm"
                             defaultValue={podcast.primary_language || 'English'}
                             onBlur={async (e) => {
                               if (e.target.value !== podcast.primary_language) {
@@ -430,9 +429,9 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
                             onClick={(e) => e.stopPropagation()}
                           />
                         ) : (
-                          <span className="text-xs text-muted-foreground mt-1">
+                          <div className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-muted text-muted-foreground border border-border">
                             {podcast.primary_language || 'English'}
-                          </span>
+                          </div>
                         )}
                       </div>
                     </td>
@@ -593,7 +592,9 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
                         ) : `#${rank}`}
                       </span>
                       <span>•</span>
-                      <span>{podcast.genre || 'General'}</span>
+                      <div className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20">
+                        {podcast.genre || 'General'}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -624,9 +625,11 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
                     {(podcast as any).views_last_7_days !== null && (podcast as any).views_last_7_days !== undefined ? ((podcast as any).views_last_7_days > 1000000 ? ((podcast as any).views_last_7_days / 1000000).toFixed(1) + 'M' : ((podcast as any).views_last_7_days / 1000).toFixed(1) + 'k') : 'N/A'}
                   </span>
                 </div>
-                <div>
-                  <span className="text-muted-foreground text-[11px] uppercase tracking-wider">Lang: </span>
-                  <span className="font-medium">{podcast.primary_language || 'EN'}</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-muted-foreground text-[11px] uppercase tracking-wider font-semibold">Lang:</span>
+                  <div className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-muted text-muted-foreground border border-border">
+                    {podcast.primary_language || 'EN'}
+                  </div>
                 </div>
               </div>
 
