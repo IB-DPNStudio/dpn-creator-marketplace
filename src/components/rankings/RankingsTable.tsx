@@ -406,9 +406,9 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
                             ))}
                           </select>
                         ) : (
-                          <div className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20 shadow-sm">
+                          <span className="text-xs font-semibold tracking-wide text-foreground uppercase mt-0.5">
                             {podcast.genre || 'General'}
-                          </div>
+                          </span>
                         )}
                         {isAdminMode ? (
                           <input
@@ -429,9 +429,9 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
                             onClick={(e) => e.stopPropagation()}
                           />
                         ) : (
-                          <div className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-muted text-muted-foreground border border-border">
+                          <span className="text-[11px] font-medium text-muted-foreground">
                             {podcast.primary_language || 'English'}
-                          </div>
+                          </span>
                         )}
                       </div>
                     </td>
@@ -591,10 +591,10 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
                           </span>
                         ) : `#${rank}`}
                       </span>
-                      <span>•</span>
-                      <div className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20">
+                      <span className="opacity-40">•</span>
+                      <span className="text-[11px] font-semibold tracking-wider uppercase text-foreground/80">
                         {podcast.genre || 'General'}
-                      </div>
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -627,9 +627,9 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-muted-foreground text-[11px] uppercase tracking-wider font-semibold">Lang:</span>
-                  <div className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-muted text-muted-foreground border border-border">
+                  <span className="text-[11px] font-medium text-foreground/80">
                     {podcast.primary_language || 'EN'}
-                  </div>
+                  </span>
                 </div>
               </div>
 
