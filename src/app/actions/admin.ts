@@ -275,16 +275,17 @@ export async function adminSeedPodcast(youtubeUrl: string, creatorEmail?: string
               if (lowerTopic.includes('music')) genre = 'Music';
               else if (lowerTopic.includes('game') || lowerTopic.includes('gaming')) genre = 'Gaming';
               else if (lowerTopic.includes('lifestyle')) genre = 'Society & Culture';
-              else if (lowerTopic.includes('entertainment')) genre = 'Entertainment';
+              else if (lowerTopic.includes('entertainment') || lowerTopic.includes('humour')) genre = 'Comedy & Entertainment';
               else if (lowerTopic.includes('technology')) genre = 'Technology';
               else if (lowerTopic.includes('business')) genre = 'Business & Finance';
               else if (lowerTopic.includes('society')) genre = 'Society & Culture';
               else if (lowerTopic.includes('sports')) genre = 'Sports';
               else if (lowerTopic.includes('knowledge') || lowerTopic.includes('education')) genre = 'Education & Learning';
-              else if (lowerTopic.includes('health') || lowerTopic.includes('medical')) genre = 'Health & Wellness';
+              else if (lowerTopic.includes('health') || lowerTopic.includes('medical')) genre = 'Health & Fitness';
               else if (lowerTopic.includes('science')) genre = 'Science';
               else if (lowerTopic.includes('religion')) genre = 'Religion & Spirituality';
               else if (lowerTopic.includes('travel')) genre = 'Travel';
+              else if (lowerTopic.includes('news') || lowerTopic.includes('politics')) genre = 'News & Current Affairs';
               else genre = 'General';
             }
 
