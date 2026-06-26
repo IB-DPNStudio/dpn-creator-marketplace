@@ -304,7 +304,7 @@ export async function adminSeedPodcast(youtubeUrl: string, creatorEmail?: string
                     const videoMap = new Map(vData.items.map((vid:any) => [vid.id, vid]));
                     
                     for (const pItem of pData.items) {
-                      const v = videoMap.get(pItem.contentDetails.videoId);
+                      const v = videoMap.get(pItem.contentDetails.videoId) as any;
                       if (!v) continue;
 
                       const durationStr = v.contentDetails?.duration || '';
