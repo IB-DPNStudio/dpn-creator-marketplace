@@ -159,6 +159,13 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
 
 export async function deleteLabsPlaylist(playlistId: string) {
   try {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (user?.email !== "studio@ideabrews.com") {
+      throw new Error("Unauthorized: Only super admins can delete playlists.");
+    }
+
     const adminDbClient = getAdminClient();
     const { error } = await adminDbClient
       .from("playlist_podcasts")

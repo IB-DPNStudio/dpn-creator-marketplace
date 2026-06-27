@@ -6,7 +6,7 @@ import { Award, Trash2, ChevronDown, ChevronUp, Search, TrendingUp, ArrowUpDown 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-export default function LabsClient({ initialPlaylists }: { initialPlaylists: any[] }) {
+export default function LabsClient({ initialPlaylists, isAdmin }: { initialPlaylists: any[], isAdmin: boolean }) {
   const [playlists, setPlaylists] = useState(initialPlaylists);
   const [loading, setLoading] = useState(false);
   
@@ -142,7 +142,7 @@ export default function LabsClient({ initialPlaylists }: { initialPlaylists: any
                   </tr>
                 ) : (
                   sortedPlaylists.map((p, idx) => (
-                    <PlaylistTableRow key={p.playlist_id || idx} rank={p.displayRank} p={p} handleDelete={handleDelete} />
+                    <PlaylistTableRow key={p.playlist_id || idx} rank={p.displayRank} p={p} handleDelete={handleDelete} isAdmin={isAdmin} />
                   ))
                 )}
               </tbody>
@@ -154,7 +154,7 @@ export default function LabsClient({ initialPlaylists }: { initialPlaylists: any
   );
 }
 
-function PlaylistTableRow({ rank, p, handleDelete }: { rank: number, p: any, handleDelete: (id: string) => void }) {
+function PlaylistTableRow({ rank, p, handleDelete, isAdmin }: { rank: number, p: any, handleDelete: (id: string) => void, isAdmin: boolean }) {
   const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [videos, setVideos] = useState<any[]>([]);
@@ -323,9 +323,11 @@ function PlaylistTableRow({ rank, p, handleDelete }: { rank: number, p: any, han
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="font-bold text-sm text-foreground uppercase tracking-wider">Sample Videos</h4>
-                  <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDelete(p.playlist_id)}>
-                    <Trash2 className="w-4 h-4 mr-2" /> Delete Playlist
-                  </Button>
+                  {isAdmin && (
+                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDelete(p.playlist_id)}>
+                      <Trash2 className="w-4 h-4 mr-2" /> Delete Playlist
+                    </Button>
+                  )}
                 </div>
                 
                 <div className="flex flex-col gap-3">
