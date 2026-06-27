@@ -631,6 +631,7 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
         {sortedPodcasts.map((podcast, index) => {
           const rank = (podcast as any).displayRank;
           const isGated = rank > 10 && !isAuth;
+          const metrics = calculateHistoricalMetrics(podcast.podcast_history, rank);
           
           return (
             <div 
