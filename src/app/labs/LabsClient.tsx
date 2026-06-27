@@ -12,6 +12,8 @@ export default function LabsClient({ initialPlaylists }: { initialPlaylists: any
   const [searchTerm, setSearchTerm] = useState("");
   const [sortColumn, setSortColumn] = useState<string>("final_score");
   const [sortDirection, setSortDirection] = useState<"desc" | "asc">("desc");
+  const [languageFilter, setLanguageFilter] = useState("All");
+  const [genreFilter, setGenreFilter] = useState("All");
 
   const uniqueLanguages = Array.from(new Set(initialPlaylists.map(p => p.primary_language || 'Unknown'))).filter(Boolean);
   const uniqueGenres = Array.from(new Set(initialPlaylists.map(p => p.genre || 'General'))).filter(Boolean);
