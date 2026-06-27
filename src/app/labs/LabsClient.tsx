@@ -160,23 +160,6 @@ function PlaylistTableRow({ rank, p, handleDelete }: { rank: number, p: any, han
   const [videos, setVideos] = useState<any[]>([]);
   const [hasFetched, setHasFetched] = useState(false);
 
-  const breakdown = p.score_breakdown || { views: 0, audience_efficiency: 0, freshness: 0, depth: 0, consistency: 0, confidence: 0 };
-  
-  // Calculate relative percentages for the UI bar based on weights in score_playlist.ts
-  const viewsWidth = breakdown.views * 0.20;
-  const effWidth = breakdown.audience_efficiency * 0.20;
-  const freshWidth = breakdown.freshness * 0.20;
-  const depthWidth = breakdown.depth * 0.15;
-  const consWidth = breakdown.consistency * 0.10;
-  
-  // Normalize to 100% for the visual bar 
-  const total = viewsWidth + effWidth + freshWidth + depthWidth + consWidth || 1;
-  const vP = (viewsWidth / total) * 100;
-  const eP = (effWidth / total) * 100;
-  const fP = (freshWidth / total) * 100;
-  const dP = (depthWidth / total) * 100;
-  const cP = (consWidth / total) * 100;
-
   const decodeHTML = (html: string) => {
     if (!html) return '';
     return html.replace(/&amp;/g, '&')
@@ -291,31 +274,48 @@ function PlaylistTableRow({ rank, p, handleDelete }: { rank: number, p: any, han
           <td colSpan={7} className="p-6">
             <div className="flex flex-col gap-6">
               
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-4 bg-background rounded-xl border border-border">
-                <div className="flex flex-col">
-                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Avg Views/Ep</span>
-                  <span className="font-mono font-bold text-foreground text-sm">{(p.average_views_per_episode || 0).toLocaleString()}</span>
+              <div className="flex flex-col gap-8">
+                {/* Chart History Stats */}
+                <div className="grid grid-cols-3 bg-background/50 border border-border rounded-xl p-4 md:p-6 shadow-sm mx-auto w-full max-w-4xl mt-2">
+                  <div className="flex flex-col items-center justify-center border-r border-border/60">
+                    <span className="text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Last Week</span>
+                    <span className="font-heading font-black text-2xl md:text-3xl text-foreground drop-shadow-sm">-</span>
+                  </div>
+                  <div className="flex flex-col items-center justify-center border-r border-border/60">
+                    <span className="text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Peak Rank</span>
+                    <span className="font-heading font-black text-2xl md:text-3xl text-foreground drop-shadow-sm">{rank}</span>
+                  </div>
+                  <div className="flex flex-col items-center justify-center">
+                    <span className="text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Weeks in Top 20</span>
+                    <span className="font-heading font-black text-2xl md:text-3xl text-foreground drop-shadow-sm">1</span>
+                  </div>
                 </div>
-                <div className="flex flex-col border-l pl-4 border-border">
-                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Like Rate</span>
-                  <span className="font-mono font-bold text-foreground text-sm">{p.average_views_per_episode ? ((p.average_likes_per_episode / p.average_views_per_episode) * 100).toFixed(2) : '0.00'}%</span>
-                </div>
-                <div className="flex flex-col border-l pl-4 border-border">
-                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Comment Rate</span>
-                  <span className="font-mono font-bold text-foreground text-sm">{p.average_views_per_episode ? ((p.average_comments_per_episode / p.average_views_per_episode) * 100).toFixed(2) : '0.00'}%</span>
-                </div>
-                <div className="flex flex-col border-l pl-4 border-border">
-                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Audience Efficiency</span>
-                  <span className="font-mono font-bold text-primary text-sm">{p.average_views_per_episode ? (((p.average_likes_per_episode + p.average_comments_per_episode) / p.average_views_per_episode) * 100).toFixed(2) : '0.00'}%</span>
-                </div>
-                <div className="flex flex-col border-l pl-4 border-border">
-                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Score Breakdown</span>
-                  <div className="h-2 mt-2 flex rounded-full overflow-hidden bg-muted w-full shadow-inner">
-                    <div style={{ width: `${vP}%` }} className="bg-blue-500" title={`Views: ${breakdown.views}%`} />
-                    <div style={{ width: `${eP}%` }} className="bg-purple-500" title={`Efficiency: ${breakdown.audience_efficiency}%`} />
-                    <div style={{ width: `${fP}%` }} className="bg-emerald-500" title={`Freshness: ${breakdown.freshness}%`} />
-                    <div style={{ width: `${dP}%` }} className="bg-amber-500" title={`Depth: ${breakdown.depth}%`} />
-                    <div style={{ width: `${cP}%` }} className="bg-rose-500" title={`Consistency: ${breakdown.consistency}%`} />
+
+                {/* About the Creator & Playlist Stats */}
+                <div className="flex flex-col md:flex-row gap-8">
+                  <div className="flex-1 flex flex-col gap-3">
+                    <h4 className="font-bold text-lg text-foreground font-heading">About the Creator</h4>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {p.description ? decodeHTML(p.description) : "No description available for this playlist."}
+                    </p>
+                  </div>
+                  <div className="flex-shrink-0 grid grid-cols-2 gap-4 h-fit border border-border rounded-xl p-4 bg-background/50">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Avg Views/Ep</span>
+                      <span className="font-mono font-bold text-foreground text-sm">{Math.round(p.average_views_per_episode || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Like Rate</span>
+                      <span className="font-mono font-bold text-foreground text-sm">{p.average_views_per_episode ? ((p.average_likes_per_episode / p.average_views_per_episode) * 100).toFixed(2) : '0.00'}%</span>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Comment Rate</span>
+                      <span className="font-mono font-bold text-foreground text-sm">{p.average_views_per_episode ? ((p.average_comments_per_episode / p.average_views_per_episode) * 100).toFixed(2) : '0.00'}%</span>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Aud Eff.</span>
+                      <span className="font-mono font-bold text-primary text-sm">{p.average_views_per_episode ? (((p.average_likes_per_episode + p.average_comments_per_episode) / p.average_views_per_episode) * 100).toFixed(2) : '0.00'}%</span>
+                    </div>
                   </div>
                 </div>
               </div>
