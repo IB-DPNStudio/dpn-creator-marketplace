@@ -159,7 +159,7 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
 
 export async function deleteLabsPlaylist(playlistId: string) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     
     if (user?.email !== "studio@ideabrews.com") {
