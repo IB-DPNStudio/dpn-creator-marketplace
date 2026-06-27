@@ -2,23 +2,46 @@
 
 import { useState } from "react";
 import { deleteLabsPlaylist, fetchPlaylistSampleVideos } from "@/app/actions/labs";
-import { Button } from "@/components/ui/button";
-import { Award, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { Award, Trash2, ChevronDown, ChevronUp, Search, TrendingUp, ArrowUpDown } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 export default function LabsClient({ initialPlaylists }: { initialPlaylists: any[] }) {
   const [playlists, setPlaylists] = useState(initialPlaylists);
   const [loading, setLoading] = useState(false);
   
-  const [languageFilter, setLanguageFilter] = useState("All");
-  const [genreFilter, setGenreFilter] = useState("All");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortColumn, setSortColumn] = useState<string>("final_score");
+  const [sortDirection, setSortDirection] = useState<"desc" | "asc">("desc");
 
   const uniqueLanguages = Array.from(new Set(initialPlaylists.map(p => p.primary_language || 'Unknown'))).filter(Boolean);
   const uniqueGenres = Array.from(new Set(initialPlaylists.map(p => p.genre || 'General'))).filter(Boolean);
 
-  const filteredPlaylists = playlists.filter(p => {
-    if (languageFilter !== "All" && (p.primary_language || 'Unknown') !== languageFilter) return false;
-    if (genreFilter !== "All" && (p.genre || 'General') !== genreFilter) return false;
-    return true;
+  const handleSort = (col: string) => {
+    if (sortColumn === col) {
+      setSortDirection(prev => prev === "desc" ? "asc" : "desc");
+    } else {
+      setSortColumn(col);
+      setSortDirection(col === "show_name" || col === "genre" ? "asc" : "desc");
+    }
+  };
+
+  const filteredAndRankedPlaylists = playlists
+    .filter(p => {
+      const matchesSearch = p.show_name?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesLanguage = languageFilter === "All" || (p.primary_language || 'Unknown') === languageFilter;
+      const matchesGenre = genreFilter === "All" || (p.genre || 'General') === genreFilter;
+      return matchesSearch && matchesLanguage && matchesGenre;
+    })
+    .sort((a, b) => (b.final_score || 0) - (a.final_score || 0))
+    .map((p, index) => ({ ...p, displayRank: index + 1 }));
+
+  const sortedPlaylists = [...filteredAndRankedPlaylists].sort((a, b) => {
+    let valA = a[sortColumn];
+    let valB = b[sortColumn];
+
+    if (valA < valB) return sortDirection === "asc" ? -1 : 1;
+    if (valA > valB) return sortDirection === "asc" ? 1 : -1;
+    return 0;
   });
 
   const handleDelete = async (id: string) => {
@@ -52,15 +75,25 @@ export default function LabsClient({ initialPlaylists }: { initialPlaylists: any
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto py-12 px-4 md:px-8 flex flex-col gap-8">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 bg-card rounded-2xl border border-border shadow-sm">
-          <h2 className="text-xl font-bold font-heading">Ranked Playlists ({filteredPlaylists.length})</h2>
-          <div className="flex gap-3">
-            <select className="bg-background border border-border text-sm p-2 rounded-lg text-foreground focus:ring-2 focus:ring-primary focus:outline-none" value={languageFilter} onChange={e => setLanguageFilter(e.target.value)}>
+      <div className="max-w-7xl mx-auto py-12 px-4 md:px-8 flex flex-col gap-6">
+        
+        {/* Filters Bar */}
+        <div className="flex flex-col md:flex-row gap-4 mb-4 bg-card border border-border p-4 rounded-xl shadow-sm">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input 
+              placeholder="Search playlists..." 
+              className="pl-9 h-10 bg-background"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-4">
+            <select className="flex h-10 w-full md:w-48 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" value={languageFilter} onChange={e => setLanguageFilter(e.target.value)}>
               <option value="All">All Languages</option>
               {uniqueLanguages.map(l => <option key={l as string} value={l as string}>{l as React.ReactNode}</option>)}
             </select>
-            <select className="bg-background border border-border text-sm p-2 rounded-lg text-foreground focus:ring-2 focus:ring-primary focus:outline-none" value={genreFilter} onChange={e => setGenreFilter(e.target.value)}>
+            <select className="flex h-10 w-full md:w-48 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" value={genreFilter} onChange={e => setGenreFilter(e.target.value)}>
               <option value="All">All Genres</option>
               {uniqueGenres.map(g => <option key={g as string} value={g as string}>{g as React.ReactNode}</option>)}
             </select>
@@ -71,24 +104,38 @@ export default function LabsClient({ initialPlaylists }: { initialPlaylists: any
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-border bg-muted/40">
-                  <th className="p-4 md:p-6 text-xs font-bold text-muted-foreground uppercase tracking-widest w-24">Rank</th>
-                  <th className="p-4 md:p-6 text-xs font-bold text-muted-foreground uppercase tracking-widest min-w-[300px]">Podcast</th>
-                  <th className="p-4 md:p-6 text-xs font-bold text-muted-foreground uppercase tracking-widest text-right">DPN Score</th>
-                  <th className="p-4 md:p-6 text-xs font-bold text-muted-foreground uppercase tracking-widest">Score Breakdown</th>
-                  <th className="p-4 md:p-6 text-xs font-bold text-muted-foreground uppercase tracking-widest w-16"></th>
+                <tr className="bg-muted/50 border-b border-border text-xs uppercase tracking-wider text-muted-foreground">
+                  <th className="p-4 w-40 text-center font-bold">Rank</th>
+                  <th className="p-4 font-bold cursor-pointer hover:bg-muted/80 transition-colors select-none" onClick={() => handleSort('show_name')}>
+                    <div className="flex items-center gap-1">Creator <ArrowUpDown className="w-3 h-3 text-muted-foreground" /></div>
+                  </th>
+                  <th className="p-4 font-bold cursor-pointer hover:bg-muted/80 transition-colors select-none" onClick={() => handleSort('total_episodes')}>
+                    <div className="flex items-center gap-1">Episodes <ArrowUpDown className="w-3 h-3 text-muted-foreground" /></div>
+                  </th>
+                  <th className="p-4 font-bold text-right cursor-pointer hover:bg-muted/80 transition-colors select-none" onClick={() => handleSort('average_views_per_episode')}>
+                    <div className="flex items-center justify-end gap-1">Avg Views <ArrowUpDown className="w-3 h-3 text-muted-foreground" /></div>
+                  </th>
+                  <th className="p-4 font-bold cursor-pointer hover:bg-muted/80 transition-colors select-none" onClick={() => handleSort('genre')}>
+                    <div className="flex items-center gap-1">Category <ArrowUpDown className="w-3 h-3 text-muted-foreground" /></div>
+                  </th>
+                  <th className="p-4 font-bold text-right cursor-pointer hover:bg-muted/80 transition-colors select-none" onClick={() => handleSort('final_score')}>
+                    <div className="flex items-center justify-end gap-2">
+                      <span className="flex items-center gap-1">DPN Score <ArrowUpDown className="w-3 h-3 text-muted-foreground" /></span>
+                    </div>
+                  </th>
+                  <th className="w-16"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {filteredPlaylists.length === 0 ? (
+                {sortedPlaylists.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="p-12 text-center text-muted-foreground">
+                    <td colSpan={7} className="p-12 text-center text-muted-foreground">
                       No playlists match the current filters.
                     </td>
                   </tr>
                 ) : (
-                  filteredPlaylists.map((p, idx) => (
-                    <PlaylistTableRow key={p.id} rank={idx + 1} p={p} handleDelete={handleDelete} />
+                  sortedPlaylists.map((p, idx) => (
+                    <PlaylistTableRow key={p.playlist_id || idx} rank={p.displayRank} p={p} handleDelete={handleDelete} />
                   ))
                 )}
               </tbody>
@@ -147,82 +194,97 @@ function PlaylistTableRow({ rank, p, handleDelete }: { rank: number, p: any, han
 
   return (
     <>
-      <tr className={`group transition-colors hover:bg-muted/20 ${expanded ? 'bg-muted/10' : 'bg-card'}`}>
-        <td className="p-4 md:p-6 align-middle">
-          <div className="flex items-center gap-2">
-            {rank <= 3 ? (
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                rank === 1 ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400' :
-                rank === 2 ? 'bg-slate-400/20 text-slate-600 dark:text-slate-300' :
-                'bg-amber-700/20 text-amber-700 dark:text-amber-500'
-              }`}>
-                <Award className="w-4 h-4 mr-0.5"/>{rank}
-              </div>
-            ) : (
-              <span className="font-mono font-bold text-xl text-foreground pl-2">{rank}</span>
-            )}
+      <tr className={`transition-colors group hover:bg-muted/30 cursor-pointer ${expanded ? 'bg-muted/10' : 'bg-card'}`} onClick={toggleExpand}>
+        <td className="p-4 text-center border-r border-border/50">
+          <div className="flex flex-col items-center justify-center gap-2">
+            <div className="flex items-center gap-2">
+              {rank <= 3 ? (
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                  rank === 1 ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400' :
+                  rank === 2 ? 'bg-slate-400/20 text-slate-600 dark:text-slate-300' :
+                  'bg-amber-700/20 text-amber-700 dark:text-amber-500'
+                }`}>
+                  <Award className="w-4 h-4 mr-0.5"/>{rank}
+                </div>
+              ) : (
+                <span className="font-mono font-bold text-xl text-foreground">{rank}</span>
+              )}
+              <span className="text-xs font-bold w-6 text-muted-foreground">-</span>
+            </div>
           </div>
         </td>
-        <td className="p-4 md:p-6 align-middle">
-          <div className="flex items-center gap-4">
-            {p.thumbnail_url ? (
-              <img src={p.thumbnail_url} alt="thumbnail" className="w-12 h-12 md:w-16 md:h-16 rounded-xl object-cover shadow-sm shrink-0 border border-border" />
-            ) : (
-              <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-border flex items-center justify-center text-primary font-bold shadow-sm shrink-0">
-                {(Array.from(decodeHTML(p.show_name).trim())[0] || '?').toUpperCase()}
-              </div>
-            )}
-            <div className="flex flex-col justify-center">
-              <span className="font-bold text-base text-foreground flex items-center gap-2">
+        <td className="p-4">
+          <div className="flex items-center space-x-4 transition-all duration-300">
+            <div className="relative w-12 h-12 rounded-full overflow-hidden border border-border shadow-sm group-hover:border-dentsu transition-colors flex-shrink-0">
+              {p.thumbnail_url ? (
+                <img src={p.thumbnail_url} alt="thumbnail" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center text-primary font-bold">
+                  {(Array.from(decodeHTML(p.show_name).trim())[0] || '?').toUpperCase()}
+                </div>
+              )}
+            </div>
+            <div>
+              <div className="font-bold text-base text-foreground group-hover:text-dentsu transition-colors flex items-center gap-2">
                 {decodeHTML(p.show_name)}
-              </span>
-              <div className="flex items-center text-[10px] sm:text-xs text-muted-foreground mt-1.5 gap-2 font-medium tracking-wide">
-                <span className="bg-muted px-2 py-0.5 rounded-full">{p.genre}</span>
-                <span className="bg-muted px-2 py-0.5 rounded-full">{p.primary_language}</span>
-                <span className="bg-muted px-2 py-0.5 rounded-full">{p.total_episodes} Episodes</span>
+              </div>
+              <div className="text-xs text-muted-foreground mt-0.5 flex flex-col items-start gap-1">
+                Playlist
               </div>
             </div>
           </div>
         </td>
-        <td className="p-4 md:p-6 align-middle text-right">
-          <span className="font-mono font-black text-2xl text-primary drop-shadow-sm">
-            {p.final_score.toFixed(1)}
-          </span>
+        <td className="p-4">
+          <div className="transition-all duration-300">
+            <div className="font-mono font-bold">
+              {p.total_episodes}
+            </div>
+            <div className="text-xs text-muted-foreground">Episodes</div>
+          </div>
         </td>
-        <td className="p-4 md:p-6 align-middle">
-          <div className="flex items-center gap-1.5">
-            <div className="h-2 flex rounded-full overflow-hidden bg-muted w-32 md:w-48 shadow-inner">
-              <div style={{ width: `${vP}%` }} className="bg-blue-500" title={`Views: ${breakdown.views}%`} />
-              <div style={{ width: `${eP}%` }} className="bg-purple-500" title={`Efficiency: ${breakdown.audience_efficiency}%`} />
-              <div style={{ width: `${fP}%` }} className="bg-emerald-500" title={`Freshness: ${breakdown.freshness}%`} />
-              <div style={{ width: `${dP}%` }} className="bg-amber-500" title={`Depth: ${breakdown.depth}%`} />
-              <div style={{ width: `${cP}%` }} className="bg-rose-500" title={`Consistency: ${breakdown.consistency}%`} />
+        <td className="p-4 text-right">
+          <div className="transition-all duration-300">
+            <div className="font-mono font-bold text-green-600 flex items-center justify-end gap-1">
+              <TrendingUp className="w-3 h-3" />
+              {p.average_views_per_episode !== null && p.average_views_per_episode !== undefined ? (p.average_views_per_episode > 1000000 ? (p.average_views_per_episode / 1000000).toFixed(1) + 'M' : p.average_views_per_episode > 1000 ? (p.average_views_per_episode / 1000).toFixed(1) + 'k' : Math.round(p.average_views_per_episode)) : 'N/A'}
             </div>
           </div>
-          <div className="text-[10px] text-muted-foreground mt-1.5 flex gap-2 font-mono">
-            <span className="text-blue-500 dark:text-blue-400" title="Views">V:{Math.round(breakdown.views)}</span>
-            <span className="text-purple-500 dark:text-purple-400" title="Audience Efficiency">E:{Math.round(breakdown.audience_efficiency)}</span>
-            <span className="text-emerald-500 dark:text-emerald-400" title="Freshness">F:{Math.round(breakdown.freshness)}</span>
-            <span className="text-amber-500 dark:text-amber-400" title="Depth">D:{Math.round(breakdown.depth)}</span>
-            <span className="text-rose-500 dark:text-rose-400" title="Consistency">C:{Math.round(breakdown.consistency)}</span>
+        </td>
+        <td className="p-4">
+          <div className="flex flex-col gap-2 items-start transition-all duration-300">
+            <span className="text-xs font-semibold tracking-wide text-foreground uppercase mt-0.5">
+              {p.genre || 'General'}
+            </span>
+            <span className="text-[11px] font-medium text-muted-foreground">
+              {p.primary_language || 'English'}
+            </span>
           </div>
         </td>
-        <td className="p-4 md:p-6 align-middle text-right">
+        <td className="p-4 text-right">
+          <div className="flex items-center justify-end space-x-3">
+            <div className="inline-flex items-center space-x-1 px-3 py-1 rounded-lg bg-spotify/10">
+              <TrendingUp className="w-4 h-4 text-spotify" />
+              <span className="text-spotify font-mono font-bold text-lg">
+                {p.final_score.toFixed(1) || 'N/A'}
+              </span>
+            </div>
+          </div>
+        </td>
+        <td className="p-4 text-right">
           <button 
-            onClick={toggleExpand}
-            className="p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground hover:text-foreground"
+            className="p-1 hover:bg-muted rounded-full transition-colors text-muted-foreground"
           >
-            {expanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+            {expanded ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
           </button>
         </td>
       </tr>
 
       {expanded && (
         <tr className="bg-muted/10 border-b border-border">
-          <td colSpan={5} className="p-6">
+          <td colSpan={7} className="p-6">
             <div className="flex flex-col gap-6">
               
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-background rounded-xl border border-border">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-4 bg-background rounded-xl border border-border">
                 <div className="flex flex-col">
                   <span className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Avg Views/Ep</span>
                   <span className="font-mono font-bold text-foreground text-sm">{(p.average_views_per_episode || 0).toLocaleString()}</span>
@@ -238,6 +300,16 @@ function PlaylistTableRow({ rank, p, handleDelete }: { rank: number, p: any, han
                 <div className="flex flex-col border-l pl-4 border-border">
                   <span className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Audience Efficiency</span>
                   <span className="font-mono font-bold text-primary text-sm">{p.average_views_per_episode ? (((p.average_likes_per_episode + p.average_comments_per_episode) / p.average_views_per_episode) * 100).toFixed(2) : '0.00'}%</span>
+                </div>
+                <div className="flex flex-col border-l pl-4 border-border">
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Score Breakdown</span>
+                  <div className="h-2 mt-2 flex rounded-full overflow-hidden bg-muted w-full shadow-inner">
+                    <div style={{ width: `${vP}%` }} className="bg-blue-500" title={`Views: ${breakdown.views}%`} />
+                    <div style={{ width: `${eP}%` }} className="bg-purple-500" title={`Efficiency: ${breakdown.audience_efficiency}%`} />
+                    <div style={{ width: `${fP}%` }} className="bg-emerald-500" title={`Freshness: ${breakdown.freshness}%`} />
+                    <div style={{ width: `${dP}%` }} className="bg-amber-500" title={`Depth: ${breakdown.depth}%`} />
+                    <div style={{ width: `${cP}%` }} className="bg-rose-500" title={`Consistency: ${breakdown.consistency}%`} />
+                  </div>
                 </div>
               </div>
 
