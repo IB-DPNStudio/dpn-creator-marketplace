@@ -12,10 +12,10 @@ export default async function RankingsPage() {
   const isAuthenticated = !!session;
   const isSuperAdmin = session?.user?.email === 'studio@ideabrews.com';
   
-  // Fetch all approved and seeded podcasts, ordered by score
+  // Fetch all approved and seeded podcasts, ordered by score, along with their history
   const { data: podcasts, error } = await supabase
     .from("podcasts")
-    .select("*")
+    .select("*, podcast_history(*)")
     .in("status", ["seeded", "verified", "approved_partner", "featured_partner"])
     .order("dpn_score", { ascending: false });
 

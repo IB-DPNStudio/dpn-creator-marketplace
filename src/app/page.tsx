@@ -17,7 +17,7 @@ export default async function Home() {
   
   const { data: podcasts } = await supabase
     .from("podcasts")
-    .select("*")
+    .select("*, podcast_history(*)")
     .in("status", ["seeded", "verified", "approved_partner", "featured_partner"])
     .order("dpn_score", { ascending: false })
     .limit(20);

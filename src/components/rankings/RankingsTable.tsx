@@ -15,6 +15,7 @@ import { updatePodcastGenre, updatePodcastLanguage, updatePodcastStatus, toggleP
 import { calculateDPNScoreBreakdown } from "@/lib/score";
 import { createClient } from "@/utils/supabase/client";
 import { PODCAST_GENRES } from "@/lib/constants";
+import { calculateHistoricalMetrics } from "@/lib/history_utils";
 
 export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin = false }: { podcasts: any[], isAuthenticated?: boolean, isSuperAdmin?: boolean }) {
   const [searchTerm, setSearchTerm] = useState("");
@@ -270,12 +271,12 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
               <tr className="bg-muted/50 border-b border-border text-xs uppercase tracking-wider text-muted-foreground">
-                <th className="p-4 w-20 text-center font-bold">Rank</th>
+                <th className="p-4 w-40 text-center font-bold">Rank</th>
                 <th className="p-4 font-bold cursor-pointer hover:bg-muted/80 transition-colors select-none" onClick={() => handleSort('show_name')}>
                   <div className="flex items-center gap-1">Creator <ArrowUpDown className="w-3 h-3 text-muted-foreground" /></div>
                 </th>
                 <th className="p-4 font-bold cursor-pointer hover:bg-muted/80 transition-colors select-none" onClick={() => handleSort('subscriber_count')}>
-                  <div className="flex items-center gap-1">Audience / Subs <ArrowUpDown className="w-3 h-3 text-muted-foreground" /></div>
+                  <div className="flex items-center gap-1">YT Subs <ArrowUpDown className="w-3 h-3 text-muted-foreground" /></div>
                 </th>
                 <th className="p-4 font-bold text-right cursor-pointer hover:bg-muted/80 transition-colors select-none" onClick={() => handleSort('views_last_7_days')}>
                   <div className="flex items-center justify-end gap-1">7-Day Views <ArrowUpDown className="w-3 h-3 text-muted-foreground" /></div>
@@ -309,6 +310,8 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
               {sortedPodcasts.map((podcast, index) => {
                 const rank = (podcast as any).displayRank;
                 const isGated = rank > 10 && !isAuth;
+                const metrics = calculateHistoricalMetrics(podcast.podcast_history, rank);
+                
                 return (
                   <React.Fragment key={podcast.id}>
                     <tr 
@@ -321,19 +324,44 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
                         }
                       }}
                     >
-                    <td className="p-4 text-center">
-                      <div className="flex flex-col items-center justify-center gap-1">
-                        {rank <= 3 ? (
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                            rank === 1 ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400' :
-                            rank === 2 ? 'bg-slate-400/20 text-slate-600 dark:text-slate-300' :
-                            'bg-amber-700/20 text-amber-700 dark:text-amber-500'
-                          }`}>
-                            <Award className="w-4 h-4 mr-0.5"/>{rank}
+                    <td className="p-4 text-center border-r border-border/50">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <div className="flex items-center gap-2">
+                          {rank <= 3 ? (
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                              rank === 1 ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400' :
+                              rank === 2 ? 'bg-slate-400/20 text-slate-600 dark:text-slate-300' :
+                              'bg-amber-700/20 text-amber-700 dark:text-amber-500'
+                            }`}>
+                              <Award className="w-4 h-4 mr-0.5"/>{rank}
+                            </div>
+                          ) : (
+                            <span className="font-mono font-bold text-xl text-foreground">{rank}</span>
+                          )}
+                          
+                          {metrics.rankChange !== null ? (
+                            <span className={`text-xs font-bold w-6 ${metrics.rankChange > 0 ? 'text-green-500' : metrics.rankChange < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                              {metrics.rankChange > 0 ? `+${metrics.rankChange}` : metrics.rankChange < 0 ? `${metrics.rankChange}` : '-'}
+                            </span>
+                          ) : (
+                            <span className="text-xs font-bold w-6 text-muted-foreground">-</span>
+                          )}
+                        </div>
+                        
+                        <div className="flex gap-3 text-[10px] text-muted-foreground uppercase tracking-wider mt-1">
+                          <div className="flex flex-col items-center">
+                            <span>Last</span>
+                            <span className="font-mono font-bold text-foreground">{metrics.lastWeekRank || '-'}</span>
                           </div>
-                        ) : (
-                          <span className="font-mono font-bold text-lg text-muted-foreground">{rank}</span>
-                        )}
+                          <div className="flex flex-col items-center">
+                            <span>Peak</span>
+                            <span className="font-mono font-bold text-foreground">{metrics.peakRank || '-'}</span>
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <span>Wks</span>
+                            <span className="font-mono font-bold text-foreground">{metrics.weeksInTop20}</span>
+                          </div>
+                        </div>
                       </div>
                     </td>
                     <td className="p-4">
@@ -348,8 +376,18 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
                           />
                         </div>
                         <div>
-                          <div className="font-bold text-base text-foreground group-hover:text-dentsu transition-colors">
+                          <div className="font-bold text-base text-foreground group-hover:text-dentsu transition-colors flex items-center gap-2">
                             {podcast.show_name}
+                            {metrics.isNew && (
+                              <span className="bg-yellow-500 text-yellow-950 text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm animate-pulse">
+                                New ✨
+                              </span>
+                            )}
+                            {metrics.isTrending && !metrics.isNew && (
+                              <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+                                Trending 🔥
+                              </span>
+                            )}
                           </div>
                           <div className="text-xs text-muted-foreground mt-0.5 flex flex-col items-start gap-1">
                             {podcast.youtube_url ? (
@@ -618,16 +656,32 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
                     />
                   </div>
                   <div className="flex flex-col">
-                    <div className="font-bold text-base text-foreground line-clamp-1">
+                    <div className="font-bold text-base text-foreground line-clamp-1 flex items-center gap-2">
                       {podcast.show_name}
+                      {metrics.isNew && (
+                        <span className="bg-yellow-500 text-yellow-950 text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm animate-pulse whitespace-nowrap">
+                          New ✨
+                        </span>
+                      )}
+                      {metrics.isTrending && !metrics.isNew && (
+                        <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm whitespace-nowrap">
+                          Trending 🔥
+                        </span>
+                      )}
                     </div>
                     <div className="text-xs text-muted-foreground flex items-center gap-2">
-                      <span className="font-bold text-foreground">
+                      <span className="font-bold text-foreground flex items-center gap-1">
                         {rank <= 3 ? (
                           <span className={`inline-flex items-center ${rank === 1 ? 'text-yellow-500' : rank === 2 ? 'text-slate-400' : 'text-amber-600'}`}>
                             <Award className="w-3 h-3 mr-0.5"/>#{rank}
                           </span>
                         ) : `#${rank}`}
+                        
+                        {metrics.rankChange !== null && (
+                          <span className={`text-[10px] ${metrics.rankChange > 0 ? 'text-green-500' : metrics.rankChange < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                            ({metrics.rankChange > 0 ? `+${metrics.rankChange}` : metrics.rankChange})
+                          </span>
+                        )}
                       </span>
                       <span className="opacity-40">•</span>
                       <span className="text-[11px] font-semibold tracking-wider uppercase text-foreground/80">
