@@ -7,7 +7,7 @@ export default function CreatorsPage() {
     "Direct access to Dentsu's enterprise brand clients.",
     "No self-serve spam. Only premium, vetted opportunities.",
     "Weekly rankings to showcase your growth to buyers.",
-    "Transparent revenue share and fast payments.",
+    "Transparent revenue share and timely payments.",
     "Dedicated Creator Success Manager for top tiers."
   ];
 
