@@ -51,8 +51,12 @@ export default function LabsClient({ initialPlaylists }: { initialPlaylists: any
     if (!confirm("Are you sure you want to delete this test playlist?")) return;
     setLoading(true);
     try {
-      await deleteLabsPlaylist(id);
-      window.location.reload();
+      const res = await deleteLabsPlaylist(id);
+      if (res.success) {
+        setPlaylists(prev => prev.filter(p => p.playlist_id !== id));
+      } else {
+        alert(res.error || "Failed to delete");
+      }
     } catch (err: any) {
       alert(err.message);
     } finally {
