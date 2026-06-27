@@ -4,7 +4,6 @@ import { useState } from "react";
 import { deleteLabsPlaylist, fetchPlaylistSampleVideos } from "@/app/actions/labs";
 import { Button } from "@/components/ui/button";
 import { Award, Trash2, ChevronDown, ChevronUp } from "lucide-react";
-import { calculateDPNScoreBreakdown } from "@/lib/score";
 
 export default function LabsClient({ initialPlaylists }: { initialPlaylists: any[] }) {
   const [playlists, setPlaylists] = useState(initialPlaylists);
@@ -107,14 +106,22 @@ function PlaylistTableRow({ rank, p, handleDelete }: { rank: number, p: any, han
   const [videos, setVideos] = useState<any[]>([]);
   const [hasFetched, setHasFetched] = useState(false);
 
-  const breakdown = calculateDPNScoreBreakdown({
-    average_views_per_episode: p.average_views_per_episode,
-    average_likes_per_episode: p.average_likes_per_episode,
-    average_comments_per_episode: p.average_comments_per_episode,
-    total_episodes: p.total_episodes,
-    manual_boost: p.manual_boost,
-    manual_penalty: p.manual_penalty
-  });
+  const breakdown = p.score_breakdown || { views: 0, audience_efficiency: 0, freshness: 0, depth: 0, consistency: 0, confidence: 0 };
+  
+  // Calculate relative percentages for the UI bar based on weights in score_playlist.ts
+  const viewsWidth = breakdown.views * 0.20;
+  const effWidth = breakdown.audience_efficiency * 0.20;
+  const freshWidth = breakdown.freshness * 0.20;
+  const depthWidth = breakdown.depth * 0.15;
+  const consWidth = breakdown.consistency * 0.10;
+  
+  // Normalize to 100% for the visual bar 
+  const total = viewsWidth + effWidth + freshWidth + depthWidth + consWidth || 1;
+  const vP = (viewsWidth / total) * 100;
+  const eP = (effWidth / total) * 100;
+  const fP = (freshWidth / total) * 100;
+  const dP = (depthWidth / total) * 100;
+  const cP = (consWidth / total) * 100;
 
   const decodeHTML = (html: string) => {
     if (!html) return '';
@@ -185,17 +192,19 @@ function PlaylistTableRow({ rank, p, handleDelete }: { rank: number, p: any, han
         <td className="p-4 md:p-6 align-middle">
           <div className="flex items-center gap-1.5">
             <div className="h-2 flex rounded-full overflow-hidden bg-muted w-32 md:w-48 shadow-inner">
-              <div style={{ width: `${breakdown.reachPercentage}%` }} className="bg-blue-500" title={`Reach: ${breakdown.reachScore.toFixed(1)}`} />
-              <div style={{ width: `${breakdown.engagementPercentage}%` }} className="bg-purple-500" title={`Engagement: ${breakdown.engagementScore.toFixed(1)}`} />
-              <div style={{ width: `${breakdown.efficiencyPercentage}%` }} className="bg-emerald-500" title={`Efficiency: ${breakdown.efficiencyScore.toFixed(1)}`} />
-              <div style={{ width: `${breakdown.consistencyPercentage}%` }} className="bg-amber-500" title={`Consistency: ${breakdown.consistencyScore.toFixed(1)}`} />
+              <div style={{ width: `${vP}%` }} className="bg-blue-500" title={`Views: ${breakdown.views}%`} />
+              <div style={{ width: `${eP}%` }} className="bg-purple-500" title={`Efficiency: ${breakdown.audience_efficiency}%`} />
+              <div style={{ width: `${fP}%` }} className="bg-emerald-500" title={`Freshness: ${breakdown.freshness}%`} />
+              <div style={{ width: `${dP}%` }} className="bg-amber-500" title={`Depth: ${breakdown.depth}%`} />
+              <div style={{ width: `${cP}%` }} className="bg-rose-500" title={`Consistency: ${breakdown.consistency}%`} />
             </div>
           </div>
           <div className="text-[10px] text-muted-foreground mt-1.5 flex gap-2 font-mono">
-            <span className="text-blue-500 dark:text-blue-400">R:{breakdown.reachScore.toFixed(1)}</span>
-            <span className="text-purple-500 dark:text-purple-400">E:{breakdown.engagementScore.toFixed(1)}</span>
-            <span className="text-emerald-500 dark:text-emerald-400">Y:{breakdown.efficiencyScore.toFixed(1)}</span>
-            <span className="text-amber-500 dark:text-amber-400">C:{breakdown.consistencyScore.toFixed(1)}</span>
+            <span className="text-blue-500 dark:text-blue-400" title="Views">V:{Math.round(breakdown.views)}</span>
+            <span className="text-purple-500 dark:text-purple-400" title="Audience Efficiency">E:{Math.round(breakdown.audience_efficiency)}</span>
+            <span className="text-emerald-500 dark:text-emerald-400" title="Freshness">F:{Math.round(breakdown.freshness)}</span>
+            <span className="text-amber-500 dark:text-amber-400" title="Depth">D:{Math.round(breakdown.depth)}</span>
+            <span className="text-rose-500 dark:text-rose-400" title="Consistency">C:{Math.round(breakdown.consistency)}</span>
           </div>
         </td>
         <td className="p-4 md:p-6 align-middle text-right">
