@@ -347,21 +347,6 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
                             <span className="text-xs font-bold w-6 text-muted-foreground">-</span>
                           )}
                         </div>
-                        
-                        <div className="flex gap-3 text-[10px] text-muted-foreground uppercase tracking-wider mt-1">
-                          <div className="flex flex-col items-center">
-                            <span>Last</span>
-                            <span className="font-mono font-bold text-foreground">{metrics.lastWeekRank || '-'}</span>
-                          </div>
-                          <div className="flex flex-col items-center">
-                            <span>Peak</span>
-                            <span className="font-mono font-bold text-foreground">{metrics.peakRank || '-'}</span>
-                          </div>
-                          <div className="flex flex-col items-center">
-                            <span>Wks</span>
-                            <span className="font-mono font-bold text-foreground">{metrics.weeksInTop20}</span>
-                          </div>
-                        </div>
                       </div>
                     </td>
                     <td className="p-4">
@@ -379,12 +364,12 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
                           <div className="font-bold text-base text-foreground group-hover:text-dentsu transition-colors flex items-center gap-2">
                             {podcast.show_name}
                             {metrics.isNew && (
-                              <span className="bg-yellow-500 text-yellow-950 text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm animate-pulse">
+                              <span className="bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm whitespace-nowrap">
                                 New ✨
                               </span>
                             )}
                             {metrics.isTrending && !metrics.isNew && (
-                              <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+                              <span className="bg-red-500/10 text-red-500 border border-red-500/20 text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm whitespace-nowrap">
                                 Trending 🔥
                               </span>
                             )}
@@ -564,6 +549,20 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
                     <tr className="bg-muted/10 border-b border-border">
                       <td colSpan={5} className="p-6">
                         <div className="flex flex-col gap-6">
+                          <div className="grid grid-cols-3 gap-4 p-4 bg-background rounded-xl border border-border mt-2">
+                            <div className="flex flex-col items-center justify-center">
+                              <span className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Last Week</span>
+                              <span className="font-mono font-bold text-2xl text-foreground">{metrics.lastWeekRank || '-'}</span>
+                            </div>
+                            <div className="flex flex-col items-center justify-center border-x border-border">
+                              <span className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Peak Rank</span>
+                              <span className="font-mono font-bold text-2xl text-foreground">{metrics.peakRank || '-'}</span>
+                            </div>
+                            <div className="flex flex-col items-center justify-center">
+                              <span className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Weeks in Top 20</span>
+                              <span className="font-mono font-bold text-2xl text-foreground">{metrics.weeksInTop20}</span>
+                            </div>
+                          </div>
                           <div>
                             <h4 className="font-bold text-lg mb-2 text-foreground">About the Creator</h4>
                             <p className="text-sm text-muted-foreground leading-relaxed max-w-4xl whitespace-pre-wrap">
@@ -660,12 +659,12 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
                     <div className="font-bold text-base text-foreground line-clamp-1 flex items-center gap-2">
                       {podcast.show_name}
                       {metrics.isNew && (
-                        <span className="bg-yellow-500 text-yellow-950 text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm animate-pulse whitespace-nowrap">
+                        <span className="bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm whitespace-nowrap">
                           New ✨
                         </span>
                       )}
                       {metrics.isTrending && !metrics.isNew && (
-                        <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm whitespace-nowrap">
+                        <span className="bg-red-500/10 text-red-500 border border-red-500/20 text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm whitespace-nowrap">
                           Trending 🔥
                         </span>
                       )}
@@ -735,8 +734,24 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
               )}
 
               {expandedId === podcast.id && !isGated && (
-                <div className="mt-2 p-3 bg-muted/30 rounded-lg text-sm text-muted-foreground">
-                   {podcast.description || "No description provided."}
+                <div className="mt-2 flex flex-col gap-3">
+                  <div className="grid grid-cols-3 gap-2 p-3 bg-background rounded-lg border border-border">
+                    <div className="flex flex-col items-center justify-center">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Last</span>
+                      <span className="font-mono font-bold text-lg text-foreground">{metrics.lastWeekRank || '-'}</span>
+                    </div>
+                    <div className="flex flex-col items-center justify-center border-x border-border">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Peak</span>
+                      <span className="font-mono font-bold text-lg text-foreground">{metrics.peakRank || '-'}</span>
+                    </div>
+                    <div className="flex flex-col items-center justify-center">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Wks</span>
+                      <span className="font-mono font-bold text-lg text-foreground">{metrics.weeksInTop20}</span>
+                    </div>
+                  </div>
+                  <div className="p-3 bg-muted/30 rounded-lg text-sm text-muted-foreground">
+                    {podcast.description || "No description provided."}
+                  </div>
                 </div>
               )}
             </div>
