@@ -22,7 +22,15 @@ export async function getLabsPlaylists() {
     .order("final_score", { ascending: false });
 
   if (error) throw error;
-  return data || [];
+  
+  // Filter out playlists older than 90 days
+  const ninetyDaysAgo = new Date();
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+  
+  return (data || []).filter(p => {
+    if (!p.latest_episode_date) return false;
+    return new Date(p.latest_episode_date) >= ninetyDaysAgo;
+  });
 }
 
 export async function addOrUpdatePlaylistRank(inputData: any) {
@@ -50,6 +58,7 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
     const showName = inputData.title || snippet.title;
     const description = inputData.description || snippet.description;
     const channelId = inputData.channelId || snippet.channelId;
+    const thumbnailUrl = snippet.thumbnails?.medium?.url || snippet.thumbnails?.default?.url || null;
 
     // 2. Fetch Playlist Items for stats
     let totalViews = 0;
@@ -118,6 +127,7 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
         channel_id: channelId,
         show_name: showName,
         description: description,
+        thumbnail_url: thumbnailUrl,
         primary_language: inputData.language || 'Unknown',
         country: inputData.country || 'Unknown',
         genre: inputData.genre || 'General',
@@ -161,6 +171,32 @@ export async function deleteLabsPlaylist(playlistId: string) {
     return { success: true };
   } catch (err: any) {
     console.error("Error deleting playlist:", err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function fetchPlaylistSampleVideos(playlistId: string) {
+  try {
+    const apiKey = process.env.YOUTUBE_API_KEY;
+    if (!apiKey) throw new Error("Missing YouTube API Key");
+
+    const itemsRes = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${playlistId}&maxResults=5&key=${apiKey}`);
+    const itemsData = await itemsRes.json();
+
+    if (!itemsData.items) {
+      return { success: true, videos: [] };
+    }
+
+    const videos = itemsData.items.map((item: any) => ({
+      title: item.snippet.title,
+      videoId: item.contentDetails.videoId,
+      thumbnail: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url,
+      publishedAt: item.snippet.publishedAt
+    }));
+
+    return { success: true, videos };
+  } catch (err: any) {
+    console.error("Error fetching sample videos:", err);
     return { success: false, error: err.message };
   }
 }

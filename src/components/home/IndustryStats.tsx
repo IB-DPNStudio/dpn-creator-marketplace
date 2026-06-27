@@ -1,7 +1,7 @@
 export function IndustryStats() {
   const stats = [
     { value: "200M+", label: "Podcast Listeners" },
-    { value: "3rd", label: "Largest Podcast Market" },
+    { value: "3rd", label: "Largest Podcast Market Globally" },
     { value: "$276M", label: "Podcast Ad Spend" },
     { value: "$587M", label: "Projected Ad Spend" },
     { value: "78%", label: "Host Read Revenue Share" },

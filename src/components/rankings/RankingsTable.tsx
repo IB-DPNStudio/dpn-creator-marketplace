@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
-import { TrendingUp, Award, Search, Info, ChevronDown, ChevronUp, Loader2, Edit2, Check, X, Eye, EyeOff, Lock } from "lucide-react";
+import { TrendingUp, Award, Search, Info, ChevronDown, ChevronUp, Loader2, Edit2, Check, X, Eye, EyeOff, Lock, ArrowUpDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
 import {
@@ -33,6 +33,18 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [gravitonData, setGravitonData] = useState<Record<string, any>>({});
   const [isAuth, setIsAuth] = useState(isAuthenticated);
+
+  const [sortColumn, setSortColumn] = useState<string>("dpn_score");
+  const [sortDirection, setSortDirection] = useState<"desc" | "asc">("desc");
+
+  const handleSort = (col: string) => {
+    if (sortColumn === col) {
+      setSortDirection(prev => prev === "desc" ? "asc" : "desc");
+    } else {
+      setSortColumn(col);
+      setSortDirection(col === "show_name" || col === "genre" ? "asc" : "desc");
+    }
+  };
 
   useEffect(() => {
     const supabase = createClient();
@@ -175,7 +187,8 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
     return ["All", ...Array.from(gs).sort()];
   }, [podcasts]);
 
-  const sortedPodcasts = useMemo(() => {
+  // First, apply filters and calculate the rank based purely on DPN score for the filtered set
+  const filteredAndRankedPodcasts = useMemo(() => {
     return podcasts
       .filter((p) => {
         const matchesSearch = p.show_name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -183,10 +196,27 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
         const matchesGenre = genreFilter === "All" || p.genre === genreFilter;
         return matchesSearch && matchesLanguage && matchesGenre;
       })
-      .sort((a, b) => {
-        return (b.dpn_score || 0) - (a.dpn_score || 0);
-      });
+      .sort((a, b) => (b.dpn_score || 0) - (a.dpn_score || 0))
+      .map((p, index) => ({ ...p, displayRank: index + 1 }));
   }, [podcasts, searchTerm, languageFilter, genreFilter, gravitonData]);
+
+  // Then, apply column sorting (which changes order but preserves displayRank)
+  const sortedPodcasts = useMemo(() => {
+    return [...filteredAndRankedPodcasts]
+      .sort((a, b) => {
+        let valA = a[sortColumn];
+        let valB = b[sortColumn];
+        
+        if (sortColumn === 'views_last_7_days') {
+          valA = (a as any).views_last_7_days || 0;
+          valB = (b as any).views_last_7_days || 0;
+        }
+
+        if (valA < valB) return sortDirection === "asc" ? -1 : 1;
+        if (valA > valB) return sortDirection === "asc" ? 1 : -1;
+        return 0;
+      });
+  }, [filteredAndRankedPodcasts, sortColumn, sortDirection]);
 
   return (
     <div className="w-full">
@@ -241,23 +271,31 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
             <thead>
               <tr className="bg-muted/50 border-b border-border text-xs uppercase tracking-wider text-muted-foreground">
                 <th className="p-4 w-20 text-center font-bold">Rank</th>
-                <th className="p-4 font-bold">Creator</th>
-                <th className="p-4 font-bold">Audience / Subs</th>
-                <th className="p-4 font-bold text-right">7-Day Views</th>
-                <th className="p-4 font-bold">Category</th>
-                <th className="p-4 font-bold text-right">
+                <th className="p-4 font-bold cursor-pointer hover:bg-muted/80 transition-colors select-none" onClick={() => handleSort('show_name')}>
+                  <div className="flex items-center gap-1">Creator <ArrowUpDown className="w-3 h-3 text-muted-foreground" /></div>
+                </th>
+                <th className="p-4 font-bold cursor-pointer hover:bg-muted/80 transition-colors select-none" onClick={() => handleSort('subscriber_count')}>
+                  <div className="flex items-center gap-1">Audience / Subs <ArrowUpDown className="w-3 h-3 text-muted-foreground" /></div>
+                </th>
+                <th className="p-4 font-bold text-right cursor-pointer hover:bg-muted/80 transition-colors select-none" onClick={() => handleSort('views_last_7_days')}>
+                  <div className="flex items-center justify-end gap-1">7-Day Views <ArrowUpDown className="w-3 h-3 text-muted-foreground" /></div>
+                </th>
+                <th className="p-4 font-bold cursor-pointer hover:bg-muted/80 transition-colors select-none" onClick={() => handleSort('genre')}>
+                  <div className="flex items-center gap-1">Category <ArrowUpDown className="w-3 h-3 text-muted-foreground" /></div>
+                </th>
+                <th className="p-4 font-bold text-right cursor-pointer hover:bg-muted/80 transition-colors select-none" onClick={() => handleSort('dpn_score')}>
                   <div className="flex items-center justify-end gap-2">
-                    DPN Score
+                    <span className="flex items-center gap-1">DPN Score <ArrowUpDown className="w-3 h-3 text-muted-foreground" /></span>
                     <TooltipProvider>
                       <Tooltip>
-                        <TooltipTrigger>
+                        <TooltipTrigger onClick={(e) => e.stopPropagation()}>
                           <Info className="w-4 h-4 text-muted-foreground hover:text-foreground transition-colors" />
                         </TooltipTrigger>
                         <TooltipContent className="max-w-sm p-4 bg-slate-950 border border-slate-800 shadow-2xl rounded-xl animate-in fade-in zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:zoom-out-95">
                           <div className="space-y-2">
                             <h4 className="font-bold text-dentsu font-heading tracking-wide uppercase text-xs">The DPN Index</h4>
                             <p className="text-slate-300 text-xs leading-relaxed">
-                              A proprietary, non-linear algorithmic matrix synthesizing <strong className="text-white">logarithmic scaling</strong> of 7-day cumulative audience penetration with relative <strong className="text-white">engagement density vectors</strong>, delivering a normalized, un-gamed impact index.
+                              A proprietary score derived from 7-day audience, engagement and content impact. Updated weekly.
                             </p>
                           </div>
                         </TooltipContent>
@@ -269,7 +307,7 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
             </thead>
             <tbody className="divide-y divide-border">
               {sortedPodcasts.map((podcast, index) => {
-                const rank = index + 1;
+                const rank = (podcast as any).displayRank;
                 const isGated = rank > 10 && !isAuth;
                 return (
                   <React.Fragment key={podcast.id}>
@@ -553,7 +591,7 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
       {/* Mobile Ranker List */}
       <div className="md:hidden flex flex-col gap-4">
         {sortedPodcasts.map((podcast, index) => {
-          const rank = index + 1;
+          const rank = (podcast as any).displayRank;
           const isGated = rank > 10 && !isAuth;
           
           return (

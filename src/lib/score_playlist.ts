@@ -11,14 +11,18 @@ export interface PlaylistScoreInput {
   manual_penalty: number;
   show_name: string;
   description: string;
+  sample_video_titles?: string[];
 }
 
 export interface ScoreBreakdown {
-  engagement: number;
+  views: number;
+  audience_efficiency: number;
   freshness: number;
   depth: number;
   consistency: number;
   confidence: number;
+  likes: number;
+  comments: number;
 }
 
 export interface Explanations {
@@ -34,91 +38,129 @@ export interface ScoreOutput {
 
 export function calculatePlaylistScore(input: PlaylistScoreInput): ScoreOutput {
   const WEIGHTS = {
-    engagement: 0.40,
-    freshness: 0.25,
+    views: 0.20,
+    audience_efficiency: 0.20,
+    freshness: 0.20,
     depth: 0.15,
     consistency: 0.10,
-    confidence: 0.10
+    confidence: 0.05,
+    likes: 0.05,
+    comments: 0.05
   };
 
   const explanations: Explanations = { positive: [], negative: [] };
 
-  // 1. Engagement Score (0-100)
-  // Proxy using average views, log normalized
-  // Let's say 100k avg views = 100 score
-  let engagementScore = 0;
+  // 1. Views Score (20%)
+  let viewsScore = 0;
   if (input.average_views_per_episode > 0) {
-    const maxLog = Math.log10(100000);
-    const viewLog = Math.log10(input.average_views_per_episode);
-    engagementScore = Math.min((viewLog / maxLog) * 100, 100);
+    viewsScore = Math.min(1, Math.log1p(input.average_views_per_episode) / Math.log1p(100000));
   }
-  if (engagementScore > 80) explanations.positive.push("Exceptionally high average viewership per episode.");
-  else if (engagementScore < 20) explanations.negative.push("Low average engagement per episode.");
+  if (viewsScore > 0.8) explanations.positive.push("Exceptionally high average viewership per episode.");
 
-  // 2. Freshness Score (0-100)
+  // 2. Likes Score (5%)
+  let likesScore = 0;
+  if (input.average_likes_per_episode > 0) {
+    likesScore = Math.min(1, Math.log1p(input.average_likes_per_episode) / Math.log1p(10000));
+  }
+
+  // 3. Comments Score (5%)
+  let commentsScore = 0;
+  if (input.average_comments_per_episode > 0) {
+    commentsScore = Math.min(1, Math.log1p(input.average_comments_per_episode) / Math.log1p(1000));
+  }
+
+  // 4. Audience Efficiency Score (15%)
+  let effScore = 0;
+  let engagementRate = 0;
+  if (input.average_views_per_episode > 0) {
+    engagementRate = (input.average_likes_per_episode + input.average_comments_per_episode) / input.average_views_per_episode;
+  }
+  if (engagementRate <= 0.0) effScore = 0;
+  else if (engagementRate <= 0.01) effScore = (engagementRate / 0.01) * 0.25;
+  else if (engagementRate <= 0.02) effScore = 0.25 + ((engagementRate - 0.01) / 0.01) * 0.25;
+  else if (engagementRate <= 0.03) effScore = 0.50 + ((engagementRate - 0.02) / 0.01) * 0.25;
+  else if (engagementRate <= 0.05) effScore = 0.75 + ((engagementRate - 0.03) / 0.02) * 0.25;
+  else effScore = 1.00;
+  
+  if (effScore > 0.8) explanations.positive.push("Highly engaged community (high likes/comments ratio).");
+  else if (effScore < 0.2) explanations.negative.push("Low audience efficiency (low interaction relative to views).");
+
+  // 5. Freshness Score (20%)
   let freshnessScore = 0;
   if (input.latest_episode_date) {
     const daysSinceLast = (new Date().getTime() - new Date(input.latest_episode_date).getTime()) / (1000 * 3600 * 24);
-    // Decay: 100 - (days * 1.5). 0 if > 66 days.
-    freshnessScore = Math.max(0, 100 - (daysSinceLast * 1.5));
-    
-    if (freshnessScore > 90) explanations.positive.push("Very recent publishing activity.");
-    else if (freshnessScore < 30) explanations.negative.push("Has not published an episode recently.");
+    freshnessScore = Math.max(0, 1 - (daysSinceLast / 45));
+    if (freshnessScore > 0.9) explanations.positive.push("Very recent publishing activity.");
+    else if (freshnessScore < 0.3) explanations.negative.push("Has not published an episode recently.");
   } else {
     explanations.negative.push("No recent episode data available.");
   }
 
-  // 3. Catalog Depth (0-100)
-  // Max out at 50 episodes
-  let depthScore = Math.min((input.total_episodes / 50) * 100, 100);
-  if (depthScore === 100) explanations.positive.push("Deep and robust catalog of episodes.");
-  else if (depthScore < 20) explanations.negative.push("Very shallow catalog, requires more episodes to build authority.");
+  // 6. Depth Score (15%)
+  let depthScore = Math.min(input.total_episodes, 50) / 50;
+  if (depthScore === 1) explanations.positive.push("Deep and robust catalog of episodes.");
+  else if (depthScore < 0.2) explanations.negative.push("Very shallow catalog, requires more episodes to build authority.");
 
-  // 4. Consistency Score (0-100)
+  // 7. Consistency Score (10%)
   let consistencyScore = 0;
-  if (input.average_days_between_episodes && input.average_days_between_episodes > 0) {
-    // Ideal is between 3 and 14 days
-    if (input.average_days_between_episodes >= 3 && input.average_days_between_episodes <= 14) {
-      consistencyScore = 100;
-    } else if (input.average_days_between_episodes < 3) {
-      consistencyScore = 80; // High frequency, maybe overwhelming
-    } else {
-      // Penalty for very sparse releases
-      consistencyScore = Math.max(0, 100 - ((input.average_days_between_episodes - 14) * 2));
-    }
+  if (input.average_days_between_episodes !== null && input.average_days_between_episodes > 0) {
+    const gap = input.average_days_between_episodes;
+    if (gap >= 4 && gap <= 14) consistencyScore = 1.0;
+    else if ((gap >= 3 && gap < 4) || (gap > 14 && gap <= 21)) consistencyScore = 0.8;
+    else if ((gap >= 1 && gap < 3) || (gap > 21 && gap <= 30)) consistencyScore = 0.4;
+    else consistencyScore = 0.0;
     
-    if (consistencyScore > 80) explanations.positive.push("Consistent and healthy publishing cadence.");
-    else explanations.negative.push("Inconsistent or overly sparse publishing schedule.");
+    if (consistencyScore === 1.0) explanations.positive.push("Consistent and healthy publishing cadence.");
+    else if (consistencyScore <= 0.4) explanations.negative.push("Inconsistent or overly erratic publishing schedule.");
   }
 
-  // 5. Confidence Score (0-100)
-  // Does it look like a podcast?
-  let confidenceScore = 50; // base assumption
+  // 8. Confidence Score (10%)
   const textToSearch = `${input.show_name} ${input.description}`.toLowerCase();
-  const podcastKeywords = ['podcast', 'episode', 'show', 'host', 'season', 'listen', 'audio', 'interview', 'talk', 'series'];
+  const keywords = ['podcast', 'episode', 'show', 'host', 'season', 'listen', 'audio', 'interview', 'talk', 'discussion', 'guest'];
   let matches = 0;
-  for (const keyword of podcastKeywords) {
+  
+  // 1. Keyword matching
+  for (const keyword of keywords) {
     if (textToSearch.includes(keyword)) matches++;
   }
-  confidenceScore = Math.min(50 + (matches * 10), 100);
-  if (confidenceScore > 80) explanations.positive.push("High confidence this is a dedicated podcast show based on metadata.");
-  else if (confidenceScore < 60) explanations.negative.push("Low metadata confidence; may be a generic playlist rather than a podcast.");
+  
+  // 2. Sequential episode numbering check (e.g. Ep 1, #12, Episode 4)
+  if (input.sample_video_titles && input.sample_video_titles.length > 0) {
+    let hasSequential = false;
+    for (const title of input.sample_video_titles) {
+      if (/(ep|episode|#)\s*\d+/i.test(title)) {
+        hasSequential = true;
+        break;
+      }
+    }
+    if (hasSequential) matches += 2; // Treat numbering as strong signal
+  }
 
-  // Final Calculation
+  let confidenceScore = Math.min(matches, 5) / 5;
+  if (confidenceScore >= 0.8) explanations.positive.push("High confidence this is a dedicated podcast show based on metadata.");
+  else if (confidenceScore < 0.5) explanations.negative.push("Low metadata confidence; may be a generic playlist rather than a podcast.");
+
+  // Convert raw 0-1 scores to 0-100 for the breakdown UI
   const breakdown: ScoreBreakdown = {
-    engagement: Number(engagementScore.toFixed(2)),
-    freshness: Number(freshnessScore.toFixed(2)),
-    depth: Number(depthScore.toFixed(2)),
-    consistency: Number(consistencyScore.toFixed(2)),
-    confidence: Number(confidenceScore.toFixed(2))
+    views: Number((viewsScore * 100).toFixed(2)),
+    audience_efficiency: Number((effScore * 100).toFixed(2)),
+    freshness: Number((freshnessScore * 100).toFixed(2)),
+    depth: Number((depthScore * 100).toFixed(2)),
+    consistency: Number((consistencyScore * 100).toFixed(2)),
+    confidence: Number((confidenceScore * 100).toFixed(2)),
+    likes: Number((likesScore * 100).toFixed(2)),
+    comments: Number((commentsScore * 100).toFixed(2))
   };
 
   let finalScore = (
-    (breakdown.engagement * WEIGHTS.engagement) +
+    (breakdown.views * WEIGHTS.views) +
+    (breakdown.audience_efficiency * WEIGHTS.audience_efficiency) +
     (breakdown.freshness * WEIGHTS.freshness) +
     (breakdown.depth * WEIGHTS.depth) +
     (breakdown.consistency * WEIGHTS.consistency) +
-    (breakdown.confidence * WEIGHTS.confidence)
+    (breakdown.confidence * WEIGHTS.confidence) +
+    (breakdown.likes * WEIGHTS.likes) +
+    (breakdown.comments * WEIGHTS.comments)
   );
 
   // Apply overrides
