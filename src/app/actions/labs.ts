@@ -32,20 +32,22 @@ export async function getLabsPlaylists() {
     return new Date(p.latest_episode_date) >= ninetyDaysAgo;
   });
 
-  // Fetch channel names from the main podcasts table
+  // Fetch channel names and descriptions from the main podcasts table
   const channelIds = [...new Set(filteredData.map(p => p.channel_id).filter(Boolean))];
   let channelMap = new Map();
+  let channelDescMap = new Map();
   
   if (channelIds.length > 0) {
     const { data: podData } = await adminDbClient
       .from("podcasts")
-      .select("channel_id, show_name")
+      .select("channel_id, show_name, description")
       .in("channel_id", channelIds);
       
     if (podData) {
       podData.forEach(p => {
-        if (p.channel_id && p.show_name) {
-          channelMap.set(p.channel_id, p.show_name);
+        if (p.channel_id) {
+          if (p.show_name) channelMap.set(p.channel_id, p.show_name);
+          if (p.description) channelDescMap.set(p.channel_id, p.description);
         }
       });
     }
@@ -53,7 +55,8 @@ export async function getLabsPlaylists() {
 
   return filteredData.map(p => ({
     ...p,
-    channel_name: channelMap.get(p.channel_id) || "YouTube Channel"
+    channel_name: channelMap.get(p.channel_id) || "YouTube Channel",
+    channel_description: channelDescMap.get(p.channel_id) || ""
   }));
 }
 

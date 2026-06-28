@@ -335,7 +335,15 @@ function PlaylistTableRow({ rank, p, handleDelete, isAdmin }: { rank: number, p:
                   <div className="flex-1 flex flex-col gap-3">
                     <h4 className="font-bold text-lg text-foreground font-heading">About the Creator</h4>
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                      {p.description ? decodeHTML(p.description) : "No description available for this playlist."}
+                      {p.description?.trim() ? (
+                        decodeHTML(p.description)
+                      ) : p.channel_description?.trim() ? (
+                        <>
+                          {decodeHTML(p.channel_description).substring(0, 300)}... <a href={`https://www.youtube.com/channel/${p.channel_id}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">more</a>
+                        </>
+                      ) : (
+                        "No description available for this playlist."
+                      )}
                     </p>
                   </div>
                   <div className="flex-shrink-0 grid grid-cols-2 gap-4 h-fit border border-border rounded-xl p-4 bg-background/50">
