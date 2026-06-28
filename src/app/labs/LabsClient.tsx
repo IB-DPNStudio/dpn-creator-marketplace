@@ -145,7 +145,7 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
                   </tr>
                 ) : (
                   sortedPlaylists.map((p, idx) => {
-                    const isBlurred = !isSignedIn && !isLabs && idx >= 10;
+                    const isBlurred = !isSignedIn && !isLabs && p.displayRank > 10;
                     return (
                       <PlaylistTableRow 
                         key={p.playlist_id || idx} 
@@ -160,19 +160,6 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
                 )}
               </tbody>
             </table>
-            
-            {/* CTA Overlay for non-signed in users */}
-            {!isSignedIn && !isLabs && sortedPlaylists.length > 10 && (
-              <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-background via-background/90 to-transparent flex flex-col items-center justify-end pb-8 z-10">
-                <h3 className="text-xl font-bold font-heading mb-2 text-foreground drop-shadow-sm">Want to see the rest of the Top {sortedPlaylists.length}?</h3>
-                <p className="text-muted-foreground mb-4 max-w-md text-center text-sm font-medium">
-                  Join the DPN network to view the complete power rankings and discover hidden gems across all categories.
-                </p>
-                <Button onClick={() => window.location.href = '/login'} className="bg-dentsu hover:bg-dentsu/90 text-white shadow-lg">
-                  Sign In / Apply Now
-                </Button>
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -212,9 +199,45 @@ function PlaylistTableRow({ rank, p, handleDelete, isAdmin, isBlurred = false }:
     setExpanded(!expanded);
   };
 
+  if (isBlurred) {
+    return (
+      <tr className="bg-card border-b border-border/50 group relative hover:bg-muted/30 transition-colors">
+        <td className="p-4 text-center border-r border-border/50">
+          <span className="font-mono font-bold text-xl text-foreground opacity-20 blur-[4px] select-none">{rank}</span>
+        </td>
+        <td className="p-4">
+          <div className="flex items-center space-x-4 opacity-20 blur-[4px] select-none pointer-events-none">
+            <div className="w-12 h-12 rounded-full bg-foreground/20"></div>
+            <div className="flex flex-col gap-2">
+              <div className="h-4 w-32 bg-foreground/20 rounded"></div>
+              <div className="h-3 w-24 bg-foreground/20 rounded"></div>
+            </div>
+          </div>
+        </td>
+        <td colSpan={5} className="p-4 relative h-[88px]">
+          <div className="absolute inset-0 flex items-center justify-center z-10 w-full h-full pr-12">
+            <Button onClick={() => window.location.href = '/login'} className="bg-dentsu hover:bg-dentsu/90 text-white rounded-full shadow-lg font-bold px-8 animate-in fade-in zoom-in duration-300">
+              Sign In to Reveal
+            </Button>
+          </div>
+          <div className="flex items-center justify-between w-full opacity-20 blur-[4px] select-none pointer-events-none">
+            <div className="h-4 w-16 bg-foreground/20 rounded"></div>
+            <div className="flex flex-col gap-2 items-end">
+              <div className="h-4 w-20 bg-foreground/20 rounded"></div>
+              <div className="h-3 w-16 bg-foreground/20 rounded"></div>
+            </div>
+            <div className="h-4 w-24 bg-foreground/20 rounded"></div>
+            <div className="h-6 w-16 bg-foreground/20 rounded-full"></div>
+            <ChevronDown className="w-5 h-5 text-muted-foreground" />
+          </div>
+        </td>
+      </tr>
+    );
+  }
+
   return (
     <>
-      <tr className={`transition-colors group hover:bg-muted/30 ${isBlurred ? 'cursor-pointer opacity-40 blur-[4px] select-none' : 'cursor-pointer'} ${expanded ? 'bg-muted/10' : 'bg-card'}`} onClick={toggleExpand}>
+      <tr className={`transition-colors group hover:bg-muted/30 cursor-pointer ${expanded ? 'bg-muted/10' : 'bg-card'}`} onClick={toggleExpand}>
         <td className="p-4 text-center border-r border-border/50">
           <div className="flex flex-col items-center justify-center gap-2">
             <div className="flex items-center gap-2">
