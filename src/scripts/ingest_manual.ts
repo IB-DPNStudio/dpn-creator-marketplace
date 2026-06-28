@@ -28,7 +28,7 @@ async function ingestManual() {
         const playlistId = playlistIdMatch ? playlistIdMatch[1] : url;
         await adminDbClient.from("playlist_podcasts").update({ status: 'seeded' }).eq("playlist_id", playlistId);
         
-        console.log(`✅ Successfully seeded: ${seedRes.data?.showName} (Score: ${seedRes.data?.dpnScore})`);
+        console.log(`✅ Successfully seeded: ${playlistId}`);
       } else {
         console.log(`❌ Failed: ${seedRes.error}`);
       }
