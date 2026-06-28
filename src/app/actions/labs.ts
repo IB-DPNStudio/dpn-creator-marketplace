@@ -117,6 +117,24 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
     const channelId = inputData.channelId || snippet.channelId;
     const thumbnailUrl = snippet.thumbnails?.maxres?.url || snippet.thumbnails?.standard?.url || snippet.thumbnails?.high?.url || snippet.thumbnails?.medium?.url || snippet.thumbnails?.default?.url || null;
 
+    let defaultLanguage = 'Unknown';
+    let defaultCountry = 'Unknown';
+    let defaultGenre = 'General';
+
+    if (channelId) {
+      const { data: pod } = await adminDbClient
+        .from("podcasts")
+        .select("primary_language, country, genre")
+        .eq("channel_id", channelId)
+        .maybeSingle();
+
+      if (pod) {
+        if (pod.primary_language) defaultLanguage = pod.primary_language;
+        if (pod.country) defaultCountry = pod.country;
+        if (pod.genre) defaultGenre = pod.genre;
+      }
+    }
+
     // 2. Fetch Playlist Items for stats
     let totalViews = 0;
     let totalLikes = 0;
@@ -218,9 +236,9 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
         show_name: showName,
         description: description,
         thumbnail_url: thumbnailUrl,
-        primary_language: inputData.language || 'Unknown',
-        country: inputData.country || 'Unknown',
-        genre: inputData.genre || 'General',
+        primary_language: inputData.language || defaultLanguage,
+        country: inputData.country || defaultCountry,
+        genre: inputData.genre || defaultGenre,
         total_episodes: totalEpisodes,
         latest_episode_date: latestEpisodeDate,
         average_days_between_episodes: averageDaysBetween,

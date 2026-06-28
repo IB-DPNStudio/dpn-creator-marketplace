@@ -345,6 +345,12 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
                         handleDelete={handleDelete} 
                         isAdmin={isAdmin} 
                         isBlurred={isBlurred}
+                        onGenreChange={(id, newGenre) => {
+                          setPlaylists(prev => prev.map(item => item.playlist_id === id ? { ...item, genre: newGenre } : item));
+                        }}
+                        onLanguageChange={(id, newLang) => {
+                          setPlaylists(prev => prev.map(item => item.playlist_id === id ? { ...item, primary_language: newLang } : item));
+                        }}
                       />
                     );
                   })
@@ -358,7 +364,7 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
   );
 }
 
-function PlaylistTableRow({ rank, p, handleDelete, isAdmin, isBlurred = false }: { rank: number, p: any, handleDelete: (id: string) => void, isAdmin: boolean, isBlurred?: boolean }) {
+function PlaylistTableRow({ rank, p, handleDelete, isAdmin, isBlurred = false, onGenreChange, onLanguageChange }: { rank: number, p: any, handleDelete: (id: string) => void, isAdmin: boolean, isBlurred?: boolean, onGenreChange: (id: string, genre: string) => void, onLanguageChange: (id: string, lang: string) => void }) {
   const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [videos, setVideos] = useState<any[]>([]);
@@ -488,10 +494,11 @@ function PlaylistTableRow({ rank, p, handleDelete, isAdmin, isBlurred = false }:
           <div className="flex flex-col gap-2 items-start transition-all duration-300">
             {isAdmin ? (
               <select
-                className="text-xs px-2 py-1.5 rounded border border-input bg-background max-w-[140px] focus:outline-none focus:ring-1 focus:ring-ring shadow-sm"
+                className="text-xs px-2 py-1.5 rounded border border-input bg-background max-w-[140px] focus:outline-none focus:ring-1 focus:ring-ring shadow-sm text-foreground"
                 value={p.genre || 'General'}
                 onChange={async (e) => {
                   const newGenre = e.target.value;
+                  onGenreChange(p.playlist_id, newGenre);
                   await updateLabsPlaylistGenre(p.playlist_id, newGenre);
                 }}
                 onClick={(e) => e.stopPropagation()}
@@ -510,10 +517,11 @@ function PlaylistTableRow({ rank, p, handleDelete, isAdmin, isBlurred = false }:
             {isAdmin ? (
               <input
                 type="text"
-                className="text-xs px-2 py-1.5 rounded border border-input bg-background w-[140px] focus:outline-none focus:ring-1 focus:ring-ring shadow-sm"
+                className="text-xs px-2 py-1.5 rounded border border-input bg-background w-[140px] focus:outline-none focus:ring-1 focus:ring-ring shadow-sm text-foreground"
                 defaultValue={p.primary_language || 'English'}
                 onBlur={async (e) => {
                   if (e.target.value !== p.primary_language) {
+                    onLanguageChange(p.playlist_id, e.target.value);
                     await updateLabsPlaylistLanguage(p.playlist_id, e.target.value);
                   }
                 }}

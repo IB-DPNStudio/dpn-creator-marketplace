@@ -9,9 +9,9 @@ async function check() {
   
   const { data } = await adminDbClient
     .from("playlist_podcasts")
-    .select("show_name, is_included, final_score")
-    .ilike("show_name", "%Shamani%");
+    .select("show_name, genre, primary_language")
+    .or("show_name.ilike.%Teen Taal%,show_name.ilike.%Nikhil Kamath%");
     
-  console.log("Shamani:", data);
+  console.log("Verified playlists:", data);
 }
 check();
