@@ -15,19 +15,35 @@ const getAdminClient = () => {
 
 export async function getLabsPlaylists(statusIn?: string[]) {
   const adminDbClient = getAdminClient();
-  let query = adminDbClient
-    .from("playlist_podcasts")
-    .select("*")
-    .eq("is_included", true)
-    .order("final_score", { ascending: false });
+  let allData: any[] = [];
+  let from = 0;
+  const step = 999;
+  let hasMore = true;
 
-  if (statusIn && statusIn.length > 0) {
-    query = query.in("status", statusIn);
+  while (hasMore) {
+    let query = adminDbClient
+      .from("playlist_podcasts")
+      .select("*")
+      .eq("is_included", true)
+      .order("final_score", { ascending: false })
+      .range(from, from + step);
+
+    if (statusIn && statusIn.length > 0) {
+      query = query.in("status", statusIn);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    
+    if (data && data.length > 0) {
+      allData = allData.concat(data);
+      from += step + 1;
+    } else {
+      hasMore = false;
+    }
   }
 
-  const { data, error } = await query;
-
-  if (error) throw error;
+  const data = allData;
   
   // Filter out playlists older than 90 days
   const ninetyDaysAgo = new Date();
@@ -44,18 +60,23 @@ export async function getLabsPlaylists(statusIn?: string[]) {
   let channelDescMap = new Map();
   
   if (channelIds.length > 0) {
-    const { data: podData } = await adminDbClient
-      .from("podcasts")
-      .select("channel_id, show_name, description")
-      .in("channel_id", channelIds);
-      
-    if (podData) {
-      podData.forEach(p => {
-        if (p.channel_id) {
-          if (p.show_name) channelMap.set(p.channel_id, p.show_name);
-          if (p.description) channelDescMap.set(p.channel_id, p.description);
-        }
-      });
+    // Chunk the requests to avoid URL length limits or PostgREST constraints
+    const chunkSize = 100;
+    for (let i = 0; i < channelIds.length; i += chunkSize) {
+      const chunk = channelIds.slice(i, i + chunkSize);
+      const { data: podData } = await adminDbClient
+        .from("podcasts")
+        .select("channel_id, show_name, description")
+        .in("channel_id", chunk);
+        
+      if (podData) {
+        podData.forEach(p => {
+          if (p.channel_id) {
+            if (p.show_name) channelMap.set(p.channel_id, p.show_name);
+            if (p.description) channelDescMap.set(p.channel_id, p.description);
+          }
+        });
+      }
     }
   }
 
