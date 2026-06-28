@@ -91,14 +91,20 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
     .sort((a, b) => (b.final_score || 0) - (a.final_score || 0))
     .map((p, index) => ({ ...p, globalRank: index + 1 }));
 
-  const filteredAndRankedPlaylists = playlistsWithGlobalRank
+  // Filter by category and language first to establish the contextual rank
+  const categorizedPlaylists = playlistsWithGlobalRank
     .filter(p => {
-      const matchesSearch = p.show_name?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesLanguage = languageFilter === "All" || (p.primary_language || 'Unknown') === languageFilter;
       const matchesGenre = genreFilter === "All" || (p.genre || 'General') === genreFilter;
-      return matchesSearch && matchesLanguage && matchesGenre;
+      return matchesLanguage && matchesGenre;
     })
     .map((p, index) => ({ ...p, displayRank: index + 1 }));
+
+  // Then apply search on top of the contextually ranked playlists
+  const filteredAndRankedPlaylists = categorizedPlaylists
+    .filter(p => {
+      return p.show_name?.toLowerCase().includes(searchTerm.toLowerCase());
+    });
 
   const sortedPlaylists = [...filteredAndRankedPlaylists].sort((a, b) => {
     const aBlurred = !isSignedIn && !isLabs && a.globalRank > 10;
