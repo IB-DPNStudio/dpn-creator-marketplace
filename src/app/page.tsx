@@ -14,6 +14,7 @@ export default async function Home() {
   const supabase = await createClient();
   const { data: { session } } = await supabase.auth.getSession();
   const isAdmin = session?.user?.email === 'studio@ideabrews.com';
+  const isSignedIn = !!session?.user;
   
   // Fetch top 20 playlists instead of podcasts
   const allPlaylists = await getLabsPlaylists(["seeded", "verified", "approved_partner", "featured_partner"]);
@@ -36,7 +37,7 @@ export default async function Home() {
             </p>
           </div>
           
-          <LabsClient initialPlaylists={topPlaylists} isAdmin={isAdmin} isLabs={false} />
+          <LabsClient initialPlaylists={topPlaylists} isAdmin={isAdmin} isLabs={false} isSignedIn={isSignedIn} />
           
           <div className="mt-12 text-center">
             <Button asChild size="lg" className="bg-dentsu hover:bg-dentsu/90 text-white font-semibold">

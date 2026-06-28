@@ -3,9 +3,9 @@ import { adminSeedPodcast } from '../app/actions/admin';
 import 'dotenv/config'; // Make sure to load env vars if running standalone
 
 async function fetchRephonicTopPodcasts() {
-  console.log("Fetching top Indian podcasts from Rephonic...");
+  console.log("Fetching top Indian podcasts from Rephonic YouTube charts...");
   try {
-    const res = await fetch("https://rephonic.com/charts/apple/in/all");
+    const res = await fetch("https://rephonic.com/charts/youtube/india/popular-podcasts");
     if (!res.ok) {
       throw new Error(`Failed to fetch Rephonic charts: ${res.statusText}`);
     }
@@ -30,7 +30,7 @@ async function fetchRephonicTopPodcasts() {
     }
     
     // Seed them by searching YouTube for playlists
-    for (const name of podcastNames.slice(0, 10)) { // Limit to 10 for safety/rate limits
+    for (const name of podcastNames.slice(0, 50)) { // Limited to 50 to conserve YouTube Data API quota (Search is expensive)
       console.log(`\nSearching YouTube for: ${name}`);
       const searchRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=playlist&q=${encodeURIComponent(name + ' podcast')}&maxResults=1&key=${apiKey}`);
       

@@ -38,11 +38,9 @@ export function NewShowsCarousel({ podcasts }: { podcasts: any[] }) {
             <CarouselItem key={podcast.id} className="pl-4 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
               <Link href={`/dashboard/podcasts/${podcast.id}`}>
                 <div className="group relative aspect-[4/5] rounded-xl overflow-hidden border border-border shadow-md transition-all hover:scale-105 hover:shadow-xl cursor-pointer">
-                  <Image 
+                  <img 
                     src={podcast.thumbnail_url || 'https://via.placeholder.com/300x400?text=Cover+Art'} 
                     alt={podcast.show_name} 
-                    fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 20vw"
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>

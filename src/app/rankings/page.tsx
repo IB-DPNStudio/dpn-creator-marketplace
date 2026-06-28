@@ -11,6 +11,7 @@ export default async function RankingsPage() {
   const supabase = await createClient();
   const { data: { session } } = await supabase.auth.getSession();
   const isAdmin = session?.user?.email === 'studio@ideabrews.com';
+  const isSignedIn = !!session?.user;
   
   // Fetch all approved playlists
   const validPlaylists = await getLabsPlaylists(["seeded", "verified", "approved_partner", "featured_partner"]);
@@ -46,7 +47,7 @@ export default async function RankingsPage() {
 
       {/* Main Rankings Area */}
       <div className="container mx-auto px-4 max-w-7xl mt-12">
-        <LabsClient initialPlaylists={validPlaylists} isAdmin={isAdmin} isLabs={false} />
+        <LabsClient initialPlaylists={validPlaylists} isAdmin={isAdmin} isLabs={false} isSignedIn={isSignedIn} />
       </div>
     </div>
   );

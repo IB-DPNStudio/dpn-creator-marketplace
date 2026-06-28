@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PODCAST_GENRES } from "@/lib/constants";
 
-export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false }: { initialPlaylists: any[], isAdmin: boolean, isLabs?: boolean }) {
+export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, isSignedIn = false }: { initialPlaylists: any[], isAdmin: boolean, isLabs?: boolean, isSignedIn?: boolean }) {
   const [playlists, setPlaylists] = useState(initialPlaylists);
   const [loading, setLoading] = useState(false);
   
@@ -110,7 +110,7 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false }
           </div>
         </div>
         
-        <div className="w-full overflow-hidden rounded-2xl border border-border bg-card shadow-xl">
+        <div className="w-full overflow-hidden rounded-2xl border border-border bg-card shadow-xl relative">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -144,12 +144,35 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false }
                     </td>
                   </tr>
                 ) : (
-                  sortedPlaylists.map((p, idx) => (
-                    <PlaylistTableRow key={p.playlist_id || idx} rank={p.displayRank} p={p} handleDelete={handleDelete} isAdmin={isAdmin} />
-                  ))
+                  sortedPlaylists.map((p, idx) => {
+                    const isBlurred = !isSignedIn && !isLabs && idx >= 10;
+                    return (
+                      <PlaylistTableRow 
+                        key={p.playlist_id || idx} 
+                        rank={p.displayRank} 
+                        p={p} 
+                        handleDelete={handleDelete} 
+                        isAdmin={isAdmin} 
+                        isBlurred={isBlurred}
+                      />
+                    );
+                  })
                 )}
               </tbody>
             </table>
+            
+            {/* CTA Overlay for non-signed in users */}
+            {!isSignedIn && !isLabs && sortedPlaylists.length > 10 && (
+              <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-background via-background/90 to-transparent flex flex-col items-center justify-end pb-8 z-10">
+                <h3 className="text-xl font-bold font-heading mb-2 text-foreground drop-shadow-sm">Want to see the rest of the Top {sortedPlaylists.length}?</h3>
+                <p className="text-muted-foreground mb-4 max-w-md text-center text-sm font-medium">
+                  Join the DPN network to view the complete power rankings and discover hidden gems across all categories.
+                </p>
+                <Button onClick={() => window.location.href = '/login'} className="bg-dentsu hover:bg-dentsu/90 text-white shadow-lg">
+                  Sign In / Apply Now
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -157,7 +180,7 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false }
   );
 }
 
-function PlaylistTableRow({ rank, p, handleDelete, isAdmin }: { rank: number, p: any, handleDelete: (id: string) => void, isAdmin: boolean }) {
+function PlaylistTableRow({ rank, p, handleDelete, isAdmin, isBlurred = false }: { rank: number, p: any, handleDelete: (id: string) => void, isAdmin: boolean, isBlurred?: boolean }) {
   const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [videos, setVideos] = useState<any[]>([]);
@@ -173,6 +196,10 @@ function PlaylistTableRow({ rank, p, handleDelete, isAdmin }: { rank: number, p:
   };
 
   const toggleExpand = async () => {
+    if (isBlurred) {
+      window.location.href = '/login';
+      return;
+    }
     if (!expanded && !hasFetched) {
       setLoading(true);
       const res = await fetchPlaylistSampleVideos(p.playlist_id);
@@ -187,7 +214,7 @@ function PlaylistTableRow({ rank, p, handleDelete, isAdmin }: { rank: number, p:
 
   return (
     <>
-      <tr className={`transition-colors group hover:bg-muted/30 cursor-pointer ${expanded ? 'bg-muted/10' : 'bg-card'}`} onClick={toggleExpand}>
+      <tr className={`transition-colors group hover:bg-muted/30 ${isBlurred ? 'cursor-pointer opacity-40 blur-[4px] select-none' : 'cursor-pointer'} ${expanded ? 'bg-muted/10' : 'bg-card'}`} onClick={toggleExpand}>
         <td className="p-4 text-center border-r border-border/50">
           <div className="flex flex-col items-center justify-center gap-2">
             <div className="flex items-center gap-2">
