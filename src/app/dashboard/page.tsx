@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server";
+import { createClient, createAdminClient } from "@/utils/supabase/server";
 import { TrendingUp } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -9,11 +9,11 @@ export default async function DashboardPage({
 }: {
   searchParams: Promise<{ q?: string; genre?: string; lang?: string }>;
 }) {
-  const supabase = await createClient();
+  const adminClient = createAdminClient();
   const resolvedSearchParams = await searchParams;
 
   // Fetch active podcasts to extract dynamic genres and languages
-  const { data: allFiltersData } = await supabase
+  const { data: allFiltersData } = await adminClient
     .from("playlist_podcasts")
     .select("genre, primary_language")
     .in("status", ["seeded", "verified", "approved_partner", "featured_partner"]);
@@ -27,7 +27,7 @@ export default async function DashboardPage({
   ).sort() as string[];
 
   // Dynamically build filtering query to run on Supabase (optimizing columns fetched)
-  let query = supabase
+  let query = adminClient
     .from("playlist_podcasts")
     .select("id, show_name, genre, primary_language, average_views_per_episode, final_score, thumbnail_url, status, description")
     .in("status", ["seeded", "verified", "approved_partner", "featured_partner"])

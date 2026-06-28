@@ -29,7 +29,7 @@ export default async function AdminPodcastsPage() {
   // Fetch approved/featured playlists using adminClient
   const { data: podcasts } = await adminClient
     .from("playlist_podcasts")
-    .select("*, profiles(email)")
+    .select("*")
     .in("status", ["seeded", "verified", "approved_partner", "featured_partner"])
     .order("final_score", { ascending: false });
 
