@@ -36,30 +36,33 @@ export function NewShowsCarousel({ podcasts }: { podcasts: any[] }) {
           {podcasts.map((podcast) => (
             <CarouselItem key={podcast.id} className="pl-4 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
               <Link href={`/dashboard/podcasts/${podcast.id}`}>
-                <div className="group relative aspect-square rounded-full overflow-hidden border-4 border-border shadow-md transition-all hover:scale-105 hover:shadow-xl hover:border-dentsu cursor-pointer">
-                  <img 
-                    src={podcast.channel_thumbnail_url || podcast.thumbnail_url || 'https://via.placeholder.com/300?text=DP'} 
-                    alt={podcast.show_name} 
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  
-                  <div className="absolute inset-0 flex flex-col items-center justify-end p-4 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <span className="bg-dentsu text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full mb-1">
+                <div className="flex flex-col items-center space-y-3 group cursor-pointer">
+                  {/* Circular Avatar */}
+                  <div className="relative w-40 h-40 rounded-full overflow-hidden border-4 border-border shadow-md transition-all duration-300 group-hover:scale-105 group-hover:shadow-xl group-hover:border-dentsu">
+                    <img 
+                      src={podcast.channel_thumbnail_url || podcast.thumbnail_url || 'https://via.placeholder.com/300?text=DP'} 
+                      alt={podcast.show_name} 
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                    {/* Tiny 'New' Badge inside circle */}
+                    <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-dentsu text-white text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-md z-10 opacity-90">
                       New
-                    </span>
-                    <h3 className="text-white font-bold text-xs leading-tight line-clamp-2 shadow-sm mb-1">
+                    </div>
+                  </div>
+                  {/* Permanent Text Below */}
+                  <div className="text-center px-1 w-full">
+                    <h3 className="font-heading text-xs font-bold text-foreground leading-tight line-clamp-1 transition-colors group-hover:text-dentsu">
                       {podcast.show_name}
                     </h3>
-                    {podcast.subscriber_count > 0 && (
-                      <span className="text-gray-300 text-[10px] font-semibold tracking-wide">
-                        {podcast.subscriber_count >= 1000000 
-                          ? (podcast.subscriber_count / 1000000).toFixed(1) + 'M' 
-                          : podcast.subscriber_count >= 1000 
-                            ? (podcast.subscriber_count / 1000).toFixed(0) + 'k' 
-                            : podcast.subscriber_count} subs
-                      </span>
-                    )}
+                    <span className="text-muted-foreground text-[10px] font-bold tracking-wide mt-1 block">
+                      {podcast.subscriber_count > 0 
+                        ? (podcast.subscriber_count >= 1000000 
+                            ? (podcast.subscriber_count / 1000000).toFixed(1) + 'M' 
+                            : podcast.subscriber_count >= 1000 
+                              ? (podcast.subscriber_count / 1000).toFixed(0) + 'k' 
+                              : podcast.subscriber_count) + ' subscribers'
+                        : '-- subscribers'}
+                    </span>
                   </div>
                 </div>
               </Link>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { deleteLabsPlaylist, fetchPlaylistSampleVideos, updateLabsPlaylistGenre, updateLabsPlaylistLanguage, addOrUpdatePlaylistRank, getLabsPlaylists } from "@/app/actions/labs";
+import { deleteLabsPlaylist, fetchPlaylistSampleVideos, updateLabsPlaylistGenre, updateLabsPlaylistLanguage, addOrUpdatePlaylistRank, getLabsPlaylists, updateLabsPlaylistBoost } from "@/app/actions/labs";
 import { Award, Trash2, ChevronDown, ChevronUp, Search, TrendingUp, ArrowUpDown, Eye, Heart, MessageSquare } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,8 +16,6 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
   const [playlistUrl, setPlaylistUrl] = useState("");
   const [customTitle, setCustomTitle] = useState("");
   const [customDescription, setCustomDescription] = useState("");
-  const [manualBoost, setManualBoost] = useState("0");
-  const [manualPenalty, setManualPenalty] = useState("0");
   const [overrideLanguage, setOverrideLanguage] = useState("");
   const [overrideGenre, setOverrideGenre] = useState("");
   const [overrideCountry, setOverrideCountry] = useState("");
@@ -33,8 +31,6 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
         playlistUrlOrId: playlistUrl,
         title: customTitle || undefined,
         description: customDescription || undefined,
-        manualBoost,
-        manualPenalty,
         language: overrideLanguage || undefined,
         genre: overrideGenre || undefined,
         country: overrideCountry || undefined,
@@ -50,8 +46,6 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
         setPlaylistUrl("");
         setCustomTitle("");
         setCustomDescription("");
-        setManualBoost("0");
-        setManualPenalty("0");
         setOverrideLanguage("");
         setOverrideGenre("");
         setOverrideCountry("");
@@ -195,31 +189,7 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-foreground">Manual Boost Score (0 - 100)</label>
-                  <Input 
-                    type="number"
-                    min="0"
-                    max="100"
-                    placeholder="0" 
-                    value={manualBoost}
-                    onChange={e => setManualBoost(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">Directly added to the final score.</p>
-                </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-foreground">Manual Penalty Score (0 - 100)</label>
-                  <Input 
-                    type="number"
-                    min="0"
-                    max="100"
-                    placeholder="0" 
-                    value={manualPenalty}
-                    onChange={e => setManualPenalty(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">Directly subtracted from the final score.</p>
-                </div>
 
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-foreground">Genre Override</label>
@@ -369,6 +339,9 @@ function PlaylistTableRow({ rank, p, handleDelete, isAdmin, isBlurred = false, o
   const [loading, setLoading] = useState(false);
   const [videos, setVideos] = useState<any[]>([]);
   const [hasFetched, setHasFetched] = useState(false);
+  const [boostVal, setBoostVal] = useState(p.manual_boost?.toString() || "0");
+  const [penaltyVal, setPenaltyVal] = useState(p.manual_penalty?.toString() || "0");
+  const [saveLoading, setSaveLoading] = useState(false);
 
   const decodeHTML = (html: string) => {
     if (!html) return '';
@@ -610,6 +583,60 @@ function PlaylistTableRow({ rank, p, handleDelete, isAdmin, isBlurred = false, o
                         "No description available for this playlist."
                       )}
                     </p>
+
+                    {isAdmin && (
+                      <div className="mt-4 p-4 border border-border rounded-xl bg-background/50 flex flex-col gap-3 max-w-sm">
+                        <h5 className="font-bold text-xs text-foreground uppercase tracking-wider">Manual Adjustment (Admin)</h5>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <span className="text-[10px] text-muted-foreground uppercase tracking-wider block">Boost (0-100)</span>
+                            <input 
+                              type="number"
+                              min="0"
+                              max="100"
+                              className="text-xs px-2.5 py-1.5 rounded border border-input bg-background w-full focus:outline-none focus:ring-1 focus:ring-ring text-foreground font-mono"
+                              value={boostVal}
+                              onChange={e => setBoostVal(e.target.value)}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <span className="text-[10px] text-muted-foreground uppercase tracking-wider block">Penalty (0-100)</span>
+                            <input 
+                              type="number"
+                              min="0"
+                              max="100"
+                              className="text-xs px-2.5 py-1.5 rounded border border-input bg-background w-full focus:outline-none focus:ring-1 focus:ring-ring text-foreground font-mono"
+                              value={penaltyVal}
+                              onChange={e => setPenaltyVal(e.target.value)}
+                            />
+                          </div>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          className="bg-dentsu hover:bg-dentsu/90 text-white font-bold text-xs h-8 mt-1"
+                          disabled={saveLoading}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            setSaveLoading(true);
+                            try {
+                              const res = await updateLabsPlaylistBoost(p.playlist_id, parseFloat(boostVal || "0"), parseFloat(penaltyVal || "0"));
+                              if (res.success) {
+                                alert("Manual adjustments successfully saved!");
+                                window.location.reload();
+                              } else {
+                                alert(res.error || "Failed to save adjustments");
+                              }
+                            } catch (err: any) {
+                              alert(err.message);
+                            } finally {
+                              setSaveLoading(false);
+                            }
+                          }}
+                        >
+                          {saveLoading ? "Saving..." : "Save Adjustments"}
+                        </Button>
+                      </div>
+                    )}
                   </div>
                   <div className="flex-shrink-0 grid grid-cols-2 gap-4 h-fit border border-border rounded-xl p-4 bg-background/50">
                     <div className="flex flex-col gap-1">

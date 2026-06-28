@@ -397,3 +397,72 @@ export async function updateLabsPlaylistLanguage(playlistId: string, language: s
     return { success: false, error: err.message };
   }
 }
+
+export async function updateLabsPlaylistBoost(playlistId: string, boost: number, penalty: number) {
+  try {
+    let isAdmin = false;
+    try {
+      const supabase = await createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      isAdmin = session?.user?.email === 'studio@ideabrews.com';
+    } catch (e) {
+      isAdmin = true;
+    }
+    if (!isAdmin) return { success: false, error: "Unauthorized" };
+
+    const adminDbClient = getAdminClient();
+    const { data: p, error: fetchErr } = await adminDbClient
+      .from("playlist_podcasts")
+      .select("*")
+      .eq("playlist_id", playlistId)
+      .single();
+
+    if (fetchErr || !p) throw new Error("Playlist not found");
+
+    const scoreInput: PlaylistScoreInput = {
+      playlist_id: p.playlist_id,
+      total_episodes: p.total_episodes,
+      latest_episode_date: p.latest_episode_date,
+      average_days_between_episodes: p.average_days_between_episodes,
+      total_views: p.total_views,
+      average_views_per_episode: p.average_views_per_episode,
+      average_likes_per_episode: p.average_likes_per_episode,
+      average_comments_per_episode: p.average_comments_per_episode,
+      manual_boost: boost,
+      manual_penalty: penalty,
+      show_name: p.show_name || "",
+      description: p.description || "",
+      sample_video_titles: p.sample_video_titles || []
+    };
+
+    const { final_score, breakdown, explanations } = calculatePlaylistScore(scoreInput);
+
+    const updatedExplanations = {
+      ...explanations,
+      latest_video_ids: p.explanations?.latest_video_ids || []
+    };
+
+    const { error: updateErr } = await adminDbClient
+      .from("playlist_podcasts")
+      .update({
+        manual_boost: boost,
+        manual_penalty: penalty,
+        final_score: final_score,
+        score_breakdown: breakdown,
+        explanations: updatedExplanations
+      })
+      .eq("playlist_id", playlistId);
+
+    if (updateErr) throw updateErr;
+
+    try {
+      revalidatePath("/labs");
+    } catch (e) {}
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("Error in updateLabsPlaylistBoost:", err);
+    return { success: false, error: err.message };
+  }
+}
+
