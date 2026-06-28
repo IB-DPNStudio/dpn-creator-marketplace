@@ -4,19 +4,15 @@ import * as dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
 
 async function ingestManual() {
-  const urls = [
-    "https://www.youtube.com/playlist?list=PLFBfr_L53wOAXg0owed8Kf2WJmbTgxB56",
-    "https://www.youtube.com/playlist?list=PL9uK6jbdzfVc7wNQmyixrMpZNPMHMgXIc",
-    "https://www.youtube.com/playlist?list=PL9uK6jbdzfVfqaEhdY3wQBpcQndKNSUgj",
-    "https://www.youtube.com/playlist?list=PL9uK6jbdzfVeV-l6Rd5JwczjDt7_2Ct5R",
-    "https://www.youtube.com/playlist?list=PLpSN4vP31-Ku10h9c8jrTjSRFbFdQ8TR6",
-    "https://www.youtube.com/playlist?list=PLE0Jo6NF_JYO5-phess8GKafKMtPv3tfZ",
-    "https://www.youtube.com/playlist?list=PLa6DgTttATAc0hftp0aZtUvCgVSKO8hbx",
-    "https://www.youtube.com/playlist?list=PL9uK6jbdzfVfBzNfitRmYaCXCyq9TaY8q",
-    "https://www.youtube.com/playlist?list=PLW8nwheTMPtHTXNBM9ajmkZgCz8xYogE2"
-  ];
-
   const adminDbClient = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+  const { data: playlists, error } = await adminDbClient.from("playlist_podcasts").select("playlist_id, show_name").eq("is_included", true).order("final_score", { ascending: false }).limit(5);
+  if (error) {
+    console.error("Failed to fetch playlists:", error);
+    return;
+  }
+  
+  const urls = playlists.map(p => p.playlist_id);
+  console.log("Top 5 Playlists to re-calculate:", playlists.map(p => p.show_name).join(", "));
 
   for (const url of urls) {
     console.log(`\nIngesting: ${url}`);

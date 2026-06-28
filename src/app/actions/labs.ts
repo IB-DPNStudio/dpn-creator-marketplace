@@ -198,6 +198,13 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
     };
 
     const { final_score, breakdown, explanations } = calculatePlaylistScore(scoreInput);
+    
+    // Inject latest 5 video IDs into explanations so frontend can fetch them instantly without playlist pagination
+    const latestVideoIds = allPlaylistItems.slice(0, 5).map((i: any) => i.contentDetails?.videoId).filter(Boolean);
+    const updatedExplanations = {
+      ...explanations,
+      latest_video_ids: latestVideoIds
+    };
 
     // 4. Upsert DB
     const { error } = await adminDbClient
@@ -224,12 +231,16 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
         notes: inputData.notes || '',
         final_score: final_score,
         score_breakdown: breakdown,
-        explanations: explanations
+        explanations: updatedExplanations
       }, { onConflict: 'playlist_id' });
 
     if (error) throw error;
 
-    revalidatePath("/labs");
+    try {
+      revalidatePath("/labs");
+    } catch (e) {
+      // Ignore static generation store missing error during ingestion scripts
+    }
     return { success: true };
   } catch (err: any) {
     console.error("Error in addOrUpdatePlaylistRank:", err);
@@ -267,41 +278,47 @@ export async function fetchPlaylistSampleVideos(playlistId: string) {
     const apiKey = process.env.YOUTUBE_API_KEY;
     if (!apiKey) throw new Error("Missing YouTube API Key");
 
-    const itemsRes = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${playlistId}&maxResults=5&key=${apiKey}`);
-    const itemsData = await itemsRes.json();
-
-    if (!itemsData.items) {
-      return { success: true, videos: [] };
+    const adminDbClient = getAdminClient();
+    const { data } = await adminDbClient.from("playlist_podcasts").select("explanations").eq("playlist_id", playlistId).single();
+    
+    let videoIdsStr = "";
+    
+    // Check if we already computed latest_video_ids during ingestion
+    if (data?.explanations?.latest_video_ids && data.explanations.latest_video_ids.length > 0) {
+      videoIdsStr = data.explanations.latest_video_ids.join(',');
+    } else {
+      // Fallback: fetch playlist items (will be oldest if not reverse chronological)
+      const itemsRes = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${playlistId}&maxResults=5&key=${apiKey}`);
+      const itemsData = await itemsRes.json();
+      
+      if (!itemsData.items || itemsData.items.length === 0) {
+        return { success: true, videos: [] };
+      }
+      videoIdsStr = itemsData.items.map((item: any) => item.contentDetails.videoId).join(',');
     }
 
-    const videos = itemsData.items.map((item: any) => ({
-      title: item.snippet.title,
-      videoId: item.contentDetails.videoId,
-      thumbnail: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url,
-      publishedAt: item.snippet.publishedAt,
-      views: 0,
-      likes: 0,
-      comments: 0
-    }));
-
-    if (videos.length > 0) {
-      const videoIds = videos.map((v: any) => v.videoId).join(',');
-      const vRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${videoIds}&key=${apiKey}`);
+    if (videoIdsStr) {
+      const vRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${videoIdsStr}&key=${apiKey}`);
       const vData = await vRes.json();
       
       if (vData.items) {
-        vData.items.forEach((vStat: any) => {
-          const v = videos.find((video: any) => video.videoId === vStat.id);
-          if (v) {
-            v.views = parseInt(vStat.statistics?.viewCount || '0');
-            v.likes = parseInt(vStat.statistics?.likeCount || '0');
-            v.comments = parseInt(vStat.statistics?.commentCount || '0');
-          }
-        });
+        // Sort them by published date descending to ensure newest first
+        const sortedItems = vData.items.sort((a: any, b: any) => new Date(b.snippet.publishedAt).getTime() - new Date(a.snippet.publishedAt).getTime());
+        
+        const videos = sortedItems.map((vStat: any) => ({
+          title: vStat.snippet.title,
+          videoId: vStat.id,
+          thumbnail: vStat.snippet.thumbnails?.maxres?.url || vStat.snippet.thumbnails?.standard?.url || vStat.snippet.thumbnails?.high?.url || vStat.snippet.thumbnails?.medium?.url || vStat.snippet.thumbnails?.default?.url,
+          publishedAt: vStat.snippet.publishedAt,
+          views: parseInt(vStat.statistics?.viewCount || '0'),
+          likes: parseInt(vStat.statistics?.likeCount || '0'),
+          comments: parseInt(vStat.statistics?.commentCount || '0')
+        }));
+        return { success: true, videos };
       }
     }
-
-    return { success: true, videos };
+    
+    return { success: true, videos: [] };
   } catch (err: any) {
     console.error("Error fetching sample videos:", err);
     return { success: false, error: err.message };
