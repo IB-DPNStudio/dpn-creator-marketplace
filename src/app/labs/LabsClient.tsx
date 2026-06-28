@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { deleteLabsPlaylist, fetchPlaylistSampleVideos, updateLabsPlaylistGenre, updateLabsPlaylistLanguage } from "@/app/actions/labs";
+import { deleteLabsPlaylist, fetchPlaylistSampleVideos, updateLabsPlaylistGenre, updateLabsPlaylistLanguage, addOrUpdatePlaylistRank, getLabsPlaylists } from "@/app/actions/labs";
 import { Award, Trash2, ChevronDown, ChevronUp, Search, TrendingUp, ArrowUpDown, Eye, Heart, MessageSquare } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,62 @@ import { PODCAST_GENRES } from "@/lib/constants";
 export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, isSignedIn = false }: { initialPlaylists: any[], isAdmin: boolean, isLabs?: boolean, isSignedIn?: boolean }) {
   const [playlists, setPlaylists] = useState(initialPlaylists);
   const [loading, setLoading] = useState(false);
+
+  // White-Glove Onboarding & Boost Panel states
+  const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
+  const [playlistUrl, setPlaylistUrl] = useState("");
+  const [customTitle, setCustomTitle] = useState("");
+  const [customDescription, setCustomDescription] = useState("");
+  const [manualBoost, setManualBoost] = useState("0");
+  const [manualPenalty, setManualPenalty] = useState("0");
+  const [overrideLanguage, setOverrideLanguage] = useState("");
+  const [overrideGenre, setOverrideGenre] = useState("");
+  const [overrideCountry, setOverrideCountry] = useState("");
+  const [isIncluded, setIsIncluded] = useState(true);
+  const [ingestLoading, setIngestLoading] = useState(false);
+
+  const handleIngest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!playlistUrl) return alert("Please enter a playlist URL or ID");
+    setIngestLoading(true);
+    try {
+      const res = await addOrUpdatePlaylistRank({
+        playlistUrlOrId: playlistUrl,
+        title: customTitle || undefined,
+        description: customDescription || undefined,
+        manualBoost,
+        manualPenalty,
+        language: overrideLanguage || undefined,
+        genre: overrideGenre || undefined,
+        country: overrideCountry || undefined,
+        isIncluded
+      });
+      
+      if (res.success) {
+        alert("Playlist successfully processed!");
+        // Refresh local playlist state
+        const updated = await getLabsPlaylists();
+        setPlaylists(updated);
+        // Reset form
+        setPlaylistUrl("");
+        setCustomTitle("");
+        setCustomDescription("");
+        setManualBoost("0");
+        setManualPenalty("0");
+        setOverrideLanguage("");
+        setOverrideGenre("");
+        setOverrideCountry("");
+        setIsIncluded(true);
+        setIsAdminPanelOpen(false);
+      } else {
+        alert(`Failed to ingest playlist: ${res.error}`);
+      }
+    } catch (err: any) {
+      alert(`Error: ${err.message}`);
+    } finally {
+      setIngestLoading(false);
+    }
+  };
   
   const [searchTerm, setSearchTerm] = useState("");
   const [sortColumn, setSortColumn] = useState<string>("final_score");
@@ -94,6 +150,131 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
 
       <div className="max-w-7xl mx-auto py-12 px-4 md:px-8 flex flex-col gap-6">
         
+        {isAdmin && (
+          <div className="bg-card border border-border rounded-xl p-6 shadow-md">
+            <div className="flex items-center justify-between cursor-pointer" onClick={() => setIsAdminPanelOpen(!isAdminPanelOpen)}>
+              <h2 className="font-heading text-lg font-bold flex items-center text-foreground gap-2">
+                <Award className="w-5 h-5 text-dentsu" />
+                White-Glove Onboarding & Boost Controls
+              </h2>
+              <Button variant="ghost" size="sm">
+                {isAdminPanelOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </Button>
+            </div>
+            
+            {isAdminPanelOpen && (
+              <form onSubmit={handleIngest} className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-border pt-4">
+                <div className="space-y-2 col-span-1 md:col-span-2">
+                  <label className="text-sm font-semibold text-foreground">YouTube Playlist URL or ID *</label>
+                  <Input 
+                    placeholder="https://www.youtube.com/playlist?list=..." 
+                    value={playlistUrl}
+                    onChange={e => setPlaylistUrl(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-foreground">Custom Title (Optional)</label>
+                  <Input 
+                    placeholder="Override show name" 
+                    value={customTitle}
+                    onChange={e => setCustomTitle(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-foreground">Custom Description (Optional)</label>
+                  <Input 
+                    placeholder="Override description" 
+                    value={customDescription}
+                    onChange={e => setCustomDescription(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-foreground">Manual Boost Score (0 - 100)</label>
+                  <Input 
+                    type="number"
+                    min="0"
+                    max="100"
+                    placeholder="0" 
+                    value={manualBoost}
+                    onChange={e => setManualBoost(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">Directly added to the final score.</p>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-foreground">Manual Penalty Score (0 - 100)</label>
+                  <Input 
+                    type="number"
+                    min="0"
+                    max="100"
+                    placeholder="0" 
+                    value={manualPenalty}
+                    onChange={e => setManualPenalty(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">Directly subtracted from the final score.</p>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-foreground">Genre Override</label>
+                  <select 
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring text-foreground"
+                    value={overrideGenre}
+                    onChange={e => setOverrideGenre(e.target.value)}
+                  >
+                    <option value="">Detect automatically</option>
+                    {PODCAST_GENRES.map(g => <option key={g} value={g}>{g}</option>)}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-foreground">Language Override</label>
+                  <Input 
+                    placeholder="e.g. English, Hindi, Tamil" 
+                    value={overrideLanguage}
+                    onChange={e => setOverrideLanguage(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-foreground">Country Override</label>
+                  <Input 
+                    placeholder="e.g. India, United States" 
+                    value={overrideCountry}
+                    onChange={e => setOverrideCountry(e.target.value)}
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2 pt-8">
+                  <input 
+                    type="checkbox"
+                    id="isIncluded"
+                    className="h-4 w-4 rounded border-gray-300 text-dentsu focus:ring-dentsu"
+                    checked={isIncluded}
+                    onChange={e => setIsIncluded(e.target.checked)}
+                  />
+                  <label htmlFor="isIncluded" className="text-sm font-semibold text-foreground">
+                    Include in Ranker list
+                  </label>
+                </div>
+
+                <div className="col-span-1 md:col-span-2 flex justify-end gap-2 pt-4 border-t border-border mt-2">
+                  <Button 
+                    type="submit" 
+                    className="bg-dentsu hover:bg-dentsu/90 text-white font-bold"
+                    disabled={ingestLoading}
+                  >
+                    {ingestLoading ? "Processing YouTube Data..." : "Onboard & Recalculate"}
+                  </Button>
+                </div>
+              </form>
+            )}
+          </div>
+        )}
+
         {/* Filters Bar */}
         <div className="flex flex-col md:flex-row gap-4 mb-4 bg-card border border-border p-4 rounded-xl shadow-sm">
           <div className="relative flex-1">

@@ -5,7 +5,7 @@ dotenv.config({ path: '.env.local' });
 
 async function ingestManual() {
   const adminDbClient = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
-  const { data: playlists, error } = await adminDbClient.from("playlist_podcasts").select("playlist_id, show_name").eq("is_included", true).order("final_score", { ascending: false }).limit(5);
+  const { data: playlists, error } = await adminDbClient.from("playlist_podcasts").select("playlist_id, show_name").eq("is_included", true).order("final_score", { ascending: false }).limit(20);
   if (error) {
     console.error("Failed to fetch playlists:", error);
     return;

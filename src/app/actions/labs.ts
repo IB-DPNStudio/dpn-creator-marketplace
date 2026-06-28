@@ -58,6 +58,7 @@ export async function getLabsPlaylists(statusIn?: string[]) {
   const channelIds = [...new Set(filteredData.map(p => p.channel_id).filter(Boolean))];
   let channelMap = new Map();
   let channelDescMap = new Map();
+  let channelThumbMap = new Map();
   
   if (channelIds.length > 0) {
     // Chunk the requests to avoid URL length limits or PostgREST constraints
@@ -66,7 +67,7 @@ export async function getLabsPlaylists(statusIn?: string[]) {
       const chunk = channelIds.slice(i, i + chunkSize);
       const { data: podData } = await adminDbClient
         .from("podcasts")
-        .select("channel_id, show_name, description")
+        .select("channel_id, show_name, description, thumbnail_url")
         .in("channel_id", chunk);
         
       if (podData) {
@@ -74,6 +75,7 @@ export async function getLabsPlaylists(statusIn?: string[]) {
           if (p.channel_id) {
             if (p.show_name) channelMap.set(p.channel_id, p.show_name);
             if (p.description) channelDescMap.set(p.channel_id, p.description);
+            if (p.thumbnail_url) channelThumbMap.set(p.channel_id, p.thumbnail_url);
           }
         });
       }
@@ -83,7 +85,8 @@ export async function getLabsPlaylists(statusIn?: string[]) {
   return filteredData.map(p => ({
     ...p,
     channel_name: channelMap.get(p.channel_id) || "YouTube Channel",
-    channel_description: channelDescMap.get(p.channel_id) || ""
+    channel_description: channelDescMap.get(p.channel_id) || "",
+    channel_thumbnail_url: channelThumbMap.get(p.channel_id) || null
   }));
 }
 

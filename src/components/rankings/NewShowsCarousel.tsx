@@ -36,31 +36,21 @@ export function NewShowsCarousel({ podcasts }: { podcasts: any[] }) {
           {podcasts.map((podcast) => (
             <CarouselItem key={podcast.id} className="pl-4 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
               <Link href={`/dashboard/podcasts/${podcast.id}`}>
-                <div className="group relative aspect-[4/5] rounded-xl overflow-hidden border border-border shadow-md transition-all hover:scale-105 hover:shadow-xl cursor-pointer">
+                <div className="group relative aspect-square rounded-full overflow-hidden border-4 border-border shadow-md transition-all hover:scale-105 hover:shadow-xl hover:border-dentsu cursor-pointer">
                   <img 
-                    src={podcast.thumbnail_url || 'https://via.placeholder.com/300x400?text=Cover+Art'} 
+                    src={podcast.channel_thumbnail_url || podcast.thumbnail_url || 'https://via.placeholder.com/300?text=DP'} 
                     alt={podcast.show_name} 
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-100"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   
-                  <div className="absolute bottom-0 left-0 p-4 w-full">
-                    <span className="bg-dentsu text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded mb-2 inline-block">
+                  <div className="absolute inset-0 flex flex-col items-center justify-end p-4 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="bg-dentsu text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full mb-1">
                       New
                     </span>
-                    <h3 className="text-white font-bold text-lg leading-tight line-clamp-2 shadow-sm">
+                    <h3 className="text-white font-bold text-xs leading-tight line-clamp-2 shadow-sm mb-2">
                       {podcast.show_name}
                     </h3>
-                    <p className="text-white/80 text-sm mt-1 flex items-center">
-                      <span className="font-mono font-medium">
-                        {podcast.average_views_per_episode > 1000000 
-                          ? (podcast.average_views_per_episode / 1000000).toFixed(1) + 'M' 
-                          : podcast.average_views_per_episode > 1000
-                            ? (podcast.average_views_per_episode / 1000).toFixed(0) + 'k'
-                            : Math.round(podcast.average_views_per_episode || 0)}
-                      </span>
-                      <span className="ml-1 text-xs uppercase tracking-wider opacity-70">Avg Views</span>
-                    </p>
                   </div>
                 </div>
               </Link>

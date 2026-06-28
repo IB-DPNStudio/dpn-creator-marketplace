@@ -29,7 +29,7 @@ export default async function DashboardPage({
   // Dynamically build filtering query to run on Supabase (optimizing columns fetched)
   let query = adminClient
     .from("playlist_podcasts")
-    .select("id, show_name, genre, primary_language, average_views_per_episode, final_score, thumbnail_url, status, description")
+    .select("id, show_name, genre, primary_language, average_views_per_episode, final_score, thumbnail_url, status, description, channel_id")
     .in("status", ["seeded", "verified", "approved_partner", "featured_partner"])
     .eq("is_included", true);
 
@@ -47,7 +47,31 @@ export default async function DashboardPage({
   }
 
   const { data: podcasts } = await query.order("final_score", { ascending: false });
-  const displayPodcasts = podcasts || [];
+  const fetchedPodcasts = podcasts || [];
+
+  // Fetch channel thumbnails to show creator faces
+  const channelIds = [...new Set(fetchedPodcasts.map(p => p.channel_id).filter(Boolean))];
+  const channelThumbMap = new Map();
+
+  if (channelIds.length > 0) {
+    const { data: podData } = await adminClient
+      .from("podcasts")
+      .select("channel_id, thumbnail_url")
+      .in("channel_id", channelIds);
+      
+    if (podData) {
+      podData.forEach(p => {
+        if (p.channel_id && p.thumbnail_url) {
+          channelThumbMap.set(p.channel_id, p.thumbnail_url);
+        }
+      });
+    }
+  }
+
+  const displayPodcasts = fetchedPodcasts.map(p => ({
+    ...p,
+    channel_thumbnail_url: channelThumbMap.get(p.channel_id) || null
+  }));
 
   return (
     <div className="space-y-8">
@@ -81,7 +105,7 @@ export default async function DashboardPage({
                       />
                       <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-background shadow-lg z-10 group-hover:scale-105 transition-transform duration-300">
                         <Image 
-                          src={podcast.thumbnail_url} 
+                          src={podcast.channel_thumbnail_url || podcast.thumbnail_url} 
                           alt={podcast.show_name} 
                           fill
                           sizes="80px"
