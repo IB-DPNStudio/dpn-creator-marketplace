@@ -48,9 +48,18 @@ export function NewShowsCarousel({ podcasts }: { podcasts: any[] }) {
                     <span className="bg-dentsu text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full mb-1">
                       New
                     </span>
-                    <h3 className="text-white font-bold text-xs leading-tight line-clamp-2 shadow-sm mb-2">
+                    <h3 className="text-white font-bold text-xs leading-tight line-clamp-2 shadow-sm mb-1">
                       {podcast.show_name}
                     </h3>
+                    {podcast.subscriber_count > 0 && (
+                      <span className="text-gray-300 text-[10px] font-semibold tracking-wide">
+                        {podcast.subscriber_count >= 1000000 
+                          ? (podcast.subscriber_count / 1000000).toFixed(1) + 'M' 
+                          : podcast.subscriber_count >= 1000 
+                            ? (podcast.subscriber_count / 1000).toFixed(0) + 'k' 
+                            : podcast.subscriber_count} subs
+                      </span>
+                    )}
                   </div>
                 </div>
               </Link>

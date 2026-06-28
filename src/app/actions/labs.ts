@@ -59,6 +59,7 @@ export async function getLabsPlaylists(statusIn?: string[]) {
   let channelMap = new Map();
   let channelDescMap = new Map();
   let channelThumbMap = new Map();
+  let channelSubMap = new Map();
   
   if (channelIds.length > 0) {
     // Chunk the requests to avoid URL length limits or PostgREST constraints
@@ -67,7 +68,7 @@ export async function getLabsPlaylists(statusIn?: string[]) {
       const chunk = channelIds.slice(i, i + chunkSize);
       const { data: podData } = await adminDbClient
         .from("podcasts")
-        .select("channel_id, show_name, description, thumbnail_url")
+        .select("channel_id, show_name, description, thumbnail_url, subscriber_count")
         .in("channel_id", chunk);
         
       if (podData) {
@@ -76,6 +77,9 @@ export async function getLabsPlaylists(statusIn?: string[]) {
             if (p.show_name) channelMap.set(p.channel_id, p.show_name);
             if (p.description) channelDescMap.set(p.channel_id, p.description);
             if (p.thumbnail_url) channelThumbMap.set(p.channel_id, p.thumbnail_url);
+            if (p.subscriber_count !== undefined && p.subscriber_count !== null) {
+              channelSubMap.set(p.channel_id, p.subscriber_count);
+            }
           }
         });
       }
@@ -86,7 +90,8 @@ export async function getLabsPlaylists(statusIn?: string[]) {
     ...p,
     channel_name: channelMap.get(p.channel_id) || "YouTube Channel",
     channel_description: channelDescMap.get(p.channel_id) || "",
-    channel_thumbnail_url: channelThumbMap.get(p.channel_id) || null
+    channel_thumbnail_url: channelThumbMap.get(p.channel_id) || null,
+    subscriber_count: channelSubMap.get(p.channel_id) || 0
   }));
 }
 

@@ -4,14 +4,15 @@ dotenv.config({ path: '.env.local' });
 
 import { calculatePlaylistScore } from "../lib/score_playlist";
 
+import { fetchPlaylistSampleVideos } from "../app/actions/labs";
+
 async function check() {
-  const adminDbClient = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
-  
-  const { data } = await adminDbClient
-    .from("playlist_podcasts")
-    .select("show_name, genre, primary_language")
-    .or("show_name.ilike.%Teen Taal%,show_name.ilike.%Nikhil Kamath%");
-    
-  console.log("Verified playlists:", data);
+  const apiKey = process.env.YOUTUBE_API_KEY;
+  const ids = ["PC1BxwiVRts", "NDvQd5Fg2wg", "e3pZ6LNkNtc", "eeRH5Cawop8", "NUKX5dMTwzo"];
+  for (const id of ids) {
+    const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,status&id=${id}&key=${apiKey}`);
+    const data = await res.json();
+    console.log(`Video ID: ${id}, exists:`, data.items?.length > 0, "status:", data.items?.[0]?.status || "Not Found");
+  }
 }
 check();
