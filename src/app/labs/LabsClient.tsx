@@ -21,9 +21,11 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
   const [overrideCountry, setOverrideCountry] = useState("");
   const [isIncluded, setIsIncluded] = useState(true);
   const [ingestLoading, setIngestLoading] = useState(false);
+  const [successResult, setSuccessResult] = useState<{ show_name: string; final_score: number; globalRank: number } | null>(null);
 
   const handleIngest = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSuccessResult(null);
     if (!playlistUrl) return alert("Please enter a playlist URL or ID");
     setIngestLoading(true);
     try {
@@ -38,11 +40,22 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
       });
       
       if (res.success) {
-        alert("Playlist successfully processed!");
         // Refresh local playlist state
         const updated = await getLabsPlaylists();
         setPlaylists(updated);
-        // Reset form
+        
+        // Calculate newly achieved global rank
+        const newlyRanked = [...updated].sort((a, b) => (b.final_score || 0) - (a.final_score || 0));
+        const index = newlyRanked.findIndex(p => p.playlist_id === res.playlist_id);
+        const rank = index >= 0 ? index + 1 : 0;
+
+        setSuccessResult({
+          show_name: res.show_name || 'Playlist',
+          final_score: res.final_score || 0,
+          globalRank: rank
+        });
+
+        // Reset form fields
         setPlaylistUrl("");
         setCustomTitle("");
         setCustomDescription("");
@@ -50,7 +63,6 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
         setOverrideGenre("");
         setOverrideCountry("");
         setIsIncluded(true);
-        setIsAdminPanelOpen(false);
       } else {
         alert(`Failed to ingest playlist: ${res.error}`);
       }
@@ -160,7 +172,26 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
             </div>
             
             {isAdminPanelOpen && (
-              <form onSubmit={handleIngest} className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-border pt-4">
+              <>
+                {successResult && (
+                  <div className="mt-4 mb-4 p-4 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900 flex flex-col gap-2 animate-in fade-in zoom-in duration-300">
+                    <h3 className="font-bold text-green-800 dark:text-green-400">Playlist Successfully Ingested!</h3>
+                    <p className="text-sm text-green-700 dark:text-green-500">
+                      <strong>{successResult.show_name}</strong> was added to the database.
+                    </p>
+                    <div className="flex items-center gap-4 mt-2">
+                      <div className="bg-white dark:bg-background px-3 py-1.5 rounded-lg shadow-sm border border-border flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Score</span>
+                        <span className="font-mono font-bold text-lg text-dentsu">{successResult.final_score.toFixed(1)}</span>
+                      </div>
+                      <div className="bg-white dark:bg-background px-3 py-1.5 rounded-lg shadow-sm border border-border flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Rank</span>
+                        <span className="font-mono font-bold text-lg">#{successResult.globalRank || '?'}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <form onSubmit={handleIngest} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2 col-span-1 md:col-span-2">
                   <label className="text-sm font-semibold text-foreground">YouTube Playlist URL or ID *</label>
                   <Input 
@@ -244,6 +275,7 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
                   </Button>
                 </div>
               </form>
+              </>
             )}
           </div>
         )}
@@ -310,7 +342,7 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
                     return (
                       <PlaylistTableRow 
                         key={p.playlist_id || idx} 
-                        rank={p.displayRank} 
+                        rank={p.globalRank} 
                         p={p} 
                         handleDelete={handleDelete} 
                         isAdmin={isAdmin} 

@@ -284,7 +284,12 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
     } catch (e) {
       // Ignore static generation store missing error during ingestion scripts
     }
-    return { success: true };
+    return { 
+      success: true,
+      playlist_id: playlistId,
+      show_name: showName,
+      final_score: final_score
+    };
   } catch (err: any) {
     console.error("Error in addOrUpdatePlaylistRank:", err);
     return { success: false, error: err.message };
