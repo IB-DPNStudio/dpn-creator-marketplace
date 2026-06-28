@@ -28,6 +28,9 @@ export default async function CreatorApplyPage({
     const result = await switchUserCategory("creator", {
       fullName: formData.get("fullName") as string,
       phone: formData.get("phone") as string,
+      managerName: formData.get("managerName") as string,
+      managerEmail: formData.get("managerEmail") as string,
+      managerPhone: formData.get("managerPhone") as string,
       showName: formData.get("showName") as string,
       description: formData.get("description") as string,
       genre: formData.get("genre") as string,
@@ -73,12 +76,28 @@ export default async function CreatorApplyPage({
               <h2 className="text-xl font-bold font-heading border-b border-border pb-2">Creator Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label htmlFor="fullName" className="text-sm font-medium">Full Name</label>
+                  <label htmlFor="fullName" className="text-sm font-medium">Full Name *</label>
                   <Input id="fullName" name="fullName" required />
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="phone" className="text-sm font-medium">Phone Number</label>
                   <Input id="phone" name="phone" type="tel" />
+                </div>
+              </div>
+              
+              <h3 className="text-lg font-bold font-heading mt-6 mb-2">Manager / Agency Details (Optional)</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <label htmlFor="managerName" className="text-sm font-medium">Manager Name</label>
+                  <Input id="managerName" name="managerName" />
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="managerEmail" className="text-sm font-medium">Manager Email</label>
+                  <Input id="managerEmail" name="managerEmail" type="email" />
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="managerPhone" className="text-sm font-medium">Manager Phone</label>
+                  <Input id="managerPhone" name="managerPhone" type="tel" />
                 </div>
               </div>
             </div>
@@ -123,8 +142,8 @@ export default async function CreatorApplyPage({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {!claimToken && (
                   <div className="space-y-2">
-                    <label htmlFor="youtubeUrl" className="text-sm font-medium">YouTube Channel URL *</label>
-                    <Input id="youtubeUrl" name="youtubeUrl" type="url" placeholder="https://youtube.com/..." required />
+                    <label htmlFor="youtubeUrl" className="text-sm font-medium">YouTube Playlist URL *</label>
+                    <Input id="youtubeUrl" name="youtubeUrl" type="url" placeholder="https://youtube.com/playlist?list=..." pattern=".*list=.*" title="Must be a valid YouTube playlist URL containing 'list='" required />
                   </div>
                 )}
                 <div className="space-y-2">

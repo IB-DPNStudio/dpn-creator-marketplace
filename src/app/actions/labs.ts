@@ -13,13 +13,19 @@ const getAdminClient = () => {
   return createSupabaseClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 };
 
-export async function getLabsPlaylists() {
+export async function getLabsPlaylists(statusIn?: string[]) {
   const adminDbClient = getAdminClient();
-  const { data, error } = await adminDbClient
+  let query = adminDbClient
     .from("playlist_podcasts")
     .select("*")
     .eq("is_included", true)
     .order("final_score", { ascending: false });
+
+  if (statusIn && statusIn.length > 0) {
+    query = query.in("status", statusIn);
+  }
+
+  const { data, error } = await query;
 
   if (error) throw error;
   

@@ -66,9 +66,12 @@ export async function adminCreateCreator(data: any) {
       }
     }
 
-    // 2. Insert podcast
+    // 2. Insert playlist
+    const playlistIdMatch = data.youtubeUrl.match(/[?&]list=([^&]+)/);
+    const playlistId = playlistIdMatch ? playlistIdMatch[1] : data.youtubeUrl;
+
     const { error: podcastErr } = await adminDbClient
-      .from("podcasts")
+      .from("playlist_podcasts")
       .insert({
         owner_id: ownerId,
         status: 'approved_partner', // Directly approved
@@ -76,11 +79,8 @@ export async function adminCreateCreator(data: any) {
         description: data.description,
         primary_language: data.language,
         genre: data.genre,
-        youtube_url: data.youtubeUrl,
-        spotify_url: data.spotifyUrl,
-        instagram_url: data.instagramUrl,
-        linkedin_url: data.linkedinUrl,
-        inventory_availability: data.inventoryAvailability || {}
+        playlist_id: playlistId,
+        is_included: true,
       });
 
     if (podcastErr) throw podcastErr;
@@ -161,7 +161,7 @@ export async function togglePodcastFeatured(id: string, currentlyFeatured: boole
     const newStatus = currentlyFeatured ? 'seeded' : 'featured_partner';
     
     const { error } = await adminDbClient
-      .from("podcasts")
+      .from("playlist_podcasts")
       .update({ status: newStatus })
       .eq("id", id);
       
@@ -184,7 +184,7 @@ export async function deletePodcast(id: string) {
     const adminDbClient = getAdminClient();
     
     const { error } = await adminDbClient
-      .from("podcasts")
+      .from("playlist_podcasts")
       .delete()
       .eq("id", id);
       
@@ -201,214 +201,65 @@ export async function deletePodcast(id: string) {
   }
 }
 
+import { addOrUpdatePlaylistRank } from "./labs";
+
 export async function adminSeedPodcast(youtubeUrl: string, creatorEmail?: string) {
   try {
     await getAdminUser();
     const adminDbClient = getAdminClient();
     
-    const apiKey = process.env.YOUTUBE_API_KEY;
-    if (!apiKey) {
-      throw new Error("Missing YouTube API Key configuration.");
-    }
-
-    let cleanUrl = youtubeUrl.trim().replace(/\/+$/, '');
+    // Call the labs function to fetch and rank the playlist
+    const res = await addOrUpdatePlaylistRank({
+      playlistUrlOrId: youtubeUrl,
+      isIncluded: true
+    });
     
-    // Remove standard YouTube subpages if present at the end
-    const subpages = ['/videos', '/shorts', '/featured', '/playlists', '/about', '/streams', '/community'];
-    for (const subpage of subpages) {
-      if (cleanUrl.toLowerCase().endsWith(subpage)) {
-        cleanUrl = cleanUrl.substring(0, cleanUrl.length - subpage.length);
-      }
-    }
-
-    // Clean query parameters from URL for display name fallback
-    let fallbackShowName = cleanUrl.split('/').pop()?.split('?')[0] || youtubeUrl;
-    let showName = fallbackShowName;
-    let description = "";
-    let coverArt = "";
-    let subscriberCount = 0;
-    let totalViews = 0;
-    let totalVideos = 0;
-    let dpnScore = 0;
-    let genre = "General";
-    let latestVideoUrl = "";
-    let latestShortUrl = "";
-    
-    let channelIdOrHandle = cleanUrl.split('/').pop()?.split('?')[0] || '';
-    if (cleanUrl.includes('/c/')) {
-      channelIdOrHandle = cleanUrl.split('/c/')[1].split('?')[0];
-    } else if (cleanUrl.includes('/user/')) {
-      channelIdOrHandle = cleanUrl.split('/user/')[1].split('?')[0];
+    if (!res.success) {
+      throw new Error(res.error || "Failed to seed playlist");
     }
     
-    let endpoint = '';
-    if (channelIdOrHandle.startsWith('UC') && channelIdOrHandle.length === 24) {
-      endpoint = `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics,topicDetails,contentDetails&id=${channelIdOrHandle}&key=${apiKey}`;
+    // Extract playlist ID from URL
+    const playlistIdMatch = youtubeUrl.match(/[?&]list=([^&]+)/);
+    const playlistId = playlistIdMatch ? playlistIdMatch[1] : youtubeUrl;
+    
+    // Update the contact email and status in playlist_podcasts
+    if (creatorEmail) {
+      const { error: updateErr } = await adminDbClient
+        .from("playlist_podcasts")
+        .update({ contact_email: creatorEmail, status: 'seeded' })
+        .eq("playlist_id", playlistId);
+        
+      if (updateErr) throw updateErr;
     } else {
-      const handle = channelIdOrHandle.startsWith('@') ? channelIdOrHandle : `@${channelIdOrHandle}`;
-      endpoint = `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics,topicDetails,contentDetails&forHandle=${encodeURIComponent(handle)}&key=${apiKey}`;
-    }
-
-    let fetchedSuccessfully = false;
-    if (endpoint) {
-      const res = await fetch(endpoint);
-      if (res.ok) {
-          const data = await res.json();
-         if (data.items && data.items.length > 0) {
-            fetchedSuccessfully = true;
-            const ch = data.items[0];
-            const channelId = ch.id;
-            showName = ch.snippet.title;
-            description = ch.snippet.description;
-            coverArt = ch.snippet.thumbnails?.high?.url || ch.snippet.thumbnails?.default?.url;
-            subscriberCount = parseInt(ch.statistics?.subscriberCount || '0');
-            totalViews = parseInt(ch.statistics?.viewCount || '0');
-            totalVideos = parseInt(ch.statistics?.videoCount || '0');
-            
-            const calc = calculateDPNScoreBreakdown(subscriberCount, totalViews, totalVideos);
-            dpnScore = calc.score;
-            
-            if (ch.topicDetails?.topicCategories?.length > 0) {
-              const topicUrl = ch.topicDetails.topicCategories[0];
-              const topicRaw = topicUrl.split('/').pop()?.replace(/_/g, ' ').replace(/\(sociology\)/g, '').trim() || 'General';
-              const lowerTopic = topicRaw.toLowerCase();
-              if (lowerTopic.includes('music')) genre = 'Music';
-              else if (lowerTopic.includes('game') || lowerTopic.includes('gaming')) genre = 'Gaming';
-              else if (lowerTopic.includes('lifestyle')) genre = 'Society & Culture';
-              else if (lowerTopic.includes('entertainment') || lowerTopic.includes('humour')) genre = 'Comedy & Entertainment';
-              else if (lowerTopic.includes('technology')) genre = 'Technology';
-              else if (lowerTopic.includes('business')) genre = 'Business & Finance';
-              else if (lowerTopic.includes('society')) genre = 'Society & Culture';
-              else if (lowerTopic.includes('sports')) genre = 'Sports';
-              else if (lowerTopic.includes('knowledge') || lowerTopic.includes('education')) genre = 'Education & Learning';
-              else if (lowerTopic.includes('health') || lowerTopic.includes('medical')) genre = 'Health & Fitness';
-              else if (lowerTopic.includes('science')) genre = 'Science';
-              else if (lowerTopic.includes('religion')) genre = 'Religion & Spirituality';
-              else if (lowerTopic.includes('travel')) genre = 'Travel';
-              else if (lowerTopic.includes('news') || lowerTopic.includes('politics')) genre = 'News & Current Affairs';
-              else genre = 'General';
-            }
-
-            // Fetch latest shorts and longs
-            try {
-              const uploadsId = ch.contentDetails?.relatedPlaylists?.uploads;
-              if (uploadsId) {
-                const pRes = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails&playlistId=${uploadsId}&maxResults=20&key=${apiKey}`);
-                const pData = await pRes.json();
-                if (pData.items && pData.items.length > 0) {
-                  const videoIds = pData.items.map((i:any) => i.contentDetails.videoId).join(',');
-                  const vRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoIds}&key=${apiKey}`);
-                  const vData = await vRes.json();
-                  
-                  if (vData.items) {
-                    const videoMap = new Map(vData.items.map((vid:any) => [vid.id, vid]));
-                    
-                    for (const pItem of pData.items) {
-                      const v = videoMap.get(pItem.contentDetails.videoId) as any;
-                      if (!v) continue;
-
-                      const durationStr = v.contentDetails?.duration || '';
-                      const title = v.snippet?.title || '';
-                      
-                      const parseDuration = (d: string) => {
-                        const match = d.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-                        if (!match) return 0;
-                        return parseInt(match[1] || '0') * 3600 + parseInt(match[2] || '0') * 60 + parseInt(match[3] || '0');
-                      };
-                      
-                      const durationSec = parseDuration(durationStr);
-                      const isShort = durationSec <= 180 || title.toLowerCase().includes('#shorts');
-                      
-                      if (isShort && !latestShortUrl) {
-                        latestShortUrl = `https://www.youtube.com/watch?v=${v.id}`;
-                      } else if (!isShort && !latestVideoUrl) {
-                        latestVideoUrl = `https://www.youtube.com/watch?v=${v.id}`;
-                      }
-                      if (latestShortUrl && latestVideoUrl) break;
-                    }
-                  }
-                }
-              }
-            } catch (err) {
-              console.error("Failed to fetch latest videos", err);
-            }
-
-            // Check for duplicates using channelId or youtubeUrl fallback
-            const { data: existingPodcasts } = await adminDbClient
-              .from("podcasts")
-              .select("id, status, owner_id, show_name, youtube_url, contact_email")
-              .or(`channel_id.eq.${channelId},youtube_url.eq.${youtubeUrl},youtube_url.eq.${cleanUrl}`);
-            
-            const existing = existingPodcasts && existingPodcasts.length > 0 ? existingPodcasts[0] : null;
-            
-            let error;
-            let podcastId = existing?.id;
-            
-            if (existing) {
-              const { error: updateErr } = await adminDbClient
-                .from("podcasts")
-                .update({
-                  show_name: showName,
-                  channel_id: channelId,
-                  contact_email: creatorEmail || existing.contact_email,
-                  description: description,
-                  cover_art_url: coverArt,
-                  thumbnail_url: coverArt,
-                  subscriber_count: subscriberCount,
-                  total_views: totalViews,
-                  total_videos: totalVideos,
-                  dpn_score: dpnScore,
-                  genre: genre,
-                  latest_video_url: latestVideoUrl,
-                  latest_short_url: latestShortUrl,
-                  updated_at: new Date().toISOString()
-                })
-                .eq("id", existing.id);
-              error = updateErr;
-            } else {
-              const { data: insertedPodcast, error: insertErr } = await adminDbClient
-                .from("podcasts")
-                .insert({
-                  status: 'seeded',
-                  youtube_url: youtubeUrl,
-                  channel_id: channelId,
-                  contact_email: creatorEmail || null,
-                  show_name: showName,
-                  description: description,
-                  cover_art_url: coverArt,
-                  thumbnail_url: coverArt,
-                  subscriber_count: subscriberCount,
-                  total_views: totalViews,
-                  total_videos: totalVideos,
-                  dpn_score: dpnScore,
-                  primary_language: 'Unknown',
-                  genre: genre,
-                  latest_video_url: latestVideoUrl,
-                  latest_short_url: latestShortUrl
-                })
-                .select()
-                .single();
-              error = insertErr;
-              if (insertedPodcast) {
-                podcastId = insertedPodcast.id;
-              }
-            }
-
-            if (error) throw error;
-         }
-      }
+      const { error: updateErr } = await adminDbClient
+        .from("playlist_podcasts")
+        .update({ status: 'seeded' })
+        .eq("playlist_id", playlistId);
+        
+      if (updateErr) throw updateErr;
     }
     
-    if (!fetchedSuccessfully) {
-      throw new Error("YouTube channel not found. Please verify the URL.");
-    }
+    // Fetch the stored record to return data
+    const { data: storedData } = await adminDbClient
+      .from("playlist_podcasts")
+      .select("final_score, genre, show_name")
+      .eq("playlist_id", playlistId)
+      .single();
     
     revalidatePath("/admin/podcasts");
     revalidatePath("/rankings");
     revalidatePath("/dashboard");
-    return { success: true, data: { dpnScore, genre, showName } };
+    
+    return { 
+      success: true, 
+      data: { 
+        dpnScore: storedData?.final_score?.toFixed(1) || "N/A", 
+        genre: storedData?.genre || "General", 
+        showName: storedData?.show_name || "Playlist" 
+      } 
+    };
   } catch(e:any) {
-    console.error("Error seeding podcast:", e);
+    console.error("Error seeding playlist:", e);
     return { success: false, error: e.message || "An unexpected error occurred." };
   }
 }
@@ -499,7 +350,7 @@ export async function updatePodcastEmail(id: string, email: string) {
     const adminDbClient = getAdminClient();
     
     const { error } = await adminDbClient
-      .from("podcasts")
+      .from("playlist_podcasts")
       .update({ 
         contact_email: email,
         claim_emails_sent: 0
@@ -522,8 +373,8 @@ export async function adminSendClaimEmail(id: string) {
     const adminDbClient = getAdminClient();
     
     const { data: podcast, error: fetchErr } = await adminDbClient
-      .from("podcasts")
-      .select("id, contact_email, show_name, cover_art_url, thumbnail_url, claim_emails_sent")
+      .from("playlist_podcasts")
+      .select("id, contact_email, show_name, thumbnail_url, claim_emails_sent")
       .eq("id", id)
       .single();
       
@@ -531,10 +382,10 @@ export async function adminSendClaimEmail(id: string) {
     if (!podcast.contact_email) throw new Error("No contact email associated with this podcast");
     
     const { sendClaimEmail } = await import('@/lib/email');
-    await sendClaimEmail(podcast.contact_email, podcast.show_name, podcast.thumbnail_url || podcast.cover_art_url || '', podcast.id);
+    await sendClaimEmail(podcast.contact_email, podcast.show_name, podcast.thumbnail_url || '', podcast.id);
     
     const { error: updateErr } = await adminDbClient
-      .from("podcasts")
+      .from("playlist_podcasts")
       .update({ 
         claim_emails_sent: (podcast.claim_emails_sent || 0) + 1,
         last_claim_email_sent_at: new Date().toISOString()
@@ -557,7 +408,7 @@ export async function unclaimPodcast(id: string) {
     const adminDbClient = getAdminClient();
     
     const { error } = await adminDbClient
-      .from("podcasts")
+      .from("playlist_podcasts")
       .update({ 
         owner_id: null
       })

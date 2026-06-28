@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PODCAST_GENRES } from "@/lib/constants";
 
-export default function LabsClient({ initialPlaylists, isAdmin }: { initialPlaylists: any[], isAdmin: boolean }) {
+export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false }: { initialPlaylists: any[], isAdmin: boolean, isLabs?: boolean }) {
   const [playlists, setPlaylists] = useState(initialPlaylists);
   const [loading, setLoading] = useState(false);
   
@@ -66,22 +66,24 @@ export default function LabsClient({ initialPlaylists, isAdmin }: { initialPlayl
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className={`min-h-screen bg-background text-foreground ${!isLabs ? 'pb-24' : ''}`}>
       {/* Header matching main site */}
-      <div className="bg-dentsu w-full py-20 px-4 md:px-8 border-b border-border shadow-2xl relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_50%_120%,rgba(255,255,255,0.8),transparent)] pointer-events-none"></div>
-        <div className="max-w-7xl mx-auto relative z-10 flex flex-col items-center text-center">
-          <span className="inline-block px-3 py-1 mb-6 text-xs font-bold uppercase tracking-widest text-white/80 bg-black/20 rounded-full backdrop-blur-sm border border-white/10">
-            Internal Alpha
-          </span>
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-heading font-black text-white tracking-tight leading-[1.1] mb-6 drop-shadow-lg">
-            Labs Ranking Engine
-          </h1>
-          <p className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto font-medium leading-relaxed drop-shadow">
-            Isolated environment testing the new playlist-based ranking logic. Changes here do not affect the main DPN Ranker.
-          </p>
+      {isLabs && (
+        <div className="bg-dentsu w-full py-20 px-4 md:px-8 border-b border-border shadow-2xl relative overflow-hidden">
+          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_50%_120%,rgba(255,255,255,0.8),transparent)] pointer-events-none"></div>
+          <div className="max-w-7xl mx-auto relative z-10 flex flex-col items-center text-center">
+            <span className="inline-block px-3 py-1 mb-6 text-xs font-bold uppercase tracking-widest text-white/80 bg-black/20 rounded-full backdrop-blur-sm border border-white/10">
+              Internal Alpha
+            </span>
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-heading font-black text-white tracking-tight leading-[1.1] mb-6 drop-shadow-lg">
+              Labs Ranking Engine
+            </h1>
+            <p className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto font-medium leading-relaxed drop-shadow">
+              Isolated environment testing the new playlist-based ranking logic. Changes here do not affect the main DPN Ranker.
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="max-w-7xl mx-auto py-12 px-4 md:px-8 flex flex-col gap-6">
         

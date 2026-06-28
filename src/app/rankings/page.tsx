@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { NewShowsCarousel } from "@/components/rankings/NewShowsCarousel";
-import { RankingsTable } from "@/components/rankings/RankingsTable";
+import LabsClient from "@/app/labs/LabsClient";
+import { getLabsPlaylists } from "@/app/actions/labs";
 import { CalendarDays } from "lucide-react";
 import { format, startOfWeek } from "date-fns";
 
@@ -9,24 +10,13 @@ export const dynamic = 'force-dynamic';
 export default async function RankingsPage() {
   const supabase = await createClient();
   const { data: { session } } = await supabase.auth.getSession();
-  const isAuthenticated = !!session;
-  const isSuperAdmin = session?.user?.email === 'studio@ideabrews.com';
+  const isAdmin = session?.user?.email === 'studio@ideabrews.com';
   
-  // Fetch all approved and seeded podcasts, ordered by score, along with their history
-  const { data: podcasts, error } = await supabase
-    .from("podcasts")
-    .select("*, podcast_history(*)")
-    .in("status", ["seeded", "verified", "approved_partner", "featured_partner"])
-    .order("dpn_score", { ascending: false });
-
-  if (error) {
-    console.error("Error fetching podcasts for rankings:", error);
-  }
-
-  const validPodcasts = podcasts || [];
+  // Fetch all approved playlists
+  const validPlaylists = await getLabsPlaylists(["seeded", "verified", "approved_partner", "featured_partner"]);
   
   // Filter new shows (featured_partner or seeded randomly to mock "new")
-  const newShows = validPodcasts.filter(p => p.status === "featured_partner" || p.subscriber_count > 500000).slice(0, 15);
+  const newShows = validPlaylists.filter(p => p.status === "featured_partner" || (p.average_views_per_episode || 0) > 100000).slice(0, 15);
   
   // Calculate the current week for the "auto-published" feel
   const currentWeekDate = format(startOfWeek(new Date(), { weekStartsOn: 1 }), "MMM do, yyyy");
@@ -56,7 +46,7 @@ export default async function RankingsPage() {
 
       {/* Main Rankings Area */}
       <div className="container mx-auto px-4 max-w-7xl mt-12">
-        <RankingsTable podcasts={validPodcasts} isAuthenticated={isAuthenticated} isSuperAdmin={isSuperAdmin} />
+        <LabsClient initialPlaylists={validPlaylists} isAdmin={isAdmin} isLabs={false} />
       </div>
     </div>
   );

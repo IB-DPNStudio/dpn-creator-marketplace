@@ -24,20 +24,21 @@ export default async function AdminPodcastsPage() {
     redirect("/dashboard");
   }
 
+  const isSuperUser = user.email === 'studio@ideabrews.com';
 
-  // Fetch approved/featured podcasts using adminClient
+  // Fetch approved/featured playlists using adminClient
   const { data: podcasts } = await adminClient
-    .from("podcasts")
+    .from("playlist_podcasts")
     .select("*, profiles(email)")
     .in("status", ["seeded", "verified", "approved_partner", "featured_partner"])
-    .order("dpn_score", { ascending: false });
+    .order("final_score", { ascending: false });
 
   return (
     <div className="space-y-8 max-w-5xl">
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold font-heading">Manage Podcasts</h1>
-          <p className="text-muted-foreground mt-2">Manage all active podcasts on the platform and set Featured status.</p>
+          <h1 className="text-3xl font-bold font-heading">Manage Playlists</h1>
+          <p className="text-muted-foreground mt-2">Manage all active playlists on the platform and set Featured status.</p>
         </div>
         <RefreshSevenDayViewsButton onRefresh={async () => {
           "use server";
@@ -50,7 +51,7 @@ export default async function AdminPodcastsPage() {
           <thead>
             <tr className="bg-muted/30 border-b border-border text-xs uppercase tracking-wider text-muted-foreground">
               <th className="p-4 font-bold w-16">Rank</th>
-              <th className="p-4 font-bold">Podcast Name</th>
+              <th className="p-4 font-bold">Playlist Name</th>
               <th className="p-4 font-bold w-48">Creator Email</th>
               <th className="p-4 font-bold">Status</th>
               <th className="p-4 font-bold text-right">Actions</th>
@@ -59,7 +60,7 @@ export default async function AdminPodcastsPage() {
           <tbody className="divide-y divide-border">
             {podcasts?.map((podcast, index) => {
               const isFeatured = podcast.status === 'featured_partner';
-              const handle = podcast.youtube_url ? podcast.youtube_url.trim().replace(/\/+$/, '').split('/').pop() : '';
+              const handle = podcast.playlist_id;
               
               return (
                 <tr key={podcast.id} className="hover:bg-muted/30 transition-colors">
@@ -68,9 +69,9 @@ export default async function AdminPodcastsPage() {
                   </td>
                   <td className="p-4 align-top pt-5">
                     <div className="font-bold text-foreground">
-                      {podcast.show_name} {handle && <span className="font-normal text-muted-foreground">({handle})</span>}
+                      {podcast.show_name}
                     </div>
-                    <div className="text-xs text-muted-foreground mt-1">{podcast.genre} • {podcast.primary_language}</div>
+                    <div className="text-xs text-muted-foreground mt-1">{podcast.genre} • {podcast.primary_language || 'Unknown'}</div>
                   </td>
                   <td className="p-4 align-top pt-4">
                     <PodcastEmailActions 
@@ -89,7 +90,7 @@ export default async function AdminPodcastsPage() {
                     }`}>
                       {isFeatured ? 'Featured' : 
                        podcast.status === 'approved_partner' ? 'Approved Partner' : 
-                       podcast.status === 'verified' ? 'Verified' : 'Regular Podcaster'}
+                       podcast.status === 'verified' ? 'Verified' : 'Seeded'}
                     </span>
                   </td>
                   <td className="p-4 text-right">
@@ -111,10 +112,12 @@ export default async function AdminPodcastsPage() {
                           )}
                         </Button>
                       </form>
-                      <DeletePodcastButton onDelete={async () => {
-                        "use server";
-                        await deletePodcast(podcast.id);
-                      }} />
+                      {isSuperUser && (
+                        <DeletePodcastButton onDelete={async () => {
+                          "use server";
+                          await deletePodcast(podcast.id);
+                        }} />
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -122,8 +125,8 @@ export default async function AdminPodcastsPage() {
             })}
             {(!podcasts || podcasts.length === 0) && (
               <tr>
-                <td colSpan={3} className="p-8 text-center text-muted-foreground">
-                  No approved podcasts found.
+                <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                  No approved playlists found.
                 </td>
               </tr>
             )}

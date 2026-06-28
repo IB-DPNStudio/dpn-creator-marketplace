@@ -188,7 +188,7 @@ export async function switchUserCategory(targetCategory: 'general' | 'creator' |
       if (claimToken) {
         // Verify user is authorized to claim this podcast
         const { data: podcast } = await adminDbClient
-          .from("podcasts")
+          .from("playlist_podcasts")
           .select("contact_email, owner_id")
           .eq("id", claimToken)
           .single();
@@ -205,32 +205,42 @@ export async function switchUserCategory(targetCategory: 'general' | 'creator' |
 
         // Update existing podcast
         const { error: podcastErr } = await adminDbClient
-          .from("podcasts")
+          .from("playlist_podcasts")
           .update({
             owner_id: user.id,
             primary_language: additionalData.language || undefined,
             genre: additionalData.genre || undefined,
-            inventory_availability: additionalData.inventoryAvailability || {}
+            manager_name: additionalData.managerName || null,
+            manager_email: additionalData.managerEmail || null,
+            manager_phone: additionalData.managerPhone || null,
           })
           .eq("id", claimToken);
 
         if (podcastErr) throw podcastErr;
       } else {
+        // Extract playlist ID from URL
+        const playlistMatch = additionalData.youtubeUrl.match(/[?&]list=([^&]+)/);
+        const playlistId = playlistMatch ? playlistMatch[1] : null;
+
+        if (!playlistId) {
+          throw new Error("Invalid YouTube Playlist URL");
+        }
+
         // Insert new podcast
         const { error: podcastErr } = await adminDbClient
-          .from("podcasts")
+          .from("playlist_podcasts")
           .insert({
             owner_id: user.id,
             status: 'verified',
+            playlist_id: playlistId,
             show_name: additionalData.showName,
             description: additionalData.description,
             primary_language: additionalData.language,
             genre: additionalData.genre,
             youtube_url: additionalData.youtubeUrl,
-            spotify_url: additionalData.spotifyUrl,
-            instagram_url: additionalData.instagramUrl,
-            linkedin_url: additionalData.linkedinUrl,
-            inventory_availability: additionalData.inventoryAvailability || {}
+            manager_name: additionalData.managerName || null,
+            manager_email: additionalData.managerEmail || null,
+            manager_phone: additionalData.managerPhone || null,
           });
 
         if (podcastErr) throw podcastErr;

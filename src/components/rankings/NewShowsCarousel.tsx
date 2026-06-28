@@ -56,11 +56,13 @@ export function NewShowsCarousel({ podcasts }: { podcasts: any[] }) {
                     </h3>
                     <p className="text-white/80 text-sm mt-1 flex items-center">
                       <span className="font-mono font-medium">
-                        {podcast.subscriber_count > 1000000 
-                          ? (podcast.subscriber_count / 1000000).toFixed(1) + 'M' 
-                          : (podcast.subscriber_count / 1000).toFixed(0) + 'k'}
+                        {podcast.average_views_per_episode > 1000000 
+                          ? (podcast.average_views_per_episode / 1000000).toFixed(1) + 'M' 
+                          : podcast.average_views_per_episode > 1000
+                            ? (podcast.average_views_per_episode / 1000).toFixed(0) + 'k'
+                            : Math.round(podcast.average_views_per_episode || 0)}
                       </span>
-                      <span className="ml-1 text-xs uppercase tracking-wider opacity-70">Subs</span>
+                      <span className="ml-1 text-xs uppercase tracking-wider opacity-70">Avg Views</span>
                     </p>
                   </div>
                 </div>

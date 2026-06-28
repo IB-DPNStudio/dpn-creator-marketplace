@@ -14,7 +14,7 @@ export default async function DashboardPage({
 
   // Fetch active podcasts to extract dynamic genres and languages
   const { data: allFiltersData } = await supabase
-    .from("podcasts")
+    .from("playlist_podcasts")
     .select("genre, primary_language")
     .in("status", ["seeded", "verified", "approved_partner", "featured_partner"]);
 
@@ -28,13 +28,14 @@ export default async function DashboardPage({
 
   // Dynamically build filtering query to run on Supabase (optimizing columns fetched)
   let query = supabase
-    .from("podcasts")
-    .select("id, show_name, host_name, genre, primary_language, subscriber_count, dpn_score, thumbnail_url, status, description")
-    .in("status", ["seeded", "verified", "approved_partner", "featured_partner"]);
+    .from("playlist_podcasts")
+    .select("id, show_name, genre, primary_language, average_views_per_episode, final_score, thumbnail_url, status, description")
+    .in("status", ["seeded", "verified", "approved_partner", "featured_partner"])
+    .eq("is_included", true);
 
   if (resolvedSearchParams.q) {
     const q = resolvedSearchParams.q;
-    query = query.or(`show_name.ilike.%${q}%,host_name.ilike.%${q}%,genre.ilike.%${q}%,description.ilike.%${q}%`);
+    query = query.or(`show_name.ilike.%${q}%,genre.ilike.%${q}%,description.ilike.%${q}%`);
   }
   
   if (resolvedSearchParams.genre && resolvedSearchParams.genre !== "All") {
@@ -45,21 +46,21 @@ export default async function DashboardPage({
     query = query.eq("primary_language", resolvedSearchParams.lang);
   }
 
-  const { data: podcasts } = await query.order("dpn_score", { ascending: false });
+  const { data: podcasts } = await query.order("final_score", { ascending: false });
   const displayPodcasts = podcasts || [];
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold font-heading">Podcast Catalogue</h1>
-        <p className="text-muted-foreground mt-2">Discover and filter premium podcast inventory.</p>
+        <h1 className="text-3xl font-bold font-heading">Playlist Catalogue</h1>
+        <p className="text-muted-foreground mt-2">Discover and filter premium playlist inventory.</p>
       </div>
 
       <CatalogueFilters genres={genres} languages={languages} />
 
       {displayPodcasts.length === 0 ? (
         <div className="text-center py-24 bg-card border border-border rounded-xl">
-          <h3 className="text-lg font-bold mb-2">No podcasts available</h3>
+          <h3 className="text-lg font-bold mb-2">No playlists available</h3>
           <p className="text-muted-foreground">No matches found for your filter criteria.</p>
         </div>
       ) : (
@@ -103,7 +104,6 @@ export default async function DashboardPage({
                       {podcast.show_name}
                     </h3>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-4">{podcast.host_name}</p>
                   
                   <div className="mt-auto space-y-4">
                     <div className="flex flex-wrap gap-2">
@@ -113,12 +113,12 @@ export default async function DashboardPage({
                     <div className="flex items-center justify-between pt-4 border-t border-border">
                       <div className="text-xs text-muted-foreground">
                         <span className="font-bold text-foreground">
-                          {podcast.subscriber_count ? (podcast.subscriber_count >= 1000000 ? (podcast.subscriber_count / 1000000).toFixed(1) + 'M' : (podcast.subscriber_count / 1000).toFixed(1) + 'k') : 'N/A'}
-                        </span> subs
+                          {podcast.average_views_per_episode ? (podcast.average_views_per_episode >= 1000000 ? (podcast.average_views_per_episode / 1000000).toFixed(1) + 'M' : (podcast.average_views_per_episode / 1000).toFixed(1) + 'k') : 'N/A'}
+                        </span> avg views
                       </div>
                       <div className="flex items-center space-x-1 text-spotify font-mono font-bold text-sm">
                         <TrendingUp className="w-4 h-4" />
-                        <span>{podcast.dpn_score || '0.0'}</span>
+                        <span>{podcast.final_score?.toFixed(1) || '0.0'}</span>
                       </div>
                     </div>
                   </div>

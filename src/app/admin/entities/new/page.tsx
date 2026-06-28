@@ -178,7 +178,7 @@ export default function AdminDataEntryPage() {
               <h2 className="text-xl font-bold font-heading border-b border-border pb-2 text-dentsu">Links</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">YouTube Channel URL *</label>
+                  <label className="text-sm font-medium">YouTube Playlist URL *</label>
                   <Input name="youtubeUrl" type="url" required />
                 </div>
                 <div className="space-y-2">
@@ -276,11 +276,11 @@ export default function AdminDataEntryPage() {
         <div className="bg-card border border-border p-8 rounded-2xl shadow-sm">
           <form id="seed-form" action={handleSeedSubmit} className="space-y-8">
             <div className="space-y-4">
-              <h2 className="text-xl font-bold font-heading border-b border-border pb-2 text-dentsu">Seed Podcast</h2>
-              <p className="text-sm text-muted-foreground">Quickly add a podcast to the directory using only its YouTube channel URL. The system will attempt to fetch basic metadata.</p>
+              <h2 className="text-xl font-bold font-heading border-b border-border pb-2 text-dentsu">Seed Playlist</h2>
+              <p className="text-sm text-muted-foreground">Quickly add a playlist to the directory using only its YouTube playlist URL. The system will attempt to fetch basic metadata.</p>
               <div className="space-y-2">
-                <label className="text-sm font-medium">YouTube Channel URL *</label>
-                <Input name="youtubeUrl" type="url" required placeholder="https://www.youtube.com/@ChannelHandle" />
+                <label className="text-sm font-medium">YouTube Playlist URL *</label>
+                <Input name="youtubeUrl" type="url" required placeholder="https://www.youtube.com/playlist?list=..." />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Creator Email (Optional)</label>

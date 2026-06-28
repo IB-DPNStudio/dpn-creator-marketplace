@@ -1,7 +1,8 @@
 import { Hero } from "@/components/home/Hero";
 import { IndustryStats } from "@/components/home/IndustryStats";
 import { HowItWorks } from "@/components/home/HowItWorks";
-import { RankingsTable } from "@/components/rankings/RankingsTable";
+import LabsClient from "@/app/labs/LabsClient";
+import { getLabsPlaylists } from "@/app/actions/labs";
 import { createClient } from "@/utils/supabase/server";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -12,17 +13,11 @@ export const revalidate = 3600;
 export default async function Home() {
   const supabase = await createClient();
   const { data: { session } } = await supabase.auth.getSession();
-  const isAuthenticated = !!session;
-  const isSuperAdmin = session?.user?.email === 'studio@ideabrews.com';
+  const isAdmin = session?.user?.email === 'studio@ideabrews.com';
   
-  const { data: podcasts } = await supabase
-    .from("podcasts")
-    .select("*, podcast_history(*)")
-    .in("status", ["seeded", "verified", "approved_partner", "featured_partner"])
-    .order("dpn_score", { ascending: false })
-    .limit(20);
-
-  const topPodcasts = podcasts || [];
+  // Fetch top 20 playlists instead of podcasts
+  const allPlaylists = await getLabsPlaylists(["seeded", "verified", "approved_partner", "featured_partner"]);
+  const topPlaylists = allPlaylists.slice(0, 20);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -34,14 +29,14 @@ export default async function Home() {
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="text-center mb-8 md:mb-12">
             <h2 className="font-heading text-2xl md:text-5xl font-bold mb-3 md:mb-4">
-              India's Top 20 Podcasts
+              India's Top 20 Playlists
             </h2>
             <p className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
               Get a glimpse of the most influential voices currently dominating the network.
             </p>
           </div>
           
-          <RankingsTable podcasts={topPodcasts} isAuthenticated={isAuthenticated} isSuperAdmin={isSuperAdmin} />
+          <LabsClient initialPlaylists={topPlaylists} isAdmin={isAdmin} isLabs={false} />
           
           <div className="mt-12 text-center">
             <Button asChild size="lg" className="bg-dentsu hover:bg-dentsu/90 text-white font-semibold">
