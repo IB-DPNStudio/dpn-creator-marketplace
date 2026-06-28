@@ -44,15 +44,10 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
         const updated = await getLabsPlaylists();
         setPlaylists(updated);
         
-        // Calculate newly achieved global rank
-        const newlyRanked = [...updated].sort((a, b) => (b.final_score || 0) - (a.final_score || 0));
-        const index = newlyRanked.findIndex(p => p.playlist_id === res.playlist_id);
-        const rank = index >= 0 ? index + 1 : 0;
-
         setSuccessResult({
           show_name: res.show_name || 'Playlist',
           final_score: res.final_score || 0,
-          globalRank: rank
+          globalRank: res.global_rank || 0
         });
 
         // Reset form fields

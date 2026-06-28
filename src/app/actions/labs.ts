@@ -279,6 +279,14 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
 
     if (error) throw error;
 
+    const { count } = await adminDbClient
+      .from("playlist_podcasts")
+      .select("*", { count: 'exact', head: true })
+      .gt("final_score", final_score)
+      .eq("is_included", true);
+
+    const calculatedRank = (count || 0) + 1;
+
     try {
       revalidatePath("/labs");
     } catch (e) {
@@ -288,7 +296,8 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
       success: true,
       playlist_id: playlistId,
       show_name: showName,
-      final_score: final_score
+      final_score: final_score,
+      global_rank: calculatedRank
     };
   } catch (err: any) {
     console.error("Error in addOrUpdatePlaylistRank:", err);
