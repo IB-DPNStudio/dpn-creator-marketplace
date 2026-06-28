@@ -21,7 +21,7 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
   const [overrideCountry, setOverrideCountry] = useState("");
   const [isIncluded, setIsIncluded] = useState(true);
   const [ingestLoading, setIngestLoading] = useState(false);
-  const [successResult, setSuccessResult] = useState<{ show_name: string; final_score: number; globalRank: number } | null>(null);
+  const [successResult, setSuccessResult] = useState<{ show_name: string; final_score: number; globalRank: number | null; is_disqualified: boolean } | null>(null);
 
   const handleIngest = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,7 +47,8 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
         setSuccessResult({
           show_name: res.show_name || 'Playlist',
           final_score: res.final_score || 0,
-          globalRank: res.global_rank || 0
+          globalRank: res.global_rank || null,
+          is_disqualified: res.is_disqualified || false
         });
 
         // Reset form fields
@@ -167,22 +168,26 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
             </div>
             
             {isAdminPanelOpen && (
-              <>
+              <div className="border-t border-border mt-6 pt-4">
                 {successResult && (
-                  <div className="mt-4 mb-4 p-4 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900 flex flex-col gap-2 animate-in fade-in zoom-in duration-300">
-                    <h3 className="font-bold text-green-800 dark:text-green-400">Playlist Successfully Ingested!</h3>
-                    <p className="text-sm text-green-700 dark:text-green-500">
-                      <strong>{successResult.show_name}</strong> was added to the database.
+                  <div className={`mb-4 p-4 rounded-xl flex flex-col gap-2 animate-in fade-in zoom-in duration-300 ${successResult.is_disqualified ? 'bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900' : 'bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900'}`}>
+                    <h3 className={`font-bold ${successResult.is_disqualified ? 'text-amber-800 dark:text-amber-400' : 'text-green-800 dark:text-green-400'}`}>
+                      {successResult.is_disqualified ? 'Playlist Ingested, but Disqualified' : 'Playlist Successfully Ingested!'}
+                    </h3>
+                    <p className={`text-sm ${successResult.is_disqualified ? 'text-amber-700 dark:text-amber-500' : 'text-green-700 dark:text-green-500'}`}>
+                      <strong>{successResult.show_name}</strong> was added to the database. {successResult.is_disqualified && "However, it does not qualify for the active ranker because it hasn't released a new episode in the last 90 days."}
                     </p>
                     <div className="flex items-center gap-4 mt-2">
                       <div className="bg-white dark:bg-background px-3 py-1.5 rounded-lg shadow-sm border border-border flex items-center gap-2">
                         <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Score</span>
                         <span className="font-mono font-bold text-lg text-dentsu">{successResult.final_score.toFixed(1)}</span>
                       </div>
-                      <div className="bg-white dark:bg-background px-3 py-1.5 rounded-lg shadow-sm border border-border flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Rank</span>
-                        <span className="font-mono font-bold text-lg">#{successResult.globalRank || '?'}</span>
-                      </div>
+                      {!successResult.is_disqualified && (
+                        <div className="bg-white dark:bg-background px-3 py-1.5 rounded-lg shadow-sm border border-border flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Rank</span>
+                          <span className="font-mono font-bold text-lg">#{successResult.globalRank || '?'}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -270,7 +275,7 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
                   </Button>
                 </div>
               </form>
-              </>
+              </div>
             )}
           </div>
         )}

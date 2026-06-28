@@ -279,6 +279,10 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
 
     if (error) throw error;
 
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+    const isDisqualified = !latestEpisodeDate || new Date(latestEpisodeDate) < ninetyDaysAgo;
+
     const { count } = await adminDbClient
       .from("playlist_podcasts")
       .select("*", { count: 'exact', head: true })
@@ -297,7 +301,8 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
       playlist_id: playlistId,
       show_name: showName,
       final_score: final_score,
-      global_rank: calculatedRank
+      global_rank: isDisqualified ? null : calculatedRank,
+      is_disqualified: isDisqualified
     };
   } catch (err: any) {
     console.error("Error in addOrUpdatePlaylistRank:", err);
