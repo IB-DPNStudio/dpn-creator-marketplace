@@ -89,7 +89,7 @@ export function calculatePlaylistScore(input: PlaylistScoreInput): ScoreOutput {
   let freshnessScore = 0;
   if (input.latest_episode_date) {
     const daysSinceLast = (new Date().getTime() - new Date(input.latest_episode_date).getTime()) / (1000 * 3600 * 24);
-    freshnessScore = Math.max(0, 1 - (daysSinceLast / 45));
+    freshnessScore = Math.max(0, 1 - (daysSinceLast / 90));
     if (freshnessScore > 0.9) explanations.positive.push("Very recent publishing activity.");
     else if (freshnessScore < 0.3) explanations.negative.push("Has not published an episode recently.");
   } else {
@@ -105,9 +105,9 @@ export function calculatePlaylistScore(input: PlaylistScoreInput): ScoreOutput {
   let consistencyScore = 0;
   if (input.average_days_between_episodes !== null && input.average_days_between_episodes > 0) {
     const gap = input.average_days_between_episodes;
-    if (gap >= 4 && gap <= 14) consistencyScore = 1.0;
-    else if ((gap >= 3 && gap < 4) || (gap > 14 && gap <= 21)) consistencyScore = 0.8;
-    else if ((gap >= 1 && gap < 3) || (gap > 21 && gap <= 30)) consistencyScore = 0.4;
+    if (gap >= 1 && gap <= 14) consistencyScore = 1.0;
+    else if (gap > 14 && gap <= 21) consistencyScore = 0.8;
+    else if (gap > 21 && gap <= 30) consistencyScore = 0.4;
     else consistencyScore = 0.0;
     
     if (consistencyScore === 1.0) explanations.positive.push("Consistent and healthy publishing cadence.");

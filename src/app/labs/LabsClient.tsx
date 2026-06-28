@@ -40,6 +40,13 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
     .map((p, index) => ({ ...p, displayRank: index + 1 }));
 
   const sortedPlaylists = [...filteredAndRankedPlaylists].sort((a, b) => {
+    const aBlurred = !isSignedIn && !isLabs && a.displayRank > 10;
+    const bBlurred = !isSignedIn && !isLabs && b.displayRank > 10;
+    
+    if (aBlurred && !bBlurred) return 1;
+    if (!aBlurred && bBlurred) return -1;
+    if (aBlurred && bBlurred) return a.displayRank - b.displayRank;
+
     let valA = a[sortColumn];
     let valB = b[sortColumn];
 

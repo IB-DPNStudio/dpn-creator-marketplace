@@ -101,14 +101,39 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
     let latestEpisodeDate: string | null = null;
     let averageDaysBetween = 0;
     
-    const itemsRes = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails,snippet&playlistId=${playlistId}&maxResults=50&key=${apiKey}`);
-    const itemsData = await itemsRes.json();
-
-    if (itemsData.items && itemsData.items.length > 0) {
-      totalEpisodes = itemsData.pageInfo?.totalResults || itemsData.items.length;
-      latestEpisodeDate = itemsData.items[0].snippet.publishedAt;
+    let allPlaylistItems: any[] = [];
+    let pageToken = '';
+    let pageCount = 0;
+    const MAX_PAGES = 50; // Max 2500 items to avoid rate limits and capture the end of large playlists
+    
+    while (pageCount < MAX_PAGES) {
+      const pageTokenParam = pageToken ? `&pageToken=${pageToken}` : '';
+      const itemsRes = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails,snippet&playlistId=${playlistId}&maxResults=50${pageTokenParam}&key=${apiKey}`);
+      const itemsData = await itemsRes.json();
       
-      const videoIds = itemsData.items.map((i: any) => i.contentDetails.videoId).join(',');
+      if (!itemsData.items || itemsData.items.length === 0) break;
+      
+      allPlaylistItems = allPlaylistItems.concat(itemsData.items);
+      totalEpisodes = itemsData.pageInfo?.totalResults || allPlaylistItems.length;
+      
+      if (itemsData.nextPageToken) {
+        pageToken = itemsData.nextPageToken;
+        pageCount++;
+      } else {
+        break;
+      }
+    }
+
+    if (allPlaylistItems.length > 0) {
+      // Sort all fetched items by publishedAt descending to get the newest 50
+      allPlaylistItems.sort((a, b) => new Date(b.snippet.publishedAt).getTime() - new Date(a.snippet.publishedAt).getTime());
+      
+      // Take top 50 most recent
+      const recentItems = allPlaylistItems.slice(0, 50);
+      
+      latestEpisodeDate = recentItems[0].snippet.publishedAt;
+      
+      const videoIds = recentItems.map((i: any) => i.contentDetails.videoId).join(',');
       const vRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${videoIds}&key=${apiKey}`);
       const vData = await vRes.json();
 
@@ -121,15 +146,15 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
       }
 
       // Calculate average days between episodes (up to 50 recent)
-      if (itemsData.items.length > 1) {
-        const firstDate = new Date(itemsData.items[0].snippet.publishedAt).getTime();
-        const lastDate = new Date(itemsData.items[itemsData.items.length - 1].snippet.publishedAt).getTime();
+      if (recentItems.length > 1) {
+        const firstDate = new Date(recentItems[0].snippet.publishedAt).getTime();
+        const lastDate = new Date(recentItems[recentItems.length - 1].snippet.publishedAt).getTime();
         const diffDays = Math.abs(firstDate - lastDate) / (1000 * 3600 * 24);
-        averageDaysBetween = diffDays / (itemsData.items.length - 1);
+        averageDaysBetween = diffDays / (recentItems.length - 1);
       }
     }
 
-    const numSampled = itemsData.items?.length || 1;
+    const numSampled = Math.min(allPlaylistItems.length, 50) || 1;
     const avgViews = totalViews / numSampled;
     const avgLikes = totalLikes / numSampled;
     const avgComments = totalComments / numSampled;
@@ -148,6 +173,7 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
       manual_penalty: parseFloat(inputData.manualPenalty || '0'),
       show_name: showName,
       description: description,
+      sample_video_titles: allPlaylistItems.slice(0, 50).map((i: any) => i.snippet.title),
     };
 
     const { final_score, breakdown, explanations } = calculatePlaylistScore(scoreInput);
