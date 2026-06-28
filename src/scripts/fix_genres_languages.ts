@@ -2,6 +2,22 @@ import { createClient } from "@supabase/supabase-js";
 import * as dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 
+const genreMapping: Record<string, string> = {
+  "Geopolitics": "News & Current Affairs",
+  "Lifestyle": "Society & Culture",
+  "Spirituality": "Religion & Spirituality",
+  "Self-help": "Society & Culture",
+  "Spirituality & Wellness": "Religion & Spirituality",
+  "Podcast": "Society & Culture"
+};
+
+function normalizeGenre(g: string): string {
+  if (!g) return "General";
+  const trimmed = g.trim();
+  if (genreMapping[trimmed]) return genreMapping[trimmed];
+  return trimmed;
+}
+
 async function fix() {
   const adminDbClient = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -73,7 +89,7 @@ async function fix() {
 
     if (!p.genre || p.genre === "General" || p.genre === "Unknown") {
       if (defaults?.genre) {
-        updates.genre = defaults.genre;
+        updates.genre = normalizeGenre(defaults.genre);
         needsUpdate = true;
       }
     }

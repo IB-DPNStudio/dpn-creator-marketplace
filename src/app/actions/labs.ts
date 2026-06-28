@@ -13,6 +13,23 @@ const getAdminClient = () => {
   return createSupabaseClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 };
 
+const genreMapping: Record<string, string> = {
+  "Geopolitics": "News & Current Affairs",
+  "Lifestyle": "Society & Culture",
+  "Spirituality": "Religion & Spirituality",
+  "Self-help": "Society & Culture",
+  "Spirituality & Wellness": "Religion & Spirituality",
+  "Podcast": "Society & Culture"
+};
+
+function normalizeGenre(g: string): string {
+  if (!g) return "General";
+  const trimmed = g.trim();
+  if (genreMapping[trimmed]) return genreMapping[trimmed];
+  return trimmed;
+}
+
+
 export async function getLabsPlaylists(statusIn?: string[]) {
   const adminDbClient = getAdminClient();
   let allData: any[] = [];
@@ -136,7 +153,7 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
       if (pod) {
         if (pod.primary_language) defaultLanguage = pod.primary_language;
         if (pod.country) defaultCountry = pod.country;
-        if (pod.genre) defaultGenre = pod.genre;
+        if (pod.genre) defaultGenre = normalizeGenre(pod.genre);
       }
     }
 
@@ -243,7 +260,7 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
         thumbnail_url: thumbnailUrl,
         primary_language: inputData.language || defaultLanguage,
         country: inputData.country || defaultCountry,
-        genre: inputData.genre || defaultGenre,
+        genre: normalizeGenre(inputData.genre || defaultGenre),
         total_episodes: totalEpisodes,
         latest_episode_date: latestEpisodeDate,
         average_days_between_episodes: averageDaysBetween,
@@ -362,7 +379,7 @@ export async function updateLabsPlaylistGenre(playlistId: string, genre: string)
     const adminDbClient = getAdminClient();
     const { error } = await adminDbClient
       .from("playlist_podcasts")
-      .update({ genre })
+      .update({ genre: normalizeGenre(genre) })
       .eq("playlist_id", playlistId);
       
     if (error) throw error;

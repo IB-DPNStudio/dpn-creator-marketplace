@@ -36,16 +36,13 @@ function detectGenre(title: string, desc: string): string {
     return "Comedy & Entertainment";
   }
   if (combined.includes("spirituality") || combined.includes("spiritual") || combined.includes("god") || combined.includes("bhakti") || combined.includes("religion") || combined.includes("hindu")) {
-    return "Spirituality & Wellness";
+    return "Religion & Spirituality";
   }
-  if (combined.includes("tech") || combined.includes("science") || combined.includes("technology") || combined.includes("coding")) {
-    return "Science & Technology";
+  if (combined.includes("tech") || combined.includes("technology") || combined.includes("coding")) {
+    return "Technology";
   }
-  if (combined.includes("history") || combined.includes("historical") || combined.includes("rome") || combined.includes("civilization")) {
-    return "History";
-  }
-  if (combined.includes("crime") || combined.includes("murder") || combined.includes("detective") || combined.includes("true crime")) {
-    return "True Crime";
+  if (combined.includes("science") || combined.includes("space") || combined.includes("astronomy") || combined.includes("biology") || combined.includes("physics")) {
+    return "Science";
   }
 
   // Fallback defaults
