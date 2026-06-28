@@ -137,8 +137,15 @@ export function calculatePlaylistScore(input: PlaylistScoreInput): ScoreOutput {
   }
 
   let confidenceScore = Math.min(matches, 5) / 5;
-  if (confidenceScore >= 0.8) explanations.positive.push("High confidence this is a dedicated podcast show based on metadata.");
-  else if (confidenceScore < 0.5) explanations.negative.push("Low metadata confidence; may be a generic playlist rather than a podcast.");
+  
+  // Override: If views score is 95 or above and audience efficiency is 60 or above, confidence can be ignored
+  if (viewsScore * 100 >= 95 && effScore * 100 >= 60) {
+    confidenceScore = 1.0;
+    explanations.positive.push("High viewership and audience efficiency overrides confidence checks.");
+  } else {
+    if (confidenceScore >= 0.8) explanations.positive.push("High confidence this is a dedicated podcast show based on metadata.");
+    else if (confidenceScore < 0.5) explanations.negative.push("Low metadata confidence; may be a generic playlist rather than a podcast.");
+  }
 
   // Convert raw 0-1 scores to 0-100 for the breakdown UI
   const breakdown: ScoreBreakdown = {

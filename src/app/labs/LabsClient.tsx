@@ -85,23 +85,26 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
     }
   };
 
-  const filteredAndRankedPlaylists = playlists
+  const playlistsWithGlobalRank = [...playlists]
+    .sort((a, b) => (b.final_score || 0) - (a.final_score || 0))
+    .map((p, index) => ({ ...p, globalRank: index + 1 }));
+
+  const filteredAndRankedPlaylists = playlistsWithGlobalRank
     .filter(p => {
       const matchesSearch = p.show_name?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesLanguage = languageFilter === "All" || (p.primary_language || 'Unknown') === languageFilter;
       const matchesGenre = genreFilter === "All" || (p.genre || 'General') === genreFilter;
       return matchesSearch && matchesLanguage && matchesGenre;
     })
-    .sort((a, b) => (b.final_score || 0) - (a.final_score || 0))
     .map((p, index) => ({ ...p, displayRank: index + 1 }));
 
   const sortedPlaylists = [...filteredAndRankedPlaylists].sort((a, b) => {
-    const aBlurred = !isSignedIn && !isLabs && a.displayRank > 10;
-    const bBlurred = !isSignedIn && !isLabs && b.displayRank > 10;
+    const aBlurred = !isSignedIn && !isLabs && a.globalRank > 10;
+    const bBlurred = !isSignedIn && !isLabs && b.globalRank > 10;
     
     if (aBlurred && !bBlurred) return 1;
     if (!aBlurred && bBlurred) return -1;
-    if (aBlurred && bBlurred) return a.displayRank - b.displayRank;
+    if (aBlurred && bBlurred) return a.globalRank - b.globalRank;
 
     let valA = a[sortColumn];
     let valB = b[sortColumn];
@@ -333,7 +336,7 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
                   </tr>
                 ) : (
                   sortedPlaylists.map((p, idx) => {
-                    const isBlurred = !isSignedIn && !isLabs && p.displayRank > 10;
+                    const isBlurred = !isSignedIn && !isLabs && p.globalRank > 10;
                     return (
                       <PlaylistTableRow 
                         key={p.playlist_id || idx} 
@@ -576,7 +579,15 @@ function PlaylistTableRow({ rank, p, handleDelete, isAdmin, isBlurred = false }:
                     <h4 className="font-bold text-lg text-foreground font-heading">About the Creator</h4>
                     <p className="text-sm text-muted-foreground leading-relaxed">
                       {p.description?.trim() ? (
-                        decodeHTML(p.description)
+                        <>
+                          {decodeHTML(p.description).length > 300 ? (
+                            <>
+                              {decodeHTML(p.description).substring(0, 300)}... <a href={`https://www.youtube.com/playlist?list=${p.playlist_id}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">more</a>
+                            </>
+                          ) : (
+                            decodeHTML(p.description)
+                          )}
+                        </>
                       ) : p.channel_description?.trim() ? (
                         <>
                           {decodeHTML(p.channel_description).length > 300 ? (

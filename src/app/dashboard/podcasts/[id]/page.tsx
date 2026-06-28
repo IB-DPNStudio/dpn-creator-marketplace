@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server";
+import { createClient, createAdminClient } from "@/utils/supabase/server";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -6,9 +6,9 @@ import { ArrowLeft, CheckCircle2, TrendingUp, Users, PlayCircle, BarChart, Eye, 
 
 export default async function PodcastDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
-  const supabase = await createClient();
+  const adminClient = createAdminClient();
   
-  const { data: podcast } = await supabase
+  const { data: podcast } = await adminClient
     .from("playlist_podcasts")
     .select("*")
     .eq("id", resolvedParams.id)
