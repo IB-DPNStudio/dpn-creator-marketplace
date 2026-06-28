@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { deleteLabsPlaylist, fetchPlaylistSampleVideos } from "@/app/actions/labs";
-import { Award, Trash2, ChevronDown, ChevronUp, Search, TrendingUp, ArrowUpDown } from "lucide-react";
+import { deleteLabsPlaylist, fetchPlaylistSampleVideos, updateLabsPlaylistGenre, updateLabsPlaylistLanguage } from "@/app/actions/labs";
+import { Award, Trash2, ChevronDown, ChevronUp, Search, TrendingUp, ArrowUpDown, Eye, Heart, MessageSquare } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { PODCAST_GENRES } from "@/lib/constants";
 
 export default function LabsClient({ initialPlaylists, isAdmin }: { initialPlaylists: any[], isAdmin: boolean }) {
   const [playlists, setPlaylists] = useState(initialPlaylists);
@@ -219,7 +220,7 @@ function PlaylistTableRow({ rank, p, handleDelete, isAdmin }: { rank: number, p:
                 {decodeHTML(p.show_name)}
               </div>
               <div className="text-xs text-muted-foreground mt-0.5 flex flex-col items-start gap-1">
-                Playlist
+                {p.channel_name || 'YouTube Channel'}
               </div>
             </div>
           </div>
@@ -242,12 +243,50 @@ function PlaylistTableRow({ rank, p, handleDelete, isAdmin }: { rank: number, p:
         </td>
         <td className="p-4">
           <div className="flex flex-col gap-2 items-start transition-all duration-300">
-            <span className="text-xs font-semibold tracking-wide text-foreground uppercase mt-0.5">
-              {p.genre || 'General'}
-            </span>
-            <span className="text-[11px] font-medium text-muted-foreground">
-              {p.primary_language || 'English'}
-            </span>
+            {isAdmin ? (
+              <select
+                className="text-xs px-2 py-1.5 rounded border border-input bg-background max-w-[140px] focus:outline-none focus:ring-1 focus:ring-ring shadow-sm"
+                value={p.genre || 'General'}
+                onChange={async (e) => {
+                  const newGenre = e.target.value;
+                  await updateLabsPlaylistGenre(p.playlist_id, newGenre);
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <option value="" disabled>Select...</option>
+                {PODCAST_GENRES.map((g) => (
+                  <option key={g} value={g}>{g}</option>
+                ))}
+              </select>
+            ) : (
+              <span className="text-xs font-semibold tracking-wide text-foreground uppercase mt-0.5">
+                {p.genre || 'General'}
+              </span>
+            )}
+            
+            {isAdmin ? (
+              <input
+                type="text"
+                className="text-xs px-2 py-1.5 rounded border border-input bg-background w-[140px] focus:outline-none focus:ring-1 focus:ring-ring shadow-sm"
+                defaultValue={p.primary_language || 'English'}
+                onBlur={async (e) => {
+                  if (e.target.value !== p.primary_language) {
+                    await updateLabsPlaylistLanguage(p.playlist_id, e.target.value);
+                  }
+                }}
+                onKeyDown={async (e) => {
+                  if (e.key === 'Enter') {
+                    e.stopPropagation();
+                    (e.target as HTMLInputElement).blur();
+                  }
+                }}
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : (
+              <span className="text-[11px] font-medium text-muted-foreground">
+                {p.primary_language || 'English'}
+              </span>
+            )}
           </div>
         </td>
         <td className="p-4 text-right">
@@ -347,11 +386,28 @@ function PlaylistTableRow({ rank, p, handleDelete, isAdmin }: { rank: number, p:
                             allowFullScreen
                             className="rounded-lg bg-muted"
                           ></iframe>
-                          <div className="flex flex-col mt-1 px-1">
+                          <div className="flex flex-col mt-1 px-1 gap-1">
                             <a href={`https://www.youtube.com/watch?v=${video.videoId}`} target="_blank" rel="noopener noreferrer" className="text-sm font-bold hover:text-primary transition-colors line-clamp-2 leading-snug">
                               {decodeHTML(video.title)}
                             </a>
-                            <span className="text-[10px] font-mono text-muted-foreground mt-1 uppercase tracking-widest">{new Date(video.publishedAt).toLocaleDateString()}</span>
+                            <div className="flex items-center gap-3 text-[10px] text-muted-foreground font-mono mt-1">
+                              <span>{new Date(video.publishedAt).toLocaleDateString()}</span>
+                              {video.views && (
+                                <span className="flex items-center gap-1" title="Views">
+                                  <Eye className="w-3 h-3" /> {(video.views > 1000000 ? (video.views/1000000).toFixed(1) + 'M' : video.views > 1000 ? (video.views/1000).toFixed(1) + 'k' : video.views)}
+                                </span>
+                              )}
+                              {video.likes && (
+                                <span className="flex items-center gap-1" title="Likes">
+                                  <Heart className="w-3 h-3" /> {(video.likes > 1000000 ? (video.likes/1000000).toFixed(1) + 'M' : video.likes > 1000 ? (video.likes/1000).toFixed(1) + 'k' : video.likes)}
+                                </span>
+                              )}
+                              {video.comments && (
+                                <span className="flex items-center gap-1" title="Comments">
+                                  <MessageSquare className="w-3 h-3" /> {(video.comments > 1000000 ? (video.comments/1000000).toFixed(1) + 'M' : video.comments > 1000 ? (video.comments/1000).toFixed(1) + 'k' : video.comments)}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       ))}

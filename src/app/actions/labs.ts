@@ -27,10 +27,34 @@ export async function getLabsPlaylists() {
   const ninetyDaysAgo = new Date();
   ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
   
-  return (data || []).filter(p => {
+  const filteredData = (data || []).filter(p => {
     if (!p.latest_episode_date) return false;
     return new Date(p.latest_episode_date) >= ninetyDaysAgo;
   });
+
+  // Fetch channel names from the main podcasts table
+  const channelIds = [...new Set(filteredData.map(p => p.channel_id).filter(Boolean))];
+  let channelMap = new Map();
+  
+  if (channelIds.length > 0) {
+    const { data: podData } = await adminDbClient
+      .from("podcasts")
+      .select("channel_id, show_name")
+      .in("channel_id", channelIds);
+      
+    if (podData) {
+      podData.forEach(p => {
+        if (p.channel_id && p.show_name) {
+          channelMap.set(p.channel_id, p.show_name);
+        }
+      });
+    }
+  }
+
+  return filteredData.map(p => ({
+    ...p,
+    channel_name: channelMap.get(p.channel_id) || "YouTube Channel"
+  }));
 }
 
 export async function addOrUpdatePlaylistRank(inputData: any) {
@@ -198,12 +222,79 @@ export async function fetchPlaylistSampleVideos(playlistId: string) {
       title: item.snippet.title,
       videoId: item.contentDetails.videoId,
       thumbnail: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url,
-      publishedAt: item.snippet.publishedAt
+      publishedAt: item.snippet.publishedAt,
+      views: 0,
+      likes: 0,
+      comments: 0
     }));
+
+    if (videos.length > 0) {
+      const videoIds = videos.map((v: any) => v.videoId).join(',');
+      const vRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${videoIds}&key=${apiKey}`);
+      const vData = await vRes.json();
+      
+      if (vData.items) {
+        vData.items.forEach((vStat: any) => {
+          const v = videos.find((video: any) => video.videoId === vStat.id);
+          if (v) {
+            v.views = parseInt(vStat.statistics?.viewCount || '0');
+            v.likes = parseInt(vStat.statistics?.likeCount || '0');
+            v.comments = parseInt(vStat.statistics?.commentCount || '0');
+          }
+        });
+      }
+    }
 
     return { success: true, videos };
   } catch (err: any) {
     console.error("Error fetching sample videos:", err);
+    return { success: false, error: err.message };
+  }
+}
+export async function updateLabsPlaylistGenre(playlistId: string, genre: string) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (user?.email !== "studio@ideabrews.com") {
+      throw new Error("Unauthorized");
+    }
+
+    const adminDbClient = getAdminClient();
+    const { error } = await adminDbClient
+      .from("playlist_podcasts")
+      .update({ genre })
+      .eq("playlist_id", playlistId);
+      
+    if (error) throw error;
+    
+    revalidatePath("/labs");
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function updateLabsPlaylistLanguage(playlistId: string, language: string) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (user?.email !== "studio@ideabrews.com") {
+      throw new Error("Unauthorized");
+    }
+
+    const adminDbClient = getAdminClient();
+    const { error } = await adminDbClient
+      .from("playlist_podcasts")
+      .update({ primary_language: language })
+      .eq("playlist_id", playlistId);
+      
+    if (error) throw error;
+    
+    revalidatePath("/labs");
+    return { success: true };
+  } catch (err: any) {
     return { success: false, error: err.message };
   }
 }
