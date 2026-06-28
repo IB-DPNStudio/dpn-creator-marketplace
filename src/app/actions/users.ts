@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
+import { addOrUpdatePlaylistRank } from "./labs";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 
@@ -218,30 +219,35 @@ export async function switchUserCategory(targetCategory: 'general' | 'creator' |
 
         if (podcastErr) throw podcastErr;
       } else {
-        // Extract playlist ID from URL
-        const playlistMatch = additionalData.youtubeUrl.match(/[?&]list=([^&]+)/);
-        const playlistId = playlistMatch ? playlistMatch[1] : null;
+        // Run ingestion and score immediately
+        const rankRes = await addOrUpdatePlaylistRank({
+          playlistUrlOrId: additionalData.youtubeUrl,
+          title: additionalData.showName,
+          description: additionalData.description,
+          language: additionalData.language,
+          genre: additionalData.genre,
+          isIncluded: true
+        });
 
-        if (!playlistId) {
-          throw new Error("Invalid YouTube Playlist URL");
+        if (rankRes.is_disqualified) {
+          throw new Error("Thank you for your interest! Unfortunately, this playlist does not currently qualify for the DPN Ranker because it hasn't released a new episode in the last 90 days. We require active shows for the marketplace.");
         }
 
-        // Insert new podcast
+        if (!rankRes.success) {
+          throw new Error("Failed to process the YouTube playlist. Please check the URL and try again.");
+        }
+
+        // Update the newly ingested podcast with the creator's ownership details
         const { error: podcastErr } = await adminDbClient
           .from("playlist_podcasts")
-          .insert({
+          .update({
             owner_id: user.id,
             status: 'verified',
-            playlist_id: playlistId,
-            show_name: additionalData.showName,
-            description: additionalData.description,
-            primary_language: additionalData.language,
-            genre: additionalData.genre,
-            youtube_url: additionalData.youtubeUrl,
             manager_name: additionalData.managerName || null,
             manager_email: additionalData.managerEmail || null,
             manager_phone: additionalData.managerPhone || null,
-          });
+          })
+          .eq("playlist_id", rankRes.playlist_id);
 
         if (podcastErr) throw podcastErr;
       }
