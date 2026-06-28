@@ -339,7 +339,13 @@ function PlaylistTableRow({ rank, p, handleDelete, isAdmin }: { rank: number, p:
                         decodeHTML(p.description)
                       ) : p.channel_description?.trim() ? (
                         <>
-                          {decodeHTML(p.channel_description).substring(0, 300)}... <a href={`https://www.youtube.com/channel/${p.channel_id}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">more</a>
+                          {decodeHTML(p.channel_description).length > 300 ? (
+                            <>
+                              {decodeHTML(p.channel_description).substring(0, 300)}... <a href={`https://www.youtube.com/channel/${p.channel_id}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">more</a>
+                            </>
+                          ) : (
+                            decodeHTML(p.channel_description)
+                          )}
                         </>
                       ) : (
                         "No description available for this playlist."
