@@ -112,7 +112,7 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
     const showName = inputData.title || snippet.title;
     const description = inputData.description || snippet.description;
     const channelId = inputData.channelId || snippet.channelId;
-    const thumbnailUrl = snippet.thumbnails?.medium?.url || snippet.thumbnails?.default?.url || null;
+    const thumbnailUrl = snippet.thumbnails?.maxres?.url || snippet.thumbnails?.standard?.url || snippet.thumbnails?.high?.url || snippet.thumbnails?.medium?.url || snippet.thumbnails?.default?.url || null;
 
     // 2. Fetch Playlist Items for stats
     let totalViews = 0;
