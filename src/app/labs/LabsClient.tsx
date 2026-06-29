@@ -347,12 +347,12 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
                     const isBlurred = !isSignedIn && !isLabs && p.globalRank > 10;
                     return (
                       <PlaylistTableRow 
-                        key={p.playlist_id || idx} 
-                        rank={p.globalRank} 
+                        key={p.playlist_id} 
                         p={p} 
+                        rank={(p as any).displayRank || p.globalRank} 
+                        isBlurred={isBlurred} 
                         handleDelete={handleDelete} 
                         isAdmin={isAdmin} 
-                        isBlurred={isBlurred}
                         onGenreChange={(id, newGenre) => {
                           setPlaylists(prev => prev.map(item => item.playlist_id === id ? { ...item, genre: newGenre } : item));
                         }}
