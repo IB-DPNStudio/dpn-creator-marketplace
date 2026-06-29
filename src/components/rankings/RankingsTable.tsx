@@ -506,7 +506,7 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
                               e.stopPropagation();
                             }}
                           >
-                            <Lock className="w-3.5 h-3.5 text-white" /> Login to view
+                            <Lock className="w-3.5 h-3.5 text-white" /> Unlock
                           </Link>
                         ) : (
                           <div className={`inline-flex items-center space-x-1 px-3 py-1 rounded-lg ${gravitonData[podcast.id]?.is_score_hidden && !isAdminMode ? 'bg-transparent' : gravitonData[podcast.id]?.is_score_hidden ? 'bg-muted/50' : 'bg-spotify/10'}`}>

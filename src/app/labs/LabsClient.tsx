@@ -423,9 +423,9 @@ function PlaylistTableRow({ rank, p, handleDelete, isAdmin, isBlurred = false, o
           </div>
         </td>
         <td colSpan={5} className="p-4 relative h-[88px]">
-          <div className="absolute inset-0 flex items-center justify-center z-10 w-full h-full pr-12">
-            <Button onClick={() => window.location.href = '/login'} className="bg-dentsu hover:bg-dentsu/90 text-white rounded-full shadow-lg font-bold px-8 animate-in fade-in zoom-in duration-300">
-              Sign In to Reveal
+          <div className="absolute inset-0 flex items-center justify-end z-10 w-full h-full pr-12">
+            <Button onClick={(e) => { e.stopPropagation(); window.location.href = '/login'; }} className="bg-dentsu hover:bg-dentsu/90 text-white rounded-full shadow-lg font-bold px-6 animate-in fade-in zoom-in duration-300 flex items-center gap-2">
+              <Lock className="w-4 h-4" /> Unlock
             </Button>
           </div>
           <div className="flex items-center justify-between w-full opacity-20 blur-[4px] select-none pointer-events-none">
