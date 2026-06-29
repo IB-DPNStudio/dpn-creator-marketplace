@@ -30,7 +30,7 @@ The platform connects brands, agencies, and podcast creators by aggregating real
 
 ### Core Capabilities
 - **Algorithmic Ranking Engine:** Synthesizes logarithmic scaling of 7-day cumulative YouTube audience penetration with relative engagement density vectors.
-- **Creator Management:** Automated onboarding workflows allowing creators to securely claim their indexed podcasts via OTP verification.
+- **Creator Management:** Automated onboarding workflows allowing creators to securely claim their indexed podcasts via Magic Link verification.
 - **Agency Portal:** Dedicated interfaces for media buyers and agency representatives to explore verified podcast inventory.
 - **Admin Orchestration:** Centralized Super Admin controls to seed new podcasts, manage rankings, enforce data integrity, and dictate feature flags.
 
@@ -80,7 +80,7 @@ The application is currently containerized and deployed via PM2 on a managed Ubu
 | **Shadcn UI** | UI Components | Accessible, customizable component primitives. | Provides the baseline design system (buttons, modals, tooltips) ensuring UI consistency. |
 | **Supabase** | Backend-as-a-Service | Database, Auth, and Storage. | Core data layer; utilizes PostgreSQL with Row Level Security (RLS) to enforce data boundaries. |
 | **YouTube API v3** | External API | Data ingestion and analytics tracking. | Fetches live subscriber counts, views, latest video URLs, and topic categories for algorithmic scoring. |
-| **Brevo** | Email Service | Transactional email orchestration. | Delivers secure OTP claim links and administrative invites. |
+| **Brevo** | Email Service | Transactional email orchestration. | Delivers secure Magic Links and administrative invites. |
 | **PM2** | Process Manager | Production process orchestration. | Ensures the Next.js Node process runs continuously on the Hostinger VPS with automatic restarts. |
 
 > [!NOTE]
@@ -98,7 +98,7 @@ The application is currently containerized and deployed via PM2 on a managed Ubu
 
 ### 5.2. Identity & Access Management (IAM)
 - **Purpose:** Manages user registration, role assignment, and access controls.
-- **Inputs:** OAuth tokens, Email/Password, OTP tokens.
+- **Inputs:** OAuth tokens, Email/Password, Magic Link tokens.
 - **Business Logic:** Maps authenticated sessions to `profiles.role` (e.g., `creator`, `agency_user`, `super_admin`). Restricts UI elements and server actions based on these roles.
 - **Dependencies:** Supabase GoTrue.
 
@@ -126,7 +126,7 @@ sequenceDiagram
     UI->>Server: Submits Claim Request (Podcast ID)
     Server->>DB: Fetch Podcast contact_email
     DB-->>Server: Returns contact_email
-    Server->>Server: Generate secure OTP & Magic Link
+    Server->>Server: Generate secure Magic Link token
     Server->>Brevo: Dispatch Claim Email
     Brevo-->>User: Delivers Magic Link
     User->>UI: Clicks Magic Link
@@ -194,7 +194,7 @@ The platform was engineered with a security-first posture, anticipating modern t
 | **SQL Injection** | Nullified via Supabase ORM/PostgREST which natively parameterizes all database queries. |
 | **XSS (Cross-Site Scripting)** | React inherently escapes dynamic content rendering. Unsafe raw HTML injection (`dangerouslySetInnerHTML`) is strictly prohibited. |
 | **CSRF (Cross-Site Request Forgery)** | Next.js Server Actions implement native Origin validation and anti-CSRF tokens. |
-| **IDOR / Privilege Escalation** | Ownership mutations (e.g., claiming a podcast) require out-of-band verification (email OTP sent to the canonical channel email). Server actions explicitly validate the requesting user's `owner_id`. |
+| **IDOR / Privilege Escalation** | Ownership mutations (e.g., claiming a podcast) require out-of-band verification (Magic Link sent to the canonical channel email). Server actions explicitly validate the requesting user's `owner_id`. |
 | **Secrets Leakage** | Critical tokens (`SUPABASE_SERVICE_ROLE_KEY`, `YOUTUBE_API_KEY`) are isolated to server-side environments and never exposed to the client bundle (`NEXT_PUBLIC_` prefix is strictly avoided for sensitive keys). |
 
 > [!CAUTION]
