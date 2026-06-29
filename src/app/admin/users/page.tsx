@@ -23,15 +23,29 @@ export default async function UsersAdminPage() {
     redirect("/admin");
   }
 
-  // Fetch all profiles
-  const { data: profiles, error } = await adminClient
+  // Fetch all auth users to ensure we see users even if they haven't completed profile setup
+  const { data: authUsersResponse, error: authError } = await adminClient.auth.admin.listUsers();
+  
+  // Fetch all profiles to get roles and names
+  const { data: profilesData, error: profileError } = await adminClient
     .from("profiles")
-    .select("id, email, full_name, role, created_at")
-    .order("created_at", { ascending: false });
+    .select("id, email, full_name, role, created_at");
 
-  if (error) {
-    console.error("Error fetching profiles:", error);
-  }
+  if (authError) console.error("Error fetching auth users:", authError);
+  if (profileError) console.error("Error fetching profiles:", profileError);
+
+  const mergedProfiles = (authUsersResponse?.users || []).map(authUser => {
+    const profile = profilesData?.find(p => p.id === authUser.id);
+    return {
+      id: authUser.id,
+      email: authUser.email || profile?.email,
+      full_name: profile?.full_name || authUser.user_metadata?.full_name || '',
+      role: profile?.role || authUser.user_metadata?.role || 'general_user',
+      created_at: authUser.created_at
+    };
+  });
+
+  mergedProfiles.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
 
   return (
@@ -42,7 +56,7 @@ export default async function UsersAdminPage() {
       </div>
 
       <UsersTable 
-        profiles={profiles || []} 
+        profiles={mergedProfiles} 
         currentUserRole={currentUserRole} 
       />
     </div>

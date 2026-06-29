@@ -51,6 +51,28 @@ export async function inviteUser(email: string, role: string) {
     });
 
     if (error) {
+      if (error.message.includes("already been registered")) {
+        // Find existing user and just update their role
+        const { data: allUsers } = await adminAuthClient.listUsers();
+        const existingUser = allUsers?.users.find(u => u.email === email);
+        if (existingUser) {
+          await getAdminClient()
+            .from("profiles")
+            .upsert({ 
+              id: existingUser.id, 
+              email: email, 
+              role: role,
+              updated_at: new Date().toISOString()
+            });
+            
+          await adminAuthClient.updateUserById(existingUser.id, {
+            user_metadata: { ...existingUser.user_metadata, role: role }
+          });
+          
+          revalidatePath("/admin/users");
+          return { success: true };
+        }
+      }
       console.error("Invite Error:", error);
       return { success: false, error: error.message };
     }
