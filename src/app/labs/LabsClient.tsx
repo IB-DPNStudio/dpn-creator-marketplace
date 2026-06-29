@@ -414,11 +414,19 @@ function PlaylistTableRow({ rank, p, handleDelete, isAdmin, isBlurred = false, o
           <span className="font-mono font-bold text-xl text-foreground opacity-40 blur-[3px] select-none">{rank}</span>
         </td>
         <td className="p-4">
-          <div className="flex items-center space-x-4 opacity-40 blur-[3px] select-none pointer-events-none">
-            <div className="w-12 h-12 rounded-full bg-foreground/20"></div>
-            <div className="flex flex-col gap-2">
-              <div className="h-4 w-32 bg-foreground/20 rounded"></div>
-              <div className="h-3 w-24 bg-foreground/20 rounded"></div>
+          <div className="flex items-center space-x-4 opacity-60 blur-[3px] select-none pointer-events-none">
+            <div className="relative w-12 h-12 rounded-full overflow-hidden border border-border shadow-sm flex-shrink-0">
+              {p.thumbnail_url ? (
+                <img src={p.thumbnail_url} alt="thumbnail" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center text-primary font-bold">
+                  {(Array.from(decodeHTML(p.show_name).trim())[0] || '?').toUpperCase()}
+                </div>
+              )}
+            </div>
+            <div>
+              <div className="font-bold text-base text-foreground">{decodeHTML(p.show_name)}</div>
+              <div className="text-xs text-muted-foreground mt-0.5">{p.channel_name || 'YouTube Channel'}</div>
             </div>
           </div>
         </td>
@@ -428,14 +436,25 @@ function PlaylistTableRow({ rank, p, handleDelete, isAdmin, isBlurred = false, o
               <Lock className="w-4 h-4" /> Unlock
             </Button>
           </div>
-          <div className="flex items-center justify-between w-full opacity-40 blur-[3px] select-none pointer-events-none">
-            <div className="h-4 w-16 bg-foreground/20 rounded"></div>
-            <div className="flex flex-col gap-2 items-end">
-              <div className="h-4 w-20 bg-foreground/20 rounded"></div>
-              <div className="h-3 w-16 bg-foreground/20 rounded"></div>
+          <div className="flex items-center justify-between w-full opacity-60 blur-[3px] select-none pointer-events-none">
+            <div>
+              <div className="font-mono font-bold">{p.total_episodes}</div>
+              <div className="text-xs text-muted-foreground">Episodes</div>
             </div>
-            <div className="h-4 w-24 bg-foreground/20 rounded"></div>
-            <div className="h-6 w-16 bg-foreground/20 rounded-full"></div>
+            <div className="text-right">
+              <div className="font-mono font-bold text-green-600 flex items-center justify-end gap-1">
+                <TrendingUp className="w-3 h-3" />
+                {p.average_views_per_episode !== null && p.average_views_per_episode !== undefined ? (p.average_views_per_episode > 1000000 ? (p.average_views_per_episode / 1000000).toFixed(1) + 'M' : p.average_views_per_episode > 1000 ? (p.average_views_per_episode / 1000).toFixed(1) + 'k' : Math.round(p.average_views_per_episode)) : 'N/A'}
+              </div>
+            </div>
+            <div>
+              <span className="text-xs font-semibold tracking-wide text-foreground uppercase block">{p.genre || 'General'}</span>
+              <span className="text-[11px] font-medium text-muted-foreground">{p.primary_language || 'English'}</span>
+            </div>
+            <div className="inline-flex items-center space-x-1 px-3 py-1 rounded-lg bg-spotify/10">
+              <TrendingUp className="w-4 h-4 text-spotify" />
+              <span className="text-spotify font-mono font-bold text-lg">{p.dpn_score || 'N/A'}</span>
+            </div>
             <ChevronDown className="w-5 h-5 text-muted-foreground" />
           </div>
         </td>
