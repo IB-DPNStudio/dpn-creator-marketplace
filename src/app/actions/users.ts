@@ -275,7 +275,7 @@ export async function switchUserCategory(targetCategory: 'general' | 'creator' |
         if (podcastErr) throw podcastErr;
         
         // Notify admin
-        await sendApprovalNotification(additionalData.showName, 'Creator', user.email);
+        await sendApprovalNotification(additionalData.showName, 'Creator', user.email || '');
       }
     } 
     else if (targetCategory === 'agency') {
@@ -315,7 +315,7 @@ export async function switchUserCategory(targetCategory: 'general' | 'creator' |
       if (agencyErr) throw agencyErr;
 
       // Notify admin
-      await sendApprovalNotification(additionalData.name || additionalData.company, 'Agency', user.email);
+      await sendApprovalNotification(additionalData.name || additionalData.company, 'Agency', user.email || '');
     }
 
     revalidatePath("/dashboard");
