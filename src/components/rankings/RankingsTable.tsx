@@ -350,7 +350,7 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
                       </div>
                     </td>
                     <td className="p-4">
-                      <div className={`flex items-center space-x-4 transition-all duration-300 ${isGated ? 'blur-[5px] select-none pointer-events-none' : ''}`}>
+                      <div className={`flex items-center space-x-4 transition-all duration-300 ${isGated ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
                         <div className="relative w-12 h-12 rounded-full overflow-hidden border border-border shadow-sm group-hover:border-dentsu transition-colors flex-shrink-0">
                           <Image 
                             src={podcast.thumbnail_url || 'https://via.placeholder.com/150'} 
@@ -432,7 +432,7 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
                       </div>
                     </td>
                     <td className="p-4">
-                      <div className={`transition-all duration-300 ${isGated ? 'blur-[5px] select-none pointer-events-none' : ''}`}>
+                      <div className={`transition-all duration-300 ${isGated ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
                         <div className="font-mono font-bold">
                           {podcast.subscriber_count > 1000000 
                             ? (podcast.subscriber_count / 1000000).toFixed(1) + 'M' 
@@ -442,7 +442,7 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
                       </div>
                     </td>
                     <td className="p-4 text-right">
-                      <div className={`transition-all duration-300 ${isGated ? 'blur-[5px] select-none pointer-events-none' : ''}`}>
+                      <div className={`transition-all duration-300 ${isGated ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
                         <div className="font-mono font-bold text-green-600 flex items-center justify-end gap-1">
                           <TrendingUp className="w-3 h-3" />
                           {(podcast as any).views_last_7_days !== null && (podcast as any).views_last_7_days !== undefined ? ((podcast as any).views_last_7_days > 1000000 ? ((podcast as any).views_last_7_days / 1000000).toFixed(1) + 'M' : ((podcast as any).views_last_7_days / 1000).toFixed(1) + 'k') : 'N/A'}
@@ -450,7 +450,7 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
                       </div>
                     </td>
                     <td className="p-4">
-                      <div className={`flex flex-col gap-2 items-start transition-all duration-300 ${isGated ? 'blur-[5px] select-none pointer-events-none' : ''}`}>
+                      <div className={`flex flex-col gap-2 items-start transition-all duration-300 ${isGated ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
                         {isAdminMode ? (
                           <select
                             className="text-xs px-2 py-1.5 rounded border border-input bg-background max-w-[140px] focus:outline-none focus:ring-1 focus:ring-ring shadow-sm"
@@ -644,7 +644,7 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
                 }
               }}
             >
-              <div className={`flex items-start justify-between gap-3 ${isGated ? 'blur-[5px] select-none pointer-events-none' : ''}`}>
+              <div className={`flex items-start justify-between gap-3 ${isGated ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
                 <div className="flex gap-3 items-center">
                   <div className="relative w-12 h-12 rounded-full overflow-hidden border border-border shadow-sm flex-shrink-0">
                     <Image 
@@ -701,7 +701,7 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
                 </div>
               </div>
 
-              <div className={`flex justify-between items-center text-sm border-t border-border pt-3 mt-1 ${isGated ? 'blur-[5px] select-none pointer-events-none' : ''}`}>
+              <div className={`flex justify-between items-center text-sm border-t border-border pt-3 mt-1 ${isGated ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
                 <div>
                   <span className="text-muted-foreground text-[11px] uppercase tracking-wider">Audience: </span>
                   <span className="font-mono font-bold">

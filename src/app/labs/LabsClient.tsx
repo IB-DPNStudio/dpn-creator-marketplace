@@ -411,10 +411,10 @@ function PlaylistTableRow({ rank, p, handleDelete, isAdmin, isBlurred = false, o
     return (
       <tr className="bg-card border-b border-border/50 group relative hover:bg-muted/30 transition-colors">
         <td className="p-4 text-center border-r border-border/50">
-          <span className="font-mono font-bold text-xl text-foreground opacity-20 blur-[4px] select-none">{rank}</span>
+          <span className="font-mono font-bold text-xl text-foreground opacity-40 blur-[3px] select-none">{rank}</span>
         </td>
         <td className="p-4">
-          <div className="flex items-center space-x-4 opacity-20 blur-[4px] select-none pointer-events-none">
+          <div className="flex items-center space-x-4 opacity-40 blur-[3px] select-none pointer-events-none">
             <div className="w-12 h-12 rounded-full bg-foreground/20"></div>
             <div className="flex flex-col gap-2">
               <div className="h-4 w-32 bg-foreground/20 rounded"></div>
@@ -428,7 +428,7 @@ function PlaylistTableRow({ rank, p, handleDelete, isAdmin, isBlurred = false, o
               <Lock className="w-4 h-4" /> Unlock
             </Button>
           </div>
-          <div className="flex items-center justify-between w-full opacity-20 blur-[4px] select-none pointer-events-none">
+          <div className="flex items-center justify-between w-full opacity-40 blur-[3px] select-none pointer-events-none">
             <div className="h-4 w-16 bg-foreground/20 rounded"></div>
             <div className="flex flex-col gap-2 items-end">
               <div className="h-4 w-20 bg-foreground/20 rounded"></div>
