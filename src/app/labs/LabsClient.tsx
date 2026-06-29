@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { deleteLabsPlaylist, fetchPlaylistSampleVideos, updateLabsPlaylistGenre, updateLabsPlaylistLanguage, addOrUpdatePlaylistRank, getLabsPlaylists, updateLabsPlaylistBoost } from "@/app/actions/labs";
-import { Award, Trash2, ChevronDown, ChevronUp, Search, TrendingUp, ArrowUpDown, Eye, Heart, MessageSquare } from "lucide-react";
+import { Award, Trash2, ChevronDown, ChevronUp, Search, TrendingUp, ArrowUpDown, Eye, Heart, MessageSquare, Lock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PODCAST_GENRES } from "@/lib/constants";
