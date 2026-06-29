@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 import { addOrUpdatePlaylistRank } from "./labs";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
+import { sendApprovalNotification } from "@/lib/email";
 
 // Admin client using service role key to bypass RLS and use Auth Admin API
 const getAdminClient = () => {
@@ -199,7 +200,7 @@ export async function switchUserCategory(targetCategory: 'general' | 'creator' |
         .from("profiles")
         .upsert({
           id: user.id,
-          role: 'creator',
+          role: 'general_user', // Will be upgraded to 'creator' upon approval
           full_name: additionalData.fullName,
           phone: additionalData.phone,
           email: user.email,
@@ -272,6 +273,9 @@ export async function switchUserCategory(targetCategory: 'general' | 'creator' |
           .eq("playlist_id", rankRes.playlist_id);
 
         if (podcastErr) throw podcastErr;
+        
+        // Notify admin
+        await sendApprovalNotification(additionalData.showName, 'Creator', user.email);
       }
     } 
     else if (targetCategory === 'agency') {
@@ -284,7 +288,7 @@ export async function switchUserCategory(targetCategory: 'general' | 'creator' |
         .from("profiles")
         .upsert({
           id: user.id,
-          role: 'agency_user',
+          role: 'general_user', // Will be upgraded to 'agency_user' upon approval
           full_name: additionalData.name,
           phone: additionalData.phone,
           email: user.email,
@@ -298,7 +302,7 @@ export async function switchUserCategory(targetCategory: 'general' | 'creator' |
         .from("agencies")
         .insert({
           owner_id: user.id,
-          status: 'approved',
+          status: 'pending',
           name: additionalData.name,
           company_name: additionalData.company,
           job_title: additionalData.jobTitle,
@@ -309,6 +313,9 @@ export async function switchUserCategory(targetCategory: 'general' | 'creator' |
         });
 
       if (agencyErr) throw agencyErr;
+
+      // Notify admin
+      await sendApprovalNotification(additionalData.name || additionalData.company, 'Agency', user.email);
     }
 
     revalidatePath("/dashboard");
@@ -317,6 +324,80 @@ export async function switchUserCategory(targetCategory: 'general' | 'creator' |
 
   } catch (err: any) {
     console.error("Error switching category:", err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function deleteUser(targetUserId: string, role: string) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) throw new Error("Unauthorized");
+
+    const adminDbClient = getAdminClient();
+    const { data: profile } = await adminDbClient
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (profile?.role !== 'super_admin' && profile?.role !== 'dpn_sales') {
+      throw new Error("Unauthorized: Only admins can delete users");
+    }
+
+    // 1. Cleanup specific role data
+    if (role === 'creator') {
+      // Orphan their podcasts
+      await adminDbClient
+        .from("podcasts")
+        .update({ owner_id: null })
+        .eq("owner_id", targetUserId);
+      await adminDbClient
+        .from("playlist_podcasts")
+        .update({ owner_id: null })
+        .eq("owner_id", targetUserId);
+    } else if (role === 'agency_user' || role === 'pending_agency') {
+      // Delete their EOIs
+      const { data: agencies } = await adminDbClient
+        .from("agencies")
+        .select("id")
+        .eq("owner_id", targetUserId);
+
+      if (agencies && agencies.length > 0) {
+        const agencyIds = agencies.map(a => a.id);
+        await adminDbClient
+          .from("eois")
+          .delete()
+          .in("agency_id", agencyIds);
+
+        await adminDbClient
+          .from("agencies")
+          .delete()
+          .in("id", agencyIds);
+      }
+    }
+
+    // 2. Delete Profile
+    await adminDbClient
+      .from("profiles")
+      .delete()
+      .eq("id", targetUserId);
+
+    // 3. Delete from Auth
+    const adminAuthClient = getAdminClient().auth.admin;
+    const { error: deleteError } = await adminAuthClient.deleteUser(targetUserId);
+
+    if (deleteError) {
+      console.error("Auth delete error:", deleteError);
+      return { success: false, error: deleteError.message };
+    }
+
+    revalidatePath("/admin/users");
+    return { success: true };
+
+  } catch (err: any) {
+    console.error("Error deleting user:", err);
     return { success: false, error: err.message };
   }
 }

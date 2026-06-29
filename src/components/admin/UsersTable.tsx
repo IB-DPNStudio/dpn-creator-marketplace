@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { inviteUser, updateUserRole } from "@/app/actions/users";
-import { Loader2, Mail, Shield, User, UserPlus, Check, X } from "lucide-react";
+import { inviteUser, updateUserRole, deleteUser } from "@/app/actions/users";
+import { Loader2, Mail, Shield, User, UserPlus, Check, X, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -43,6 +43,19 @@ export function UsersTable({ profiles, currentUserRole }: { profiles: any[], cur
       setEditingUserId(null);
     } else {
       alert("Failed to update role: " + result.error);
+    }
+  };
+
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+
+  const handleDelete = async (userId: string, role: string) => {
+    if (confirm("Are you sure you want to delete this user? Their account will be permanently removed. For creators, their podcast will be un-linked but remain in the ranker. For agencies, their EOIs will be deleted.")) {
+      setIsDeleting(userId);
+      const result = await deleteUser(userId, role);
+      setIsDeleting(null);
+      if (!result.success) {
+        alert("Failed to delete user: " + result.error);
+      }
     }
   };
 
@@ -162,15 +175,25 @@ export function UsersTable({ profiles, currentUserRole }: { profiles: any[], cur
                           {profile.role?.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
                         </div>
                         {canManageRoles && profile.id && (
-                          <button 
-                            onClick={() => {
-                              setTempRole(profile.role);
-                              setEditingUserId(profile.id);
-                            }}
-                            className="text-xs text-muted-foreground hover:text-foreground underline decoration-dotted underline-offset-4"
-                          >
-                            Edit
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button 
+                              onClick={() => {
+                                setTempRole(profile.role);
+                                setEditingUserId(profile.id);
+                              }}
+                              className="text-xs text-muted-foreground hover:text-foreground underline decoration-dotted underline-offset-4"
+                            >
+                              Edit
+                            </button>
+                            <button 
+                              onClick={() => handleDelete(profile.id, profile.role)}
+                              disabled={isDeleting === profile.id}
+                              className="text-xs text-red-500/70 hover:text-red-500 underline decoration-dotted underline-offset-4 flex items-center"
+                            >
+                              {isDeleting === profile.id ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Trash2 className="w-3 h-3 mr-1" />}
+                              Delete
+                            </button>
+                          </div>
                         )}
                       </div>
                     )}

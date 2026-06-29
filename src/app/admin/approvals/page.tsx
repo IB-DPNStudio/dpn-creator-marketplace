@@ -22,6 +22,14 @@ export default async function AdminApprovalsPage() {
     "use server";
     const id = formData.get("id") as string;
     const adminClient = createAdminClient();
+    
+    // Get the owner_id and upgrade their profile role
+    const { data: podcast } = await adminClient.from("podcasts").select("owner_id").eq("id", id).single();
+    if (podcast?.owner_id) {
+      await adminClient.from("profiles").update({ role: "creator" }).eq("id", podcast.owner_id);
+      await adminClient.auth.admin.updateUserById(podcast.owner_id, { user_metadata: { role: 'creator' }});
+    }
+    
     await adminClient.from("podcasts").update({ status: 'approved_partner' }).eq("id", id);
     revalidatePath("/admin/approvals");
   }
@@ -30,6 +38,14 @@ export default async function AdminApprovalsPage() {
     "use server";
     const id = formData.get("id") as string;
     const adminClient = createAdminClient();
+    
+    // Get the owner_id and upgrade their profile role
+    const { data: agency } = await adminClient.from("agencies").select("owner_id").eq("id", id).single();
+    if (agency?.owner_id) {
+      await adminClient.from("profiles").update({ role: "agency_user" }).eq("id", agency.owner_id);
+      await adminClient.auth.admin.updateUserById(agency.owner_id, { user_metadata: { role: 'agency_user' }});
+    }
+    
     await adminClient.from("agencies").update({ status: 'approved' }).eq("id", id);
     revalidatePath("/admin/approvals");
   }

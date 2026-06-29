@@ -73,3 +73,55 @@ export async function sendClaimEmail(toEmail: string, showName: string, coverUrl
 
   return info;
 }
+
+export async function sendApprovalNotification(applicantName: string, applicantType: 'Agency' | 'Creator', email: string) {
+  const adminUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://dpnranker.com'}/admin/approvals`;
+  const logoUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://dpnranker.com'}/dentsu-logo.png`;
+  
+  const htmlContent = `
+    <div style="font-family: 'Helvetica Neue', Arial, sans-serif; color: #1a1a1a; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #eaeaef; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+      
+      <!-- Header Area -->
+      <div style="background-color: #ffffff; padding: 30px; text-align: center; border-bottom: 1px solid #eaeaef;">
+        <img src="${logoUrl}" alt="Dentsu Podcast Network" style="max-height: 80px; width: auto;" />
+      </div>
+
+      <!-- Main Content Area -->
+      <div style="padding: 40px 30px;">
+        <h2 style="margin-top: 0; color: #000000; font-size: 22px;">New ${applicantType} Application Pending Approval</h2>
+        
+        <p style="font-size: 16px; line-height: 1.6; color: #4a4a4a; margin-bottom: 24px;">
+          A new user has registered and is requesting <strong>${applicantType}</strong> access to the DPN Creator Marketplace.
+        </p>
+
+        <div style="background-color: #f8f8fa; padding: 15px; border-radius: 6px; margin: 20px 0;">
+          <p style="margin: 5px 0;"><strong>Name / Company:</strong> ${applicantName}</p>
+          <p style="margin: 5px 0;"><strong>Email:</strong> ${email}</p>
+        </div>
+
+        <p style="font-size: 16px; line-height: 1.6; color: #4a4a4a; margin-bottom: 24px;">
+          Please log in to the admin dashboard to review and approve their access.
+        </p>
+
+        <!-- CTA Button -->
+        <div style="text-align: center; margin: 40px 0;">
+          <a href="${adminUrl}" style="background-color: #000000; color: #ffffff; padding: 16px 32px; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 8px; display: inline-block;">
+            Review & Approve
+          </a>
+        </div>
+      </div>
+    </div>
+  `;
+
+  try {
+    const info = await transporter.sendMail({
+      from: '"DPN System" <afbdb4001@smtp-brevo.com>', 
+      to: 'studio@ideabrews.com',
+      subject: `[Action Required] New ${applicantType} Application`,
+      html: htmlContent,
+    });
+    return info;
+  } catch (err) {
+    console.error("Error sending approval email:", err);
+  }
+}
