@@ -2,7 +2,8 @@ import { createClient, createAdminClient } from "@/utils/supabase/server";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, TrendingUp, Users, PlayCircle, BarChart, Eye, Heart, MessageSquare } from "lucide-react";
+import { ArrowLeft, CheckCircle2, TrendingUp, Users, PlayCircle, BarChart, Eye, Heart, MessageSquare, Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export default async function PodcastDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
@@ -63,7 +64,32 @@ export default async function PodcastDetailsPage({ params }: { params: Promise<{
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 py-6 border-y border-border">
             <div className="space-y-1">
-              <div className="text-sm text-muted-foreground flex items-center"><TrendingUp className="w-4 h-4 mr-1"/> DPN Score</div>
+              <div className="text-sm text-muted-foreground flex items-center gap-1">
+                <TrendingUp className="w-4 h-4" />
+                <span>DPN Score</span>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger className="cursor-default">
+                      <Info className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground transition-colors" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-sm p-4 bg-slate-950 border border-slate-800 shadow-2xl rounded-xl text-slate-200 text-left">
+                      <div className="space-y-2">
+                        <h4 className="font-bold text-dentsu font-heading tracking-wide uppercase text-xs">DPN Score Breakdown</h4>
+                        <p className="text-slate-300 text-xs leading-relaxed">
+                          A proprietary index calculated from:
+                        </p>
+                        <ul className="text-xs list-disc pl-4 space-y-1 text-slate-400">
+                          <li><span className="font-semibold text-slate-200">Engagement & Audience (40%):</span> 7-day views, likes, comments & audience efficiency</li>
+                          <li><span className="font-semibold text-slate-200">Freshness (20%):</span> Recency of the last published episode</li>
+                          <li><span className="font-semibold text-slate-200">Depth (15%):</span> Total episode catalog size</li>
+                          <li><span className="font-semibold text-slate-200">Consistency (15%):</span> Publishing frequency/cadence</li>
+                          <li><span className="font-semibold text-slate-200">Confidence (10%):</span> Podcast metadata verification</li>
+                        </ul>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <div className="text-2xl font-bold font-mono text-spotify">{podcast.final_score?.toFixed(1) || '0.0'}</div>
             </div>
             <div className="space-y-1">

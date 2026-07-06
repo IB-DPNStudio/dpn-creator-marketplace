@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { deleteLabsPlaylist, fetchPlaylistSampleVideos, updateLabsPlaylistGenre, updateLabsPlaylistLanguage, addOrUpdatePlaylistRank, getLabsPlaylists, updateLabsPlaylistBoost } from "@/app/actions/labs";
-import { Award, Trash2, ChevronDown, ChevronUp, Search, TrendingUp, ArrowUpDown, Eye, Heart, MessageSquare, Lock } from "lucide-react";
+import { Award, Trash2, ChevronDown, ChevronUp, Search, TrendingUp, ArrowUpDown, Eye, Heart, MessageSquare, Lock, Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PODCAST_GENRES } from "@/lib/constants";
@@ -330,6 +331,28 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
                   <th className="p-4 font-bold text-right cursor-pointer hover:bg-muted/80 transition-colors select-none" onClick={() => handleSort('final_score')}>
                     <div className="flex items-center justify-end gap-2">
                       <span className="flex items-center gap-1">DPN Score <ArrowUpDown className="w-3 h-3 text-muted-foreground" /></span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger onClick={(e) => e.stopPropagation()}>
+                            <Info className="w-4 h-4 text-muted-foreground hover:text-foreground transition-colors" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-sm p-4 bg-slate-950 border border-slate-800 shadow-2xl rounded-xl animate-in fade-in zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:zoom-out-95 text-slate-200 text-left">
+                            <div className="space-y-2">
+                              <h4 className="font-bold text-dentsu font-heading tracking-wide uppercase text-xs">DPN Score Breakdown</h4>
+                              <p className="text-slate-300 text-xs leading-relaxed">
+                                A proprietary index calculated from:
+                              </p>
+                              <ul className="text-xs list-disc pl-4 space-y-1 text-slate-400">
+                                <li><span className="font-semibold text-slate-200">Engagement & Audience (40%):</span> 7-day views, likes, comments & audience efficiency</li>
+                                <li><span className="font-semibold text-slate-200">Freshness (20%):</span> Recency of the last published episode</li>
+                                <li><span className="font-semibold text-slate-200">Depth (15%):</span> Total episode catalog size</li>
+                                <li><span className="font-semibold text-slate-200">Consistency (15%):</span> Publishing frequency/cadence</li>
+                                <li><span className="font-semibold text-slate-200">Confidence (10%):</span> Podcast metadata verification</li>
+                              </ul>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                   </th>
                   <th className="w-16"></th>
