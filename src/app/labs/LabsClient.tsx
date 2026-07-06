@@ -622,15 +622,30 @@ function PlaylistTableRow({ rank, p, handleDelete, isAdmin, isBlurred = false, o
                 <div className="grid grid-cols-3 bg-background/50 border border-border rounded-xl p-4 md:p-6 shadow-sm mx-auto w-full max-w-4xl mt-2">
                   <div className="flex flex-col items-center justify-center border-r border-border/60">
                     <span className="text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Last Week</span>
-                    <span className="font-heading font-black text-2xl md:text-3xl text-foreground drop-shadow-sm">-</span>
+                    <span className="font-heading font-black text-2xl md:text-3xl text-foreground drop-shadow-sm">
+                      {(() => {
+                        const m = calculateHistoricalMetrics(p.podcast_history || [], rank);
+                        return m.lastWeekRank ? m.lastWeekRank : '-';
+                      })()}
+                    </span>
                   </div>
                   <div className="flex flex-col items-center justify-center border-r border-border/60">
                     <span className="text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Peak Rank</span>
-                    <span className="font-heading font-black text-2xl md:text-3xl text-foreground drop-shadow-sm">{rank}</span>
+                    <span className="font-heading font-black text-2xl md:text-3xl text-foreground drop-shadow-sm">
+                      {(() => {
+                        const m = calculateHistoricalMetrics(p.podcast_history || [], rank);
+                        return m.peakRank ? m.peakRank : rank;
+                      })()}
+                    </span>
                   </div>
                   <div className="flex flex-col items-center justify-center">
                     <span className="text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Weeks in Top 20</span>
-                    <span className="font-heading font-black text-2xl md:text-3xl text-foreground drop-shadow-sm">1</span>
+                    <span className="font-heading font-black text-2xl md:text-3xl text-foreground drop-shadow-sm">
+                      {(() => {
+                        const m = calculateHistoricalMetrics(p.podcast_history || [], rank);
+                        return m.weeksInTop20;
+                      })()}
+                    </span>
                   </div>
                 </div>
 
