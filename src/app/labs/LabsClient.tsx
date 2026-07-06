@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PODCAST_GENRES } from "@/lib/constants";
+import { calculateHistoricalMetrics } from "@/lib/history_utils";
 
 export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, isSignedIn = false }: { initialPlaylists: any[], isAdmin: boolean, isLabs?: boolean, isSignedIn?: boolean }) {
   const [playlists, setPlaylists] = useState(initialPlaylists);
@@ -492,7 +493,16 @@ function PlaylistTableRow({ rank, p, handleDelete, isAdmin, isBlurred = false, o
               ) : (
                 <span className="font-mono font-bold text-xl text-foreground">{rank}</span>
               )}
-              <span className="text-xs font-bold w-6 text-muted-foreground">-</span>
+              {(() => {
+                const metrics = calculateHistoricalMetrics(p.podcast_history || [], rank);
+                return metrics.rankChange !== null ? (
+                  <span className={`text-xs font-bold w-6 ${metrics.rankChange > 0 ? 'text-green-500' : metrics.rankChange < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                    {metrics.rankChange > 0 ? `+${metrics.rankChange}` : metrics.rankChange < 0 ? `${metrics.rankChange}` : '-'}
+                  </span>
+                ) : (
+                  <span className="text-xs font-bold w-6 text-muted-foreground">-</span>
+                );
+              })()}
             </div>
           </div>
         </td>

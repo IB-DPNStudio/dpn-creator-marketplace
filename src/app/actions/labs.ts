@@ -40,7 +40,7 @@ export async function getLabsPlaylists(statusIn?: string[]) {
   while (hasMore) {
     let query = adminDbClient
       .from("playlist_podcasts")
-      .select("*")
+      .select("*, podcast_history(*)")
       .eq("is_included", true)
       .order("final_score", { ascending: false })
       .range(from, from + step);
@@ -108,7 +108,8 @@ export async function getLabsPlaylists(statusIn?: string[]) {
     channel_name: channelMap.get(p.channel_id) || "YouTube Channel",
     channel_description: channelDescMap.get(p.channel_id) || "",
     channel_thumbnail_url: channelThumbMap.get(p.channel_id) || null,
-    subscriber_count: channelSubMap.get(p.channel_id) || 0
+    subscriber_count: channelSubMap.get(p.channel_id) || 0,
+    podcast_history: p.podcast_history || []
   }));
 }
 
