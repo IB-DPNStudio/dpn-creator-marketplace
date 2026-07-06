@@ -40,7 +40,10 @@ export function calculateHistoricalMetrics(
     new Date(b.snapshot_date).getTime() - new Date(a.snapshot_date).getTime()
   );
 
-  const lastWeekSnapshot = sortedHistory[0]; // Most recent past snapshot
+  const today = new Date().toISOString().split('T')[0];
+  const pastSnapshots = sortedHistory.filter(h => !h.snapshot_date.startsWith(today));
+  
+  const lastWeekSnapshot = pastSnapshots.length > 0 ? pastSnapshots[0] : null; // Most recent past snapshot
   
   // Calculate Peak Rank (lowest number is best)
   let peakRank = currentRank;
