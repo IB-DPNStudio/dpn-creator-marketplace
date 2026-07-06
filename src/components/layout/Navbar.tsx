@@ -12,7 +12,7 @@ export async function Navbar() {
       <div className="container mx-auto flex h-16 items-center px-4 justify-between">
         <Link href="/" className="flex items-center space-x-2">
           <span className="font-heading font-bold text-xl tracking-tight flex items-center">
-            <img src="/dentsu-logo.png" alt="Dentsu" className="h-5 w-auto mr-2 dark:invert" />
+            <img src="/dentsu-logo-new.png" alt="Dentsu" className="h-[18px] w-auto mr-2 dark:invert" />
             <span>Podcast Network</span>
           </span>
         </Link>
