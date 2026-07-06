@@ -11,8 +11,11 @@ export async function Navbar() {
     <nav className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 w-full">
       <div className="container mx-auto flex h-16 items-center px-4 justify-between">
         <Link href="/" className="flex items-center space-x-2">
-          <span className="font-heading font-bold text-xl tracking-tight">
-            <span className="text-dentsu">Dentsu</span> Podcast Network
+          <span className="font-heading font-bold text-xl tracking-tight flex items-center">
+            <span className="bg-black px-2 py-1 rounded-sm flex items-center justify-center mr-2">
+              <img src="/dentsu-logo.png" alt="Dentsu" className="h-5 w-auto invert dark:invert-0" />
+            </span>
+            <span>Podcast Network</span>
           </span>
         </Link>
         <div className="hidden md:flex items-center space-x-6 text-sm font-medium">
