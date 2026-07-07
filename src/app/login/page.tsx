@@ -70,7 +70,7 @@ function LoginContent() {
       <div className="w-full max-w-md bg-card border border-border p-8 rounded-2xl shadow-lg space-y-8">
         <div className="text-center space-y-2">
           <h1 className="font-heading text-3xl font-bold">Welcome Back</h1>
-          <p className="text-muted-foreground">Sign in to your DPN account</p>
+          <p className="text-muted-foreground">Sign in to your account</p>
         </div>
         
         <div className="space-y-4">

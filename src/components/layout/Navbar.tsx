@@ -10,11 +10,11 @@ export async function Navbar() {
   return (
     <nav className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 w-full">
       <div className="container mx-auto flex h-16 items-center px-4 justify-between">
-        <Link href="/" className="flex items-center space-x-2">
-          <span className="font-heading font-bold text-xl tracking-tight flex items-center">
-            <img src="/dentsu-logo-new.png" alt="Dentsu" className="h-[18px] w-auto mr-2 dark:invert" />
-            <span>Podcast Network</span>
-          </span>
+        <Link href="/" className="flex items-center">
+          <div className="flex items-center">
+            <img src="/dentsu-logo-new.png" alt="dentsu" className="h-[16px] md:h-[18px] w-auto mr-[6px] dark:invert" />
+            <span className="font-heading font-medium text-base md:text-lg tracking-tight lowercase pt-[2px]">podcast network</span>
+          </div>
         </Link>
         <div className="hidden md:flex items-center space-x-6 text-sm font-medium">
           <Link href="/creators" className="transition-colors hover:text-foreground/80 text-foreground/60">Creators</Link>

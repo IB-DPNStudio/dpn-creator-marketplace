@@ -4,8 +4,8 @@ import { CheckCircle2 } from "lucide-react";
 
 export default function CreatorsPage() {
   const benefits = [
-    "Direct access to Dentsu's enterprise brand clients.",
-    "No self-serve spam. Only premium, vetted opportunities.",
+    "Direct access to dentsu's enterprise brand clients.",
+    "Comprehensive monetization and premium CPMs.",
     "Weekly rankings to showcase your growth to buyers.",
     "Transparent revenue share and timely payments.",
     "Dedicated Creator Success Manager for top tiers."

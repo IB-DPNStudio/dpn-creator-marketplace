@@ -14,7 +14,7 @@ export default function TermsPage() {
           <p className="text-muted-foreground mb-8">Last updated: June 2026</p>
           
           <h2>1. Terms</h2>
-          <p>By accessing the Dentsu Podcast Network (DPN) Platform, you are agreeing to be bound by these terms of service, all applicable laws and regulations, and agree that you are responsible for compliance with any applicable local laws.</p>
+          <p>By accessing the dentsu podcast network (DPN) Platform, you are agreeing to be bound by these terms of service, all applicable laws and regulations, and agree that you are responsible for compliance with any applicable local laws.</p>
           
           <h2>2. Use License</h2>
           <p>Permission is granted to temporarily download one copy of the materials (information or software) on DPN's website for personal, non-commercial transitory viewing only. This is the grant of a license, not a transfer of title, and under this license you may not:</p>

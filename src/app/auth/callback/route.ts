@@ -58,12 +58,12 @@ export async function GET(request: Request) {
           })
         }
       }
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dpnranker.com'
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || origin
       return NextResponse.redirect(`${siteUrl}${next === '/' ? '' : next}`)
     }
   }
 
   // return the user to an error page with instructions
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dpnranker.com'
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || origin
   return NextResponse.redirect(`${siteUrl}/auth/auth-code-error`)
 }

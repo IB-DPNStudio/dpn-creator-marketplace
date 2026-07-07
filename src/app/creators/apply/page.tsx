@@ -63,9 +63,9 @@ export default async function CreatorApplyPage({
   return (
     <div className="py-20 bg-background min-h-screen">
       <div className="container mx-auto px-4 max-w-3xl">
-        <div className="mb-10">
-          <h1 className="font-heading text-4xl font-bold mb-2">Creator Application</h1>
-          <p className="text-muted-foreground">Submit your podcast details to join the Dentsu Podcast Network.</p>
+        <div className="text-center mb-8">
+          <h1 className="font-heading text-3xl font-bold mb-2">Creator Application</h1>
+          <p className="text-muted-foreground">Submit your podcast details to join the dentsu podcast network.</p>
         </div>
 
         <div className="bg-card border border-border p-8 rounded-2xl shadow-sm">

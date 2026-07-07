@@ -26,7 +26,8 @@ export async function POST(request: Request) {
 
   await supabase.auth.signOut()
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dpnranker.com'
+  const { origin } = new URL(request.url)
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || origin
   return NextResponse.redirect(`${siteUrl}/`, {
     status: 302,
   })

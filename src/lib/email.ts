@@ -20,7 +20,7 @@ export async function sendClaimEmail(toEmail: string, showName: string, coverUrl
       
       <!-- Header Area -->
       <div style="background-color: #ffffff; padding: 30px; text-align: center; border-bottom: 1px solid #eaeaef;">
-        <img src="${logoUrl}" alt="Dentsu Podcast Network" style="max-height: 80px; width: auto;" />
+        <img src="${logoUrl}" alt="dentsu podcast network" style="max-height: 80px; width: auto;" />
       </div>
 
       <!-- Main Content Area -->
@@ -56,9 +56,10 @@ export async function sendClaimEmail(toEmail: string, showName: string, coverUrl
 
       <!-- Footer Area -->
       <div style="background-color: #f8f8fa; padding: 20px; text-align: center; border-top: 1px solid #eaeaef;">
-        <p style="margin: 0; font-size: 12px; color: #888888;">
-          © ${new Date().getFullYear()} Dentsu Podcast Network. All rights reserved.<br/>
-          Empowering creators globally.
+        <div style="text-align: center; margin-top: 30px; font-size: 12px; color: #999;">
+        <p>
+          &copy; ${new Date().getFullYear()} dentsu podcast network. All rights reserved.<br/>
+          Powered by dentsu
         </p>
       </div>
     </div>
@@ -83,7 +84,7 @@ export async function sendApprovalNotification(applicantName: string, applicantT
       
       <!-- Header Area -->
       <div style="background-color: #ffffff; padding: 30px; text-align: center; border-bottom: 1px solid #eaeaef;">
-        <img src="${logoUrl}" alt="Dentsu Podcast Network" style="max-height: 80px; width: auto;" />
+        <img src="${logoUrl}" alt="dentsu podcast network" style="max-height: 80px; width: auto;" />
       </div>
 
       <!-- Main Content Area -->

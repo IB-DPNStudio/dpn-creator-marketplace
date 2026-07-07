@@ -8,7 +8,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-mono: var(--font-mono);
   --font-heading: var(--font-heading);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -52,6 +52,10 @@
 }
 
 :root {
+  --font-sans: 'Halcom', Verdana, sans-serif;
+  --font-heading: 'Halcom', Verdana, sans-serif;
+  --font-mono: monospace;
+  
   --background: #ffffff;
   --foreground: #121212;
   --card: #ffffff;
@@ -69,7 +73,7 @@
   --destructive: #ff0000;
   --border: #ececec;
   --input: #ececec;
-  --ring: #e60012;
+  --ring: #ff5023;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -83,15 +87,15 @@
   --sidebar-accent: #ececec;
   --sidebar-accent-foreground: #121212;
   --sidebar-border: #ececec;
-  --sidebar-ring: #e60012;
+  --sidebar-ring: #ff5023;
   
-  --dentsu-red: #e60012;
+  --dentsu-red: #ff5023;
   --spotify-green: #1db954;
   --youtube-red: #ff0000;
 }
 
 .dark {
-  --background: #121212;
+  --background: #323232;
   --foreground: #f8f8f8;
   --card: #1f1f1f;
   --card-foreground: #f8f8f8;
@@ -106,9 +110,9 @@
   --accent: #1f1f1f;
   --accent-foreground: #f8f8f8;
   --destructive: #ff0000;
-  --border: #333333;
-  --input: #333333;
-  --ring: #e60012;
+  --border: #505050;
+  --input: #505050;
+  --ring: #ff5023;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -116,12 +120,12 @@
   --chart-5: oklch(0.269 0 0);
   --sidebar: #1f1f1f;
   --sidebar-foreground: #f8f8f8;
-  --sidebar-primary: #e60012;
+  --sidebar-primary: #ff5023;
   --sidebar-primary-foreground: #f8f8f8;
   --sidebar-accent: #121212;
   --sidebar-accent-foreground: #f8f8f8;
-  --sidebar-border: #333333;
-  --sidebar-ring: #e60012;
+  --sidebar-border: #505050;
+  --sidebar-ring: #ff5023;
 }
 
 @layer base {

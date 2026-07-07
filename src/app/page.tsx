@@ -26,7 +26,7 @@ export default async function Home() {
       <IndustryStats />
       
       {/* Top 20 Rankings Section */}
-      <section className="py-24 bg-muted/30">
+      <section id="top-20" className="py-24 bg-muted/30">
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="text-center mb-8 md:mb-12">
             <h2 className="font-heading text-2xl md:text-5xl font-bold mb-3 md:mb-4">

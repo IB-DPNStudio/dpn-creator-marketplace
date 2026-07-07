@@ -14,7 +14,7 @@ export default function PrivacyPage() {
           <p className="text-muted-foreground mb-8">Last updated: June 2026</p>
           
           <h2>1. Introduction</h2>
-          <p>Welcome to the Dentsu Podcast Network (DPN) Platform. We respect your privacy and are committed to protecting your personal data.</p>
+          <p>Welcome to the dentsu podcast network (DPN) Platform. We respect your privacy and are committed to protecting your personal data.</p>
           
           <h2>2. Data We Collect</h2>
           <p>We may collect, use, store and transfer different kinds of personal data about you which we have grouped together as follows:</p>

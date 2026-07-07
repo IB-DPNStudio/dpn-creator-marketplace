@@ -7,10 +7,10 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="col-span-1 md:col-span-1">
             <Link href="/" className="flex items-center space-x-2 mb-4">
-              <img src="/dentsu-logo-new.png" alt="Dentsu Podcast Network" className="h-10 w-auto dark:invert" />
+              <img src="/dentsu-logo-new.png" alt="dentsu podcast network" className="h-10 w-auto dark:invert" />
             </Link>
             <p className="text-sm text-muted-foreground">
-              Audience = Revenue. Connect with top podcast creators through Dentsu's premium ecosystem.
+              Audience = Revenue. Connect with top podcast creators through dentsu's premium ecosystem.
             </p>
           </div>
           
@@ -52,9 +52,9 @@ export function Footer() {
         </div>
         
         <div className="mt-12 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center text-xs text-muted-foreground">
-          <p>© {new Date().getFullYear()} Dentsu Podcast Network. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} dentsu podcast network. All rights reserved.</p>
           <div className="flex space-x-4 mt-4 md:mt-0">
-            <span>Powered by Dentsu</span>
+            <span>Powered by dentsu</span>
           </div>
         </div>
       </div>

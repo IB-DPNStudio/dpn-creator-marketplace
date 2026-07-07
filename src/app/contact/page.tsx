@@ -6,14 +6,14 @@ export default function ContactPage() {
   return (
     <div className="py-24 bg-background min-h-[80vh]">
       <div className="container mx-auto px-4 max-w-2xl">
-        <div className="text-center mb-12 space-y-4">
-          <h1 className="font-heading text-4xl font-bold">Contact Us</h1>
-          <p className="text-muted-foreground">
-            Have questions about the Dentsu Podcast Network? Reach out to our team at{" "}
-            <a href="mailto:studio@ideabrews.com" className="text-dentsu hover:underline">
-              studio@ideabrews.com
-            </a>
-          </p>
+          <div className="bg-card border border-border p-8 rounded-2xl shadow-sm text-center">
+            <h2 className="font-heading text-2xl font-bold mb-4">Get in Touch</h2>
+            <p className="text-muted-foreground mb-6">
+              Have questions about the dentsu podcast network? Reach out to our team at{" "}
+              <a href="mailto:studio@ideabrews.com" className="text-dentsu font-medium hover:underline">
+                studio@ideabrews.com
+              </a>
+            </p>
         </div>
 
         <div className="bg-card border border-border p-8 rounded-xl shadow-sm">

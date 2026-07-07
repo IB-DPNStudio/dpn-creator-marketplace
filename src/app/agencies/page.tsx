@@ -7,7 +7,7 @@ export default function AgenciesPage() {
     {
       icon: <ShieldCheck className="w-10 h-10 text-dentsu" />,
       title: "Curated & Brand Safe",
-      description: "Access a hand-picked catalogue of premium Indian podcasts. Every creator is vetted by Dentsu for quality and brand safety. (In 3 easy steps, select from a list of podcasts by podcasters, and build a podcast 1st plan. All creators are verified as per dentsu standards, brand friendliness and safety – iAB compliant)"
+      description: "Access a hand-picked catalogue of premium Indian podcasts. Every creator is vetted by dentsu for quality and brand safety. (In 3 easy steps, select from a list of podcasts by podcasters, and build a podcast 1st plan. All creators are verified as per dentsu standards, brand friendliness and safety - iAB compliant)"
     },
     {
       icon: <BarChart3 className="w-10 h-10 text-dentsu" />,
