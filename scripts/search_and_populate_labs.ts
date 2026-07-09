@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { calculatePlaylistScore, PlaylistScoreInput } from "../src/lib/score_playlist";
 import fetch from "node-fetch";
+import WebSocket from 'ws';
 
 require("dotenv").config({ path: ".env.local" });
 
@@ -10,6 +11,9 @@ const apiKey = process.env.YOUTUBE_API_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: { autoRefreshToken: false, persistSession: false },
+  realtime: {
+    transport: WebSocket,
+  },
 });
 
 async function main() {
