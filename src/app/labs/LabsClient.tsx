@@ -6,12 +6,15 @@ import { Award, Trash2, ChevronDown, ChevronUp, Search, TrendingUp, ArrowUpDown,
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { BottomSheet } from "@/components/ui/bottom-sheet";
+import { MobileSortFab } from "@/components/ui/mobile-sort-fab";
 import { PODCAST_GENRES } from "@/lib/constants";
 import { calculateHistoricalMetrics } from "@/lib/history_utils";
 
 export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, isSignedIn = false }: { initialPlaylists: any[], isAdmin: boolean, isLabs?: boolean, isSignedIn?: boolean }) {
   const [playlists, setPlaylists] = useState(initialPlaylists);
   const [loading, setLoading] = useState(false);
+  const [isSortSheetOpen, setIsSortSheetOpen] = useState(false);
 
   // White-Glove Onboarding & Boost Panel states
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
@@ -313,7 +316,7 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
         
         <div className="w-full overflow-hidden rounded-2xl border border-border bg-card shadow-xl relative">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse hidden md:table">
               <thead>
                 <tr className="bg-muted/50 border-b border-border text-xs uppercase tracking-wider text-muted-foreground">
                   <th className="p-4 w-40 text-center font-bold">Rank</th>
@@ -379,9 +382,78 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
                 )}
               </tbody>
             </table>
+            
+            {/* Mobile Tiles View */}
+            <div className="flex flex-col md:hidden divide-y divide-border">
+              {sortedPlaylists.length === 0 ? (
+                <div className="p-8 text-center text-muted-foreground">
+                  No playlists match the current filters.
+                </div>
+              ) : (
+                sortedPlaylists.map((p, idx) => {
+                  const isBlurred = !isSignedIn && !isLabs && p.globalRank > 10;
+                  return (
+                    <PlaylistMobileTile 
+                      key={p.playlist_id} 
+                      p={p} 
+                      rank={(p as any).displayRank || p.globalRank} 
+                      isBlurred={isBlurred} 
+                      handleDelete={handleDelete} 
+                      isAdmin={isAdmin} 
+                      onGenreChange={(id, newGenre) => {
+                        setPlaylists(prev => prev.map(item => item.playlist_id === id ? { ...item, genre: newGenre } : item));
+                      }}
+                      onLanguageChange={(id, newLang) => {
+                        setPlaylists(prev => prev.map(item => item.playlist_id === id ? { ...item, primary_language: newLang } : item));
+                      }}
+                    />
+                  );
+                })
+              )}
+            </div>
           </div>
         </div>
       </div>
+      
+      <MobileSortFab onClick={() => setIsSortSheetOpen(true)} />
+      
+      <BottomSheet isOpen={isSortSheetOpen} onClose={() => setIsSortSheetOpen(false)} title="Sort Rankings">
+        <div className="flex flex-col gap-6 pb-6">
+          <div className="space-y-3">
+            <h4 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Sort By</h4>
+            <div className="grid grid-cols-1 gap-2">
+              {[
+                { id: 'final_score', label: 'DPN Score' },
+                { id: 'show_name', label: 'Creator Name' },
+                { id: 'total_episodes', label: 'Total Episodes' },
+                { id: 'average_views_per_episode', label: 'Average Views' },
+                { id: 'genre', label: 'Category' }
+              ].map(opt => (
+                <label key={opt.id} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${sortColumn === opt.id ? 'bg-dentsu/10 border-dentsu text-foreground' : 'bg-background border-border text-foreground hover:bg-muted'}`}>
+                  <input type="radio" name="sortColumn" value={opt.id} checked={sortColumn === opt.id} onChange={() => setSortColumn(opt.id)} className="w-4 h-4 text-dentsu focus:ring-dentsu" />
+                  <span className="font-medium">{opt.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-3">
+            <h4 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Order</h4>
+            <div className="grid grid-cols-2 gap-2">
+              <label className={`flex items-center justify-center gap-2 p-3 rounded-xl border cursor-pointer transition-colors ${sortDirection === 'desc' ? 'bg-dentsu/10 border-dentsu text-foreground' : 'bg-background border-border text-foreground hover:bg-muted'}`}>
+                <input type="radio" name="sortDirection" value="desc" checked={sortDirection === 'desc'} onChange={() => setSortDirection('desc')} className="sr-only" />
+                <span className="font-medium">Descending</span>
+              </label>
+              <label className={`flex items-center justify-center gap-2 p-3 rounded-xl border cursor-pointer transition-colors ${sortDirection === 'asc' ? 'bg-dentsu/10 border-dentsu text-foreground' : 'bg-background border-border text-foreground hover:bg-muted'}`}>
+                <input type="radio" name="sortDirection" value="asc" checked={sortDirection === 'asc'} onChange={() => setSortDirection('asc')} className="sr-only" />
+                <span className="font-medium">Ascending</span>
+              </label>
+            </div>
+          </div>
+          <Button onClick={() => setIsSortSheetOpen(false)} className="w-full bg-dentsu hover:bg-dentsu/90 text-white font-bold h-12 rounded-xl mt-2">
+            Apply Sort
+          </Button>
+        </div>
+      </BottomSheet>
     </div>
   );
 }
@@ -816,5 +888,267 @@ function PlaylistTableRow({ rank, p, handleDelete, isAdmin, isBlurred = false, o
         </tr>
       )}
     </>
+  );
+}
+
+function PlaylistMobileTile({ rank, p, handleDelete, isAdmin, isBlurred = false, onGenreChange, onLanguageChange }: { rank: number, p: any, handleDelete: (id: string) => void, isAdmin: boolean, isBlurred?: boolean, onGenreChange: (id: string, genre: string) => void, onLanguageChange: (id: string, lang: string) => void }) {
+  const [expanded, setExpanded] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [videos, setVideos] = useState<any[]>([]);
+  const [hasFetched, setHasFetched] = useState(false);
+
+  const decodeHTML = (html: string) => {
+    if (!html) return '';
+    return html.replace(/&amp;/g, '&')
+               .replace(/&quot;/g, '"')
+               .replace(/&#39;/g, "'")
+               .replace(/&lt;/g, '<')
+               .replace(/&gt;/g, '>');
+  };
+
+  const toggleExpand = async () => {
+    if (isBlurred) {
+      window.location.href = '/login';
+      return;
+    }
+    if (!expanded && !hasFetched) {
+      setLoading(true);
+      const res = await fetchPlaylistSampleVideos(p.playlist_id);
+      if (res.success) {
+        setVideos(res.videos);
+        setHasFetched(true);
+      }
+      setLoading(false);
+    }
+    setExpanded(!expanded);
+  };
+
+  if (isBlurred) {
+    return (
+      <div className="bg-card p-4 group relative hover:bg-muted/30 transition-colors border-b border-border/50">
+         <div className="absolute top-4 right-4 z-20">
+           <Button onClick={(e) => { e.stopPropagation(); window.location.href = '/login'; }} className="bg-dentsu hover:bg-dentsu/90 text-white rounded-full shadow-lg font-bold px-4 h-8 animate-in fade-in zoom-in duration-300 flex items-center gap-2 text-xs">
+             <Lock className="w-3 h-3" /> Unlock
+           </Button>
+         </div>
+         <div className="flex gap-4 opacity-60 blur-[3px] select-none pointer-events-none">
+           <div className="font-mono font-bold text-2xl text-foreground opacity-40">{rank}</div>
+           <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-border shadow-sm flex-shrink-0">
+             {p.thumbnail_url ? (
+               <img src={p.thumbnail_url} alt="thumbnail" className="w-full h-full object-cover" />
+             ) : (
+               <div className="w-full h-full bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center text-primary font-bold text-lg">
+                 {(Array.from(decodeHTML(p.show_name).trim())[0] || '?').toUpperCase()}
+               </div>
+             )}
+           </div>
+           <div className="flex-1 min-w-0">
+             <div className="font-bold text-base text-foreground line-clamp-1">{decodeHTML(p.show_name)}</div>
+             <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{p.channel_name || 'YouTube Channel'}</div>
+             <div className="mt-2 flex items-center justify-between">
+               <span className="text-[10px] font-semibold uppercase">{p.genre || 'General'}</span>
+               <div className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md bg-spotify/10">
+                 <TrendingUp className="w-3 h-3 text-spotify" />
+                 <span className="text-spotify font-mono font-bold text-sm">{p.dpn_score || 'N/A'}</span>
+               </div>
+             </div>
+           </div>
+         </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`transition-colors cursor-pointer border-b border-border/50 ${expanded ? 'bg-muted/10' : 'bg-card'}`} onClick={toggleExpand}>
+      <div className="p-4 flex gap-4">
+        <div className="flex flex-col items-center min-w-[2rem] pt-1">
+          {rank <= 3 ? (
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+              rank === 1 ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400' :
+              rank === 2 ? 'bg-slate-400/20 text-slate-600 dark:text-slate-300' :
+              'bg-amber-700/20 text-amber-700 dark:text-amber-500'
+            }`}>
+              <Award className="w-4 h-4 mr-0.5"/>{rank}
+            </div>
+          ) : (
+            <span className="font-mono font-bold text-xl text-foreground">{rank}</span>
+          )}
+          {(() => {
+            const metrics = calculateHistoricalMetrics(p.podcast_history || [], rank);
+            return metrics.rankChange !== null ? (
+              <span className={`text-[10px] font-bold mt-1 ${metrics.rankChange > 0 ? 'text-green-500' : metrics.rankChange < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                {metrics.rankChange > 0 ? `+${metrics.rankChange}` : metrics.rankChange < 0 ? `${metrics.rankChange}` : '-'}
+              </span>
+            ) : (
+              <span className="text-[10px] font-bold mt-1 text-muted-foreground">-</span>
+            );
+          })()}
+        </div>
+
+        <div className="flex-1 flex flex-col min-w-0">
+          <div className="flex gap-3">
+            <div className="relative w-14 h-14 rounded-xl overflow-hidden border border-border shadow-sm flex-shrink-0">
+              {p.thumbnail_url ? (
+                <img src={p.thumbnail_url} alt="thumbnail" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center text-primary font-bold">
+                  {(Array.from(decodeHTML(p.show_name).trim())[0] || '?').toUpperCase()}
+                </div>
+              )}
+            </div>
+            <div className="flex-1 min-w-0 pr-2">
+              <div className="font-bold text-sm md:text-base text-foreground line-clamp-2 leading-tight">
+                {decodeHTML(p.show_name)}
+              </div>
+              <div className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                {p.channel_name || 'YouTube Channel'}
+              </div>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-border/50">
+             <div>
+               <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Avg Views</div>
+               <div className="font-mono font-bold text-green-600 text-sm mt-0.5 flex items-center gap-1">
+                 <TrendingUp className="w-3 h-3" />
+                 {p.average_views_per_episode !== null && p.average_views_per_episode !== undefined ? (p.average_views_per_episode > 1000000 ? (p.average_views_per_episode / 1000000).toFixed(1) + 'M' : p.average_views_per_episode > 1000 ? (p.average_views_per_episode / 1000).toFixed(1) + 'k' : Math.round(p.average_views_per_episode)) : 'N/A'}
+               </div>
+             </div>
+             <div className="text-right">
+               <div className="text-[10px] text-muted-foreground uppercase tracking-wider">DPN Score</div>
+               <div className="inline-flex items-center space-x-1 px-2 py-0.5 mt-0.5 rounded-md bg-spotify/10">
+                 <TrendingUp className="w-3 h-3 text-spotify" />
+                 <span className="text-spotify font-mono font-bold text-sm">
+                   {p.final_score.toFixed(1) || 'N/A'}
+                 </span>
+               </div>
+             </div>
+          </div>
+          
+          <div className="flex items-center justify-center mt-2 text-muted-foreground">
+             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </div>
+        </div>
+      </div>
+
+      {expanded && (
+        <div className="px-4 pb-6 pt-2 border-t border-border/50 bg-background/30">
+          <div className="flex flex-col gap-6 mt-4">
+             <div className="grid grid-cols-3 bg-background border border-border rounded-xl p-3 shadow-sm mx-auto w-full">
+               <div className="flex flex-col items-center justify-center border-r border-border/60">
+                 <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-1 text-center">Last Week</span>
+                 <span className="font-heading font-black text-xl text-foreground">
+                   {(() => {
+                     const m = calculateHistoricalMetrics(p.podcast_history || [], rank);
+                     return m.lastWeekRank ? m.lastWeekRank : '-';
+                   })()}
+                 </span>
+               </div>
+               <div className="flex flex-col items-center justify-center border-r border-border/60">
+                 <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-1 text-center">Peak Rank</span>
+                 <span className="font-heading font-black text-xl text-foreground">
+                   {(() => {
+                     const m = calculateHistoricalMetrics(p.podcast_history || [], rank);
+                     return m.peakRank ? m.peakRank : rank;
+                   })()}
+                 </span>
+               </div>
+               <div className="flex flex-col items-center justify-center">
+                 <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-1 text-center">In Top 20</span>
+                 <span className="font-heading font-black text-xl text-foreground">
+                   {(() => {
+                     const m = calculateHistoricalMetrics(p.podcast_history || [], rank);
+                     return m.weeksInTop20;
+                   })()}
+                 </span>
+               </div>
+             </div>
+             
+             <div className="flex flex-col gap-2">
+                <h4 className="font-bold text-sm text-foreground font-heading">About the Creator</h4>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {p.description?.trim() ? (
+                    <>
+                      {decodeHTML(p.description).length > 200 ? (
+                        <>
+                          {decodeHTML(p.description).substring(0, 200)}... <a href={`https://www.youtube.com/playlist?list=${p.playlist_id}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline" onClick={e => e.stopPropagation()}>more</a>
+                        </>
+                      ) : (
+                        decodeHTML(p.description)
+                      )}
+                    </>
+                  ) : p.channel_description?.trim() ? (
+                    <>
+                      {decodeHTML(p.channel_description).length > 200 ? (
+                        <>
+                          {decodeHTML(p.channel_description).substring(0, 200)}... <a href={`https://www.youtube.com/channel/${p.channel_id}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline" onClick={e => e.stopPropagation()}>more</a>
+                        </>
+                      ) : (
+                        decodeHTML(p.channel_description)
+                      )}
+                    </>
+                  ) : (
+                    "No description available."
+                  )}
+                </p>
+             </div>
+             
+             {isAdmin && (
+               <div className="flex flex-col gap-2">
+                 <select
+                   className="text-xs px-2 py-1.5 rounded border border-input bg-background w-full focus:outline-none focus:ring-1 focus:ring-ring shadow-sm text-foreground"
+                   value={p.genre || 'General'}
+                   onChange={async (e) => {
+                     const newGenre = e.target.value;
+                     onGenreChange(p.playlist_id, newGenre);
+                     await updateLabsPlaylistGenre(p.playlist_id, newGenre);
+                   }}
+                   onClick={(e) => e.stopPropagation()}
+                 >
+                   <option value="" disabled>Select...</option>
+                   {PODCAST_GENRES.map((g) => (
+                     <option key={g} value={g}>{g}</option>
+                   ))}
+                 </select>
+                 <Button variant="outline" size="sm" className="w-full text-destructive border-destructive/20 hover:bg-destructive/10" onClick={(e) => { e.stopPropagation(); handleDelete(p.playlist_id); }}>
+                    <Trash2 className="w-4 h-4 mr-2" /> Delete Playlist
+                 </Button>
+               </div>
+             )}
+             
+             <div>
+                <h4 className="font-bold text-sm text-foreground uppercase tracking-wider mb-3">Sample Videos</h4>
+                <div className="flex flex-col gap-3">
+                  {loading && <div className="text-xs text-muted-foreground text-center py-2">Loading videos...</div>}
+                  {!loading && videos.length === 0 && <div className="text-xs text-muted-foreground text-center py-2 border border-dashed border-border rounded-lg">No videos found.</div>}
+                  {!loading && (
+                    <div className="flex flex-col gap-4">
+                      {videos.slice(0, 3).map((video, vIdx) => (
+                        <div key={vIdx} className="flex flex-col gap-2 bg-card p-2 rounded-xl border border-border shadow-sm">
+                          <iframe
+                            width="100%"
+                            height="160"
+                            src={`https://www.youtube.com/embed/${video.videoId}`}
+                            title={video.title}
+                            frameBorder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                            className="rounded-lg bg-muted"
+                          ></iframe>
+                          <div className="flex flex-col px-1 gap-1">
+                            <a href={`https://www.youtube.com/watch?v=${video.videoId}`} target="_blank" rel="noopener noreferrer" className="text-xs font-bold hover:text-primary transition-colors line-clamp-2" onClick={e => e.stopPropagation()}>
+                              {decodeHTML(video.title)}
+                            </a>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+             </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
