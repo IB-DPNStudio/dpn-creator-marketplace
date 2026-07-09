@@ -33,7 +33,7 @@ export function Hero() {
           </div>
           
           <div className="pt-4 flex justify-center">
-            <a href="#top-20" className="text-sm md:text-base text-muted-foreground hover:text-foreground font-medium transition-colors flex items-center">
+            <a href="#top-20" className="text-sm md:text-base text-dentsu hover:text-dentsu/80 font-bold transition-colors flex items-center">
               Jump to Top 20 Rankings 
               <svg className="ml-1 w-4 h-4 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
             </a>
