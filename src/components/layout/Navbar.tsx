@@ -9,13 +9,13 @@ export async function Navbar() {
   const isLoggedIn = !!session;
   return (
     <nav className="border-b border-[#323232] bg-[#121212] sticky top-0 z-50 w-full text-white">
-      <div className="container mx-auto flex h-[90px] items-center px-4 justify-between">
+      <div className="container mx-auto flex h-[90px] items-center px-4 justify-between relative">
         <Link href="/" className="flex items-center">
           <div className="flex items-center text-white hover:text-gray-200 transition-colors">
             <img src="/dpn-logo-stacked.svg?v=9" alt="dentsu podcast network" className="h-[65px] w-auto" />
           </div>
         </Link>
-        <div className="hidden md:flex items-center space-x-8 text-sm font-medium">
+        <div className="hidden md:flex items-center space-x-8 text-sm font-medium absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
           <Link href="/creators" className="transition-colors hover:text-white/80 text-white">Creators</Link>
           <Link href="/agencies" className="transition-colors hover:text-white/80 text-white">Agencies</Link>
           <Link href="/rankings" className="transition-colors hover:text-white/80 text-white">Rankings</Link>
