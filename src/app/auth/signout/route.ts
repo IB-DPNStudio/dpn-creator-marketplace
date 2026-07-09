@@ -26,8 +26,11 @@ export async function POST(request: Request) {
 
   await supabase.auth.signOut()
 
-  const { origin } = new URL(request.url)
+  const host = request.headers.get('x-forwarded-host') || request.headers.get('host')
+  const protocol = request.headers.get('x-forwarded-proto') || 'https'
+  const origin = `${protocol}://${host}`
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || origin
+
   return NextResponse.redirect(`${siteUrl}/`, {
     status: 302,
   })
