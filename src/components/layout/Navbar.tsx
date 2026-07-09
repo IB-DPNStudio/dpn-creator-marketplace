@@ -12,7 +12,7 @@ export async function Navbar() {
       <div className="container mx-auto flex h-24 items-center px-4 justify-between">
         <Link href="/" className="flex items-center">
           <div className="flex items-center text-white hover:text-gray-200 transition-colors">
-            <img src="/dpn-logo-stacked.svg" alt="dentsu podcast network" className="h-[50px] md:h-[65px] w-auto" />
+            <img src="/dpn-logo-stacked.svg?v=2" alt="dentsu podcast network" className="h-[65px] md:h-[80px] w-auto" />
           </div>
         </Link>
         <div className="hidden md:flex items-center space-x-8 text-sm font-medium">
