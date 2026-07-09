@@ -6,10 +6,10 @@ export function Footer() {
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="col-span-1 md:col-span-1">
-            <Link href="/" className="flex items-center mb-2 text-white hover:text-gray-200 transition-colors">
+            <Link href="/" className="flex items-center mb-0 text-white hover:text-gray-200 transition-colors">
               <img src="/dpn-logo-stacked.svg?v=5" alt="dentsu podcast network" className="h-[145px] w-auto" />
             </Link>
-            <p className="text-sm text-zinc-400">
+            <p className="text-sm text-zinc-400 -mt-2">
               Audience = Revenue. Connect with top podcast creators through dentsu's premium ecosystem.
             </p>
           </div>
