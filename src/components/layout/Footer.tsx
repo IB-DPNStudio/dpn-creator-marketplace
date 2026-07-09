@@ -2,12 +2,12 @@ import Link from "next/link";
 
 export function Footer() {
   return (
-    <footer className="border-t border-zinc-800 bg-zinc-950 text-white py-12 md:py-16">
+    <footer className="border-t border-zinc-800 bg-zinc-950 text-white py-8 md:py-10">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="col-span-1 md:col-span-1">
-            <Link href="/" className="flex items-center mb-6 text-white hover:text-gray-200 transition-colors">
-              <img src="/dpn-logo-stacked.svg?v=3" alt="dentsu podcast network" className="h-[115px] w-auto" />
+            <Link href="/" className="flex items-center mb-4 text-white hover:text-gray-200 transition-colors">
+              <img src="/dpn-logo-stacked.svg?v=4" alt="dentsu podcast network" className="h-[145px] w-auto" />
             </Link>
             <p className="text-sm text-zinc-400">
               Audience = Revenue. Connect with top podcast creators through dentsu's premium ecosystem.
