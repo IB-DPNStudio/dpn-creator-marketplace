@@ -8,7 +8,7 @@ export async function Navbar() {
   const { data: { session } } = await supabase.auth.getSession();
   const isLoggedIn = !!session;
   return (
-    <nav className="border-b border-zinc-900 bg-black sticky top-0 z-50 w-full text-white">
+    <nav className="border-b border-[#323232] bg-[#121212] sticky top-0 z-50 w-full text-white">
       <div className="container mx-auto flex h-[90px] items-center px-4 justify-between">
         <Link href="/" className="flex items-center">
           <div className="flex items-center text-white hover:text-gray-200 transition-colors">
