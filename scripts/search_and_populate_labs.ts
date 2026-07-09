@@ -92,7 +92,7 @@ async function main() {
         }
       }
 
-      const numSampled = itemsData.items?.length || 1;
+      const numSampled = (vData && vData.items && vData.items.length > 0) ? vData.items.length : 1;
       const avgViews = totalViews / numSampled;
       const avgLikes = totalLikes / numSampled;
       const avgComments = totalComments / numSampled;
