@@ -7,9 +7,9 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="col-span-1 md:col-span-1">
             <Link href="/" className="flex items-center mb-0 text-white hover:text-gray-200 transition-colors">
-              <img src="/dpn-logo-stacked.svg?v=11" alt="dentsu podcast network" className="h-[65px] w-auto" />
+              <img src="/dpn-logo-stacked.svg?v=12" alt="dentsu podcast network" className="h-[65px] w-auto" />
             </Link>
-            <p className="text-sm text-zinc-400 mt-[7px]">
+            <p className="text-sm text-zinc-400 mt-[10px]">
               Audience = Revenue. Connect with top podcast creators through dentsu's premium ecosystem.
             </p>
           </div>
