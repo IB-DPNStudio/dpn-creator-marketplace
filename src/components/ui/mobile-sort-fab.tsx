@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpDown } from "lucide-react";
+import { ListFilter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface MobileSortFabProps {
@@ -8,15 +8,16 @@ interface MobileSortFabProps {
   label?: string;
 }
 
-export function MobileSortFab({ onClick, label = "Sort & Filter" }: MobileSortFabProps) {
+export function MobileSortFab({ onClick, label }: MobileSortFabProps) {
   return (
     <div className="fixed bottom-6 right-4 z-50 md:hidden">
       <Button 
         onClick={onClick}
-        className="bg-dentsu hover:bg-dentsu/90 text-white rounded-full shadow-2xl h-14 px-6 flex items-center gap-2 font-bold transition-transform active:scale-95"
+        size="icon"
+        className="bg-card text-foreground border border-border/50 shadow-xl rounded-full w-12 h-12 flex items-center justify-center transition-transform active:scale-95 hover:bg-muted"
+        aria-label={label || "Sort & Filter"}
       >
-        <ArrowUpDown className="w-5 h-5" />
-        {label}
+        <ListFilter className="w-5 h-5" />
       </Button>
     </div>
   );
