@@ -62,6 +62,8 @@ async function main() {
         let latestEpisodeDate: string | null = null;
         let averageDaysBetween = 0;
 
+        let vDataLength = 0;
+
         const itemsRes = await fetch(
           `https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails,snippet&playlistId=${playlistId}&maxResults=50&key=${apiKey}`
         );
@@ -78,6 +80,7 @@ async function main() {
             `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${videoIds}&key=${apiKey}`
           );
           const vData = await vRes.json();
+          vDataLength = vData.items ? vData.items.length : 0;
 
           if (vData.items) {
             for (const v of vData.items) {
@@ -102,7 +105,7 @@ async function main() {
           continue;
         }
 
-        const numSampled = (vData.items && vData.items.length > 0) ? vData.items.length : 1;
+        const numSampled = vDataLength > 0 ? vDataLength : 1;
         const avgViews = totalViews / numSampled;
         const avgLikes = totalLikes / numSampled;
         const avgComments = totalComments / numSampled;
