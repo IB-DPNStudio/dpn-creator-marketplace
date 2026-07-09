@@ -9,10 +9,10 @@ export async function Navbar() {
   const isLoggedIn = !!session;
   return (
     <nav className="border-b border-zinc-800 bg-zinc-950 sticky top-0 z-50 w-full text-white">
-      <div className="container mx-auto flex h-24 items-center px-4 justify-between">
+      <div className="container mx-auto flex h-32 items-center px-4 justify-between">
         <Link href="/" className="flex items-center">
           <div className="flex items-center text-white hover:text-gray-200 transition-colors">
-            <img src="/dpn-logo-stacked.svg?v=2" alt="dentsu podcast network" className="h-[65px] md:h-[80px] w-auto" />
+            <img src="/dpn-logo-stacked.svg?v=3" alt="dentsu podcast network" className="h-[80px] md:h-[100px] w-auto" />
           </div>
         </Link>
         <div className="hidden md:flex items-center space-x-8 text-sm font-medium">
