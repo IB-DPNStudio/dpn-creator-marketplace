@@ -165,6 +165,7 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
     let totalEpisodes = 0;
     let latestEpisodeDate: string | null = null;
     let averageDaysBetween = 0;
+    let vDataLength = 0;
     
     let allPlaylistItems: any[] = [];
     let pageToken = '';
@@ -201,6 +202,7 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
       const videoIds = recentItems.map((i: any) => i.contentDetails.videoId).join(',');
       const vRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${videoIds}&key=${apiKey}`);
       const vData = await vRes.json();
+      vDataLength = vData.items ? vData.items.length : 0;
 
       if (vData.items) {
         for (const v of vData.items) {
@@ -219,7 +221,7 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
       }
     }
 
-    const numSampled = Math.min(allPlaylistItems.length, 50) || 1;
+    const numSampled = vDataLength > 0 ? vDataLength : 1;
     const avgViews = totalViews / numSampled;
     const avgLikes = totalLikes / numSampled;
     const avgComments = totalComments / numSampled;
