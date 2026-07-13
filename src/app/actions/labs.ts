@@ -252,7 +252,14 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
       latest_video_ids: latestVideoIds
     };
 
-    // 4. Upsert DB
+    // 4. Check if it exists and Upsert DB
+    const { data: existing } = await adminDbClient
+      .from("playlist_podcasts")
+      .select("playlist_id")
+      .eq("playlist_id", playlistId)
+      .maybeSingle();
+    const wasUpdated = !!existing;
+
     const { error } = await adminDbClient
       .from("playlist_podcasts")
       .upsert({
@@ -305,7 +312,8 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
       show_name: showName,
       final_score: final_score,
       global_rank: isDisqualified ? null : calculatedRank,
-      is_disqualified: isDisqualified
+      is_disqualified: isDisqualified,
+      was_updated: wasUpdated
     };
   } catch (err: any) {
     console.error("Error in addOrUpdatePlaylistRank:", err);
