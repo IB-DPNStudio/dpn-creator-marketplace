@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { deleteLabsPlaylist, fetchPlaylistSampleVideos, updateLabsPlaylistGenre, updateLabsPlaylistLanguage, addOrUpdatePlaylistRank, getLabsPlaylists, updateLabsPlaylistBoost } from "@/app/actions/labs";
-import { Award, Trash2, ChevronDown, ChevronUp, Search, TrendingUp, ArrowUpDown, Eye, Heart, MessageSquare, Lock, Info } from "lucide-react";
+import { Award, Trash2, ChevronDown, ChevronUp, Search, TrendingUp, ArrowUpDown, Eye, Heart, MessageSquare, Lock, Info, FileSpreadsheet } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -127,6 +127,34 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
     if (valA > valB) return sortDirection === "asc" ? 1 : -1;
     return 0;
   });
+
+  const exportToCSV = () => {
+    const headers = ["Rank", "Show Name", "DPN Score", "Avg Views", "Episodes", "Playlist URL", "Language", "Genre"];
+    const rows = sortedPlaylists.map((p, index) => [
+      index + 1,
+      `"${(p.show_name || '').replace(/"/g, '""')}"`,
+      p.final_score?.toFixed(1) || '0',
+      p.average_views_per_episode || 0,
+      p.total_episodes || 0,
+      `https://www.youtube.com/playlist?list=${p.playlist_id}`,
+      p.primary_language || '',
+      p.genre || ''
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(r => r.join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `dpn_ranker_export_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this test playlist?")) return;
@@ -312,6 +340,15 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
               <option value="All">All Genres</option>
               {uniqueGenres.map(g => <option key={g as string} value={g as string}>{g as React.ReactNode}</option>)}
             </select>
+            {isAdmin && (
+              <button 
+                onClick={exportToCSV}
+                title="Export to Excel"
+                className="flex items-center justify-center w-10 h-10 bg-green-100 hover:bg-green-200 text-green-700 rounded-md border border-green-200 transition-colors flex-shrink-0"
+              >
+                <FileSpreadsheet className="w-5 h-5" />
+              </button>
+            )}
           </div>
         </div>
         
