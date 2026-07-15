@@ -109,7 +109,24 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
   // Then apply search on top of the contextually ranked playlists
   const filteredAndRankedPlaylists = categorizedPlaylists
     .filter(p => {
-      return p.show_name?.toLowerCase().includes(searchTerm.toLowerCase());
+      if (!searchTerm) return true;
+      const lowerSearch = searchTerm.toLowerCase();
+      
+      const inShowName = p.show_name?.toLowerCase().includes(lowerSearch);
+      const inDesc = p.description?.toLowerCase().includes(lowerSearch);
+      const inChannelDesc = p.channel_description?.toLowerCase().includes(lowerSearch);
+      const inGenre = p.genre?.toLowerCase().includes(lowerSearch);
+      const inLang = p.primary_language?.toLowerCase().includes(lowerSearch);
+      
+      let inSampleVideos = false;
+      if (p.explanations?.sample_videos && Array.isArray(p.explanations.sample_videos)) {
+        inSampleVideos = p.explanations.sample_videos.some((v: any) => 
+          v.title?.toLowerCase().includes(lowerSearch) || 
+          v.description?.toLowerCase().includes(lowerSearch)
+        );
+      }
+
+      return inShowName || inDesc || inChannelDesc || inGenre || inLang || inSampleVideos;
     });
 
   const sortedPlaylists = [...filteredAndRankedPlaylists].sort((a, b) => {

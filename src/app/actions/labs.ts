@@ -250,7 +250,8 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
     const latestVideoIds = allPlaylistItems.slice(0, 5).map((i: any) => i.contentDetails?.videoId).filter(Boolean);
     const updatedExplanations = {
       ...explanations,
-      latest_video_ids: latestVideoIds
+      latest_video_ids: latestVideoIds,
+      sample_videos: allPlaylistItems.slice(0, 5).map((i: any) => ({ title: i.snippet?.title, description: i.snippet?.description }))
     };
 
     // 4. Check if it exists and Upsert DB

@@ -127,6 +127,13 @@ async function main() {
 
       const { final_score, breakdown, explanations } = calculatePlaylistScore(scoreInput);
 
+      const latestVideoIds = itemsData.items ? itemsData.items.slice(0, 5).map((i: any) => i.contentDetails?.videoId).filter(Boolean) : [];
+      const updatedExplanations = {
+        ...explanations,
+        latest_video_ids: latestVideoIds,
+        sample_videos: itemsData.items ? itemsData.items.slice(0, 5).map((i: any) => ({ title: i.snippet?.title, description: i.snippet?.description })) : []
+      };
+
       // Only include decent scoring playlists to avoid complete junk (e.g., threshold of 20)
       if (final_score < 20) {
          console.log(`   Skipping: Score too low (${final_score})`);
@@ -155,10 +162,10 @@ async function main() {
             manual_boost: scoreInput.manual_boost,
             manual_penalty: scoreInput.manual_penalty,
             is_included: true,
-            notes: "Auto-populated via YouTube Search (IN)",
+            notes: "Auto-extracted from search query",
             final_score: final_score,
             score_breakdown: breakdown,
-            explanations: explanations,
+            explanations: updatedExplanations,
           },
           { onConflict: "playlist_id" }
         );

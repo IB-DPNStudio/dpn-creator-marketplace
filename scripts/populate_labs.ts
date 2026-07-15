@@ -128,6 +128,13 @@ async function main() {
 
         const { final_score, breakdown, explanations } = calculatePlaylistScore(scoreInput);
 
+        const latestVideoIds = itemsData.items ? itemsData.items.slice(0, 5).map((i: any) => i.contentDetails?.videoId).filter(Boolean) : [];
+        const updatedExplanations = {
+          ...explanations,
+          latest_video_ids: latestVideoIds,
+          sample_videos: itemsData.items ? itemsData.items.slice(0, 5).map((i: any) => ({ title: i.snippet?.title, description: i.snippet?.description })) : []
+        };
+
         const { error: upsertErr } = await supabase
           .from("playlist_podcasts")
           .upsert(
@@ -153,7 +160,7 @@ async function main() {
               notes: "Auto-extracted from channel",
               final_score: final_score,
               score_breakdown: breakdown,
-              explanations: explanations,
+              explanations: updatedExplanations,
             },
             { onConflict: "playlist_id" }
           );
