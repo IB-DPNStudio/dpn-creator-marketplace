@@ -68,6 +68,7 @@ export async function getLabsPlaylists(statusIn?: string[]) {
   
   const filteredData = (data || []).filter(p => {
     if (!p.latest_episode_date) return false;
+    if (p.total_episodes < 6) return false;
     return new Date(p.latest_episode_date) >= ninetyDaysAgo;
   });
 

@@ -150,7 +150,10 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `dpn_ranker_export_${new Date().toISOString().split('T')[0]}.csv`);
+    const langStr = languageFilter !== 'All' ? `_${languageFilter.replace(/\\s+/g, '')}` : '';
+    const genreStr = genreFilter !== 'All' ? `_${genreFilter.replace(/\\s+/g, '')}` : '';
+    const dateStr = new Date().toISOString().replace(/[:.]/g, '-');
+    link.setAttribute("download", `dpn_ranker_export${langStr}${genreStr}_${dateStr}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -344,7 +347,7 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
               <button 
                 onClick={exportToCSV}
                 title="Export to Excel"
-                className="flex items-center justify-center w-10 h-10 bg-green-100 hover:bg-green-200 text-green-700 rounded-md border border-green-200 transition-colors flex-shrink-0"
+                className="flex items-center justify-center w-10 h-10 bg-green-100 hover:bg-green-200 text-green-700 rounded-md border border-green-200 transition-colors flex-shrink-0 cursor-pointer"
               >
                 <FileSpreadsheet className="w-5 h-5" />
               </button>
