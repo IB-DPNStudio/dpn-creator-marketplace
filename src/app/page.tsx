@@ -41,7 +41,7 @@ export default async function Home() {
           
           <div className="mt-12 text-center">
             <Link href="/rankings">
-              <Button size="lg" className="bg-dentsu hover:bg-dentsu/90 text-white font-semibold">
+              <Button size="lg" className="bg-dentsu hover:bg-dentsu/90 text-white font-semibold cursor-pointer">
                 View Full Power Ranker <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
             </Link>
