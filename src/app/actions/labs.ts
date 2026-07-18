@@ -146,6 +146,28 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
     let defaultGenre = 'General';
 
     if (channelId) {
+      // Fetch channel statistics to update subscriber count
+      try {
+        const cRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=statistics,snippet&id=${channelId}&key=${apiKey}`);
+        const cData = await cRes.json();
+        
+        if (cData.items && cData.items.length > 0) {
+          const channelStats = cData.items[0];
+          const subCount = parseInt(channelStats.statistics?.subscriberCount || '0');
+          const channelThumb = channelStats.snippet?.thumbnails?.high?.url || channelStats.snippet?.thumbnails?.default?.url;
+          
+          await adminDbClient.from("podcasts").upsert({
+            channel_id: channelId,
+            show_name: inputData.channelName || showName,
+            subscriber_count: subCount,
+            thumbnail_url: channelThumb || thumbnailUrl,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'channel_id' });
+        }
+      } catch (err) {
+        console.error("Failed to fetch/upsert channel stats:", err);
+      }
+
       const { data: pod } = await adminDbClient
         .from("podcasts")
         .select("primary_language, country, genre")
