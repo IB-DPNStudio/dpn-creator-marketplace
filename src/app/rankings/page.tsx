@@ -16,8 +16,22 @@ export default async function RankingsPage() {
   // Fetch all approved playlists
   const validPlaylists = await getLabsPlaylists(["seeded", "verified", "approved_partner", "featured_partner"]);
   
-  // Filter new shows (featured_partner or seeded randomly to mock "new")
-  const newShows = validPlaylists.filter(p => p.status === "featured_partner" || (p.average_views_per_episode || 0) > 100000).slice(0, 15);
+  // Carousel logic: 10 latest faces from the top 100, 5 latest faces from beyond 100
+  const top100 = validPlaylists.slice(0, 100);
+  const beyond100 = validPlaylists.slice(100);
+
+  const latestTop100 = [...top100].sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()).slice(0, 10);
+  const latestBeyond100 = [...beyond100].sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()).slice(0, 5);
+
+  const newShows = [...latestTop100, ...latestBeyond100];
+  
+  // Fill up to 15 if needed
+  if (newShows.length < 15) {
+    const needed = 15 - newShows.length;
+    const includedIds = new Set(newShows.map(s => s.playlist_id));
+    const fillers = validPlaylists.filter(p => !includedIds.has(p.playlist_id)).slice(0, needed);
+    newShows.push(...fillers);
+  }
   
   // Calculate the current week for the "auto-published" feel
   const currentWeekDate = format(startOfWeek(new Date(), { weekStartsOn: 1 }), "MMM do, yyyy");

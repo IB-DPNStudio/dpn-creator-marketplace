@@ -40,11 +40,11 @@ export default async function Home() {
           <LabsClient initialPlaylists={topPlaylists} isAdmin={isAdmin} isLabs={false} isSignedIn={isSignedIn} />
           
           <div className="mt-12 text-center">
-            <Button asChild size="lg" className="bg-dentsu hover:bg-dentsu/90 text-white font-semibold">
-              <Link href="/rankings">
+            <Link href="/rankings">
+              <Button size="lg" className="bg-dentsu hover:bg-dentsu/90 text-white font-semibold">
                 View Full Power Ranker <ArrowRight className="ml-2 w-4 h-4" />
-              </Link>
-            </Button>
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
