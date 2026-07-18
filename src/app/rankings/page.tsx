@@ -16,21 +16,31 @@ export default async function RankingsPage() {
   // Fetch all approved playlists
   const validPlaylists = await getLabsPlaylists(["seeded", "verified", "approved_partner", "featured_partner"]);
   
-  // Carousel logic: 10 latest faces from the top 100, 5 latest faces from beyond 100
-  const top100 = validPlaylists.slice(0, 100);
-  const beyond100 = validPlaylists.slice(100);
+  let newShows: any[] = [];
+  try {
+    const top100 = validPlaylists.slice(0, 100);
+    const beyond100 = validPlaylists.slice(100);
 
-  const latestTop100 = [...top100].sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()).slice(0, 10);
-  const latestBeyond100 = [...beyond100].sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()).slice(0, 5);
+    const safeGetTime = (item: any) => {
+      if (!item || !item.created_at) return 0;
+      const t = new Date(item.created_at).getTime();
+      return isNaN(t) ? 0 : t;
+    };
 
-  const newShows = [...latestTop100, ...latestBeyond100];
-  
-  // Fill up to 15 if needed
-  if (newShows.length < 15) {
-    const needed = 15 - newShows.length;
-    const includedIds = new Set(newShows.map(s => s.playlist_id));
-    const fillers = validPlaylists.filter(p => !includedIds.has(p.playlist_id)).slice(0, needed);
-    newShows.push(...fillers);
+    const latestTop100 = [...top100].sort((a, b) => safeGetTime(b) - safeGetTime(a)).slice(0, 10);
+    const latestBeyond100 = [...beyond100].sort((a, b) => safeGetTime(b) - safeGetTime(a)).slice(0, 5);
+
+    newShows = [...latestTop100, ...latestBeyond100];
+    
+    if (newShows.length < 15) {
+      const needed = 15 - newShows.length;
+      const includedIds = new Set(newShows.map(s => s?.playlist_id));
+      const fillers = validPlaylists.filter(p => p && !includedIds.has(p.playlist_id)).slice(0, needed);
+      newShows.push(...fillers);
+    }
+  } catch (err) {
+    console.error("Error calculating newShows:", err);
+    newShows = validPlaylists.slice(0, 15);
   }
   
   // Calculate the current week for the "auto-published" feel
