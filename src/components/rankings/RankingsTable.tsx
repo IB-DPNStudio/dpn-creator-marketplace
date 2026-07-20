@@ -21,6 +21,7 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
   const [searchTerm, setSearchTerm] = useState("");
   const [languageFilter, setLanguageFilter] = useState("All");
   const [genreFilter, setGenreFilter] = useState("All");
+  const [trendFilter, setTrendFilter] = useState<"All" | "Gainers" | "Losers">("All");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isAdminMode, setIsAdminMode] = useState(isSuperAdmin);
   const [editingGenreId, setEditingGenreId] = useState<string | null>(null);
@@ -188,8 +189,8 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
     return ["All", ...Array.from(gs).sort()];
   }, [podcasts]);
 
-  // First, apply filters and calculate the rank based purely on DPN score for the filtered set
-  const filteredAndRankedPodcasts = useMemo(() => {
+  // First, calculate the global display rank for the filtered set (Language/Genre/Search)
+  const baseFilteredAndRanked = useMemo(() => {
     return podcasts
       .filter((p) => {
         const matchesSearch = p.show_name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -201,12 +202,42 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
       .map((p, index) => ({ ...p, displayRank: index + 1 }));
   }, [podcasts, searchTerm, languageFilter, genreFilter, gravitonData]);
 
+  // Then, apply trend filter (Gainers / Losers) which requires calculating historical metrics
+  const filteredAndRankedPodcasts = useMemo(() => {
+    if (trendFilter === "All") return baseFilteredAndRanked;
+
+    // Calculate metrics to find rankChange for each
+    const withMetrics = baseFilteredAndRanked.map(p => {
+      const metrics = calculateHistoricalMetrics(p.podcast_history, p.displayRank);
+      return { ...p, metrics };
+    });
+
+    if (trendFilter === "Gainers") {
+      return withMetrics
+        .filter(p => p.metrics.rankChange !== null && p.metrics.rankChange > 0)
+        .sort((a, b) => (b.metrics.rankChange || 0) - (a.metrics.rankChange || 0))
+        .slice(0, 20);
+    } else if (trendFilter === "Losers") {
+      return withMetrics
+        .filter(p => p.metrics.rankChange !== null && p.metrics.rankChange < 0)
+        .sort((a, b) => (a.metrics.rankChange || 0) - (b.metrics.rankChange || 0)) // Most negative first
+        .slice(0, 20);
+    }
+    
+    return baseFilteredAndRanked;
+  }, [baseFilteredAndRanked, trendFilter]);
+
   // Then, apply column sorting (which changes order but preserves displayRank)
   const sortedPodcasts = useMemo(() => {
     return [...filteredAndRankedPodcasts]
       .sort((a, b) => {
-        let valA = a[sortColumn];
-        let valB = b[sortColumn];
+        // Maintain Gainers/Losers sort order if default sorting is active
+        if (trendFilter !== "All" && sortColumn === "dpn_score" && sortDirection === "desc") {
+          return 0; 
+        }
+
+        let valA = (a as any)[sortColumn];
+        let valB = (b as any)[sortColumn];
         
         if (sortColumn === 'views_last_7_days') {
           valA = (a as any).views_last_7_days || 0;
@@ -217,7 +248,7 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
         if (valA > valB) return sortDirection === "asc" ? 1 : -1;
         return 0;
       });
-  }, [filteredAndRankedPodcasts, sortColumn, sortDirection]);
+  }, [filteredAndRankedPodcasts, sortColumn, sortDirection, trendFilter]);
 
   return (
     <div className="w-full">
@@ -249,6 +280,15 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
             {genres.map(g => (
               <option key={g} value={g}>{g === "All" ? "All Genres" : g}</option>
             ))}
+          </select>
+          <select
+            value={trendFilter}
+            onChange={(e) => setTrendFilter(e.target.value as any)}
+            className="px-4 py-2 bg-muted/50 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary w-full sm:w-auto min-w-[120px]"
+          >
+            <option value="All">All Trends</option>
+            <option value="Gainers">Top 20 Gainers</option>
+            <option value="Losers">Top 20 Losers</option>
           </select>
         </div>
         {isAdminMode && (
@@ -307,7 +347,7 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
               {sortedPodcasts.map((podcast, index) => {
                 const rank = (podcast as any).displayRank;
                 const isGated = rank > 10 && !isAuth;
-                const metrics = calculateHistoricalMetrics(podcast.podcast_history, rank);
+                const metrics = (podcast as any).metrics || calculateHistoricalMetrics(podcast.podcast_history, rank);
                 
                 return (
                   <React.Fragment key={podcast.id}>
