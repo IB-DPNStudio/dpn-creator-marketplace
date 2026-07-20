@@ -658,13 +658,20 @@ function PlaylistTableRow({ rank, p, handleDelete, isAdmin, isBlurred = false, o
                 <span className="font-mono font-bold text-xl text-foreground">{rank}</span>
               )}
               {(() => {
-                const metrics = calculateHistoricalMetrics(p.podcast_history || [], rank);
+                const metrics = p.metrics || calculateHistoricalMetrics(p.podcast_history || [], rank);
+                if (metrics.isNew && rank <= 100) {
+                  return (
+                    <span className="text-[10px] font-bold mt-1 text-amber-500 uppercase tracking-widest w-6 text-center">
+                      NEW
+                    </span>
+                  );
+                }
                 return metrics.rankChange !== null ? (
-                  <span className={`text-xs font-bold w-6 ${metrics.rankChange > 0 ? 'text-green-500' : metrics.rankChange < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                  <span className={`text-xs font-bold w-6 text-center ${metrics.rankChange > 0 ? 'text-green-500' : metrics.rankChange < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
                     {metrics.rankChange > 0 ? `+${metrics.rankChange}` : metrics.rankChange < 0 ? `${metrics.rankChange}` : '-'}
                   </span>
                 ) : (
-                  <span className="text-xs font-bold w-6 text-muted-foreground">-</span>
+                  <span className="text-xs font-bold w-6 text-center text-muted-foreground">-</span>
                 );
               })()}
             </div>
