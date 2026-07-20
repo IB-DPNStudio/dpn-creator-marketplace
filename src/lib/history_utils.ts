@@ -68,8 +68,8 @@ export function calculateHistoricalMetrics(
   // Is Trending? (Moved up 3 or more spots)
   const isTrending = rankChange !== null && rankChange >= 3;
 
-  // Is New? (In top 20 now, but wasn't in top 20 last week)
-  const isNew = currentRank <= 20 && (!lastWeekRank || lastWeekRank > 20);
+  // Is New? (In top 100 now, but wasn't in top 100 last week)
+  const isNew = currentRank <= 100 && (!lastWeekRank || lastWeekRank > 100);
 
   return {
     peakRank,

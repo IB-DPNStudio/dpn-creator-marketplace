@@ -139,12 +139,15 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
 
     if (trendFilter === "Gainers") {
       filteredAndRankedPlaylists = withMetrics
-        .filter(p => p.metrics.rankChange !== null && p.metrics.rankChange > 0)
-        .sort((a, b) => (b.metrics.rankChange || 0) - (a.metrics.rankChange || 0))
+        .filter(p => p.displayRank <= 100 && ((p.metrics.rankChange !== null && p.metrics.rankChange > 0) || p.metrics.isNew))
+        .sort((a, b) => {
+          const getEffectiveGain = (p: any) => p.metrics.isNew && p.metrics.rankChange === null ? 101 - p.displayRank : (p.metrics.rankChange || 0);
+          return getEffectiveGain(b) - getEffectiveGain(a);
+        })
         .slice(0, 20);
     } else if (trendFilter === "Losers") {
       filteredAndRankedPlaylists = withMetrics
-        .filter(p => p.metrics.rankChange !== null && p.metrics.rankChange < 0)
+        .filter(p => p.displayRank <= 100 && p.metrics.rankChange !== null && p.metrics.rankChange < 0)
         .sort((a, b) => (a.metrics.rankChange || 0) - (b.metrics.rankChange || 0)) // Most negative first
         .slice(0, 20);
     }
@@ -1064,6 +1067,13 @@ function PlaylistMobileTile({ rank, p, handleDelete, isAdmin, isBlurred = false,
           )}
           {(() => {
             const metrics = p.metrics || calculateHistoricalMetrics(p.podcast_history || [], rank);
+            if (metrics.isNew && rank <= 100) {
+              return (
+                <span className="text-[10px] font-bold mt-1 text-amber-500 uppercase tracking-widest">
+                  NEW
+                </span>
+              );
+            }
             return metrics.rankChange !== null ? (
               <span className={`text-[10px] font-bold mt-1 ${metrics.rankChange > 0 ? 'text-green-500' : metrics.rankChange < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
                 {metrics.rankChange > 0 ? `+${metrics.rankChange}` : metrics.rankChange < 0 ? `${metrics.rankChange}` : '-'}
