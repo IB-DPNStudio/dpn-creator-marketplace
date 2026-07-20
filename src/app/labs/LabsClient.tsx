@@ -80,6 +80,7 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
   const [sortDirection, setSortDirection] = useState<"desc" | "asc">("desc");
   const [languageFilter, setLanguageFilter] = useState("All");
   const [genreFilter, setGenreFilter] = useState("All");
+  const [trendFilter, setTrendFilter] = useState<"All" | "Gainers" | "Losers">("All");
 
   const uniqueLanguages = Array.from(new Set(initialPlaylists.map(p => p.primary_language || 'Unknown'))).filter(Boolean);
   const uniqueGenres = Array.from(new Set(initialPlaylists.map(p => p.genre || 'General'))).filter(Boolean);
@@ -107,7 +108,7 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
     .map((p, index) => ({ ...p, displayRank: index + 1 }));
 
   // Then apply search on top of the contextually ranked playlists
-  const filteredAndRankedPlaylists = categorizedPlaylists
+  const baseFilteredAndRankedPlaylists = categorizedPlaylists
     .filter(p => {
       if (!searchTerm) return true;
       const lowerSearch = searchTerm.toLowerCase();
@@ -129,7 +130,32 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
       return inShowName || inDesc || inChannelDesc || inGenre || inLang || inSampleVideos;
     });
 
+  let filteredAndRankedPlaylists = baseFilteredAndRankedPlaylists;
+  if (trendFilter !== "All") {
+    const withMetrics = baseFilteredAndRankedPlaylists.map(p => {
+      const metrics = calculateHistoricalMetrics(p.podcast_history || [], p.displayRank);
+      return { ...p, metrics };
+    });
+
+    if (trendFilter === "Gainers") {
+      filteredAndRankedPlaylists = withMetrics
+        .filter(p => p.metrics.rankChange !== null && p.metrics.rankChange > 0)
+        .sort((a, b) => (b.metrics.rankChange || 0) - (a.metrics.rankChange || 0))
+        .slice(0, 20);
+    } else if (trendFilter === "Losers") {
+      filteredAndRankedPlaylists = withMetrics
+        .filter(p => p.metrics.rankChange !== null && p.metrics.rankChange < 0)
+        .sort((a, b) => (a.metrics.rankChange || 0) - (b.metrics.rankChange || 0)) // Most negative first
+        .slice(0, 20);
+    }
+  }
+
   const sortedPlaylists = [...filteredAndRankedPlaylists].sort((a, b) => {
+    // Maintain Gainers/Losers sort order if default sorting is active
+    if (trendFilter !== "All" && sortColumn === "final_score" && sortDirection === "desc") {
+      return 0; 
+    }
+
     const aBlurred = !isSignedIn && !isLabs && a.globalRank > 10;
     const bBlurred = !isSignedIn && !isLabs && b.globalRank > 10;
     
@@ -137,8 +163,8 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
     if (!aBlurred && bBlurred) return -1;
     if (aBlurred && bBlurred) return a.globalRank - b.globalRank;
 
-    let valA = a[sortColumn];
-    let valB = b[sortColumn];
+    let valA = (a as any)[sortColumn];
+    let valB = (b as any)[sortColumn];
 
     if (valA < valB) return sortDirection === "asc" ? -1 : 1;
     if (valA > valB) return sortDirection === "asc" ? 1 : -1;
@@ -351,7 +377,7 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <div className="flex gap-4">
+          <div className="flex flex-col sm:flex-row gap-4">
             <select className="flex h-10 w-full md:w-48 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" value={languageFilter} onChange={e => setLanguageFilter(e.target.value)}>
               <option value="All">All Languages</option>
               {uniqueLanguages.map(l => <option key={l as string} value={l as string}>{l as React.ReactNode}</option>)}
@@ -359,6 +385,11 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
             <select className="flex h-10 w-full md:w-48 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" value={genreFilter} onChange={e => setGenreFilter(e.target.value)}>
               <option value="All">All Genres</option>
               {uniqueGenres.map(g => <option key={g as string} value={g as string}>{g as React.ReactNode}</option>)}
+            </select>
+            <select className="flex h-10 w-full md:w-48 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" value={trendFilter} onChange={e => setTrendFilter(e.target.value as any)}>
+              <option value="All">All Trends</option>
+              <option value="Gainers">Top 20 Gainers</option>
+              <option value="Losers">Top 20 Losers</option>
             </select>
             {isAdmin && (
               <button 
@@ -1032,7 +1063,7 @@ function PlaylistMobileTile({ rank, p, handleDelete, isAdmin, isBlurred = false,
             <span className="font-mono font-bold text-xl text-foreground">{rank}</span>
           )}
           {(() => {
-            const metrics = calculateHistoricalMetrics(p.podcast_history || [], rank);
+            const metrics = p.metrics || calculateHistoricalMetrics(p.podcast_history || [], rank);
             return metrics.rankChange !== null ? (
               <span className={`text-[10px] font-bold mt-1 ${metrics.rankChange > 0 ? 'text-green-500' : metrics.rankChange < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
                 {metrics.rankChange > 0 ? `+${metrics.rankChange}` : metrics.rankChange < 0 ? `${metrics.rankChange}` : '-'}
