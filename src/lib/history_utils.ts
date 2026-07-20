@@ -24,7 +24,7 @@ export function calculateHistoricalMetrics(
   history: PodcastHistory[],
   currentRank: number
 ): HistoricalMetrics {
-  if (!history || history.length === 0) {
+  if (!history || history.length <= 1) {
     return {
       peakRank: currentRank,
       weeksInTop20: currentRank <= 20 ? 1 : 0,
