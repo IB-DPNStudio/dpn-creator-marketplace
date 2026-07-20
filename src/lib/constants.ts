@@ -20,5 +20,9 @@ export const PODCAST_GENRES = [
   "Automobile",
   "Gaming",
   "Music",
+  "Crime and Thriller",
+  "Horror",
+  "True Stories",
+  "Movie Review",
   "General",
 ];

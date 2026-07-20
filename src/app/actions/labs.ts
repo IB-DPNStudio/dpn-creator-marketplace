@@ -15,11 +15,16 @@ const getAdminClient = () => {
 
 const genreMapping: Record<string, string> = {
   "Geopolitics": "News & Current Affairs",
+  "Government & Politics": "News & Current Affairs",
+  "Government & Politcs": "News & Current Affairs",
+  "Defence": "News & Current Affairs",
   "Lifestyle": "Society & Culture",
   "Spirituality": "Religion & Spirituality",
+  "Astrology": "Religion & Spirituality",
   "Self-help": "Society & Culture",
   "Spirituality & Wellness": "Religion & Spirituality",
-  "Podcast": "Society & Culture"
+  "Podcast": "Society & Culture",
+  "Entertainment": "Comedy & Entertainment",
 };
 
 function normalizeGenre(g: string): string {
