@@ -31,7 +31,7 @@ export function calculateHistoricalMetrics(
       lastWeekRank: null,
       rankChange: null,
       isTrending: false,
-      isNew: currentRank <= 20
+      isNew: currentRank <= 100
     };
   }
 
