@@ -4,7 +4,9 @@ import { createClient } from "@/utils/supabase/server";
 import { addOrUpdatePlaylistRank } from "./labs";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { sendApprovalNotification } from "@/lib/email";
+import { rateLimit } from "@/lib/rate-limit";
 
 // Admin client using service role key to bypass RLS and use Auth Admin API
 const getAdminClient = () => {
@@ -136,6 +138,15 @@ export async function updateUserRole(userId: string, newRole: string) {
 
 export async function switchUserCategory(targetCategory: 'general' | 'creator' | 'agency', additionalData?: any, claimToken?: string) {
   try {
+    const headersList = await headers();
+    const ip = headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || 'unknown';
+    
+    // Allow 5 category switches/applications per hour per IP
+    const rateLimitResult = rateLimit(ip, 5, 60 * 60 * 1000);
+    if (!rateLimitResult.success) {
+      return { success: false, error: `Too many requests. Please try again in ${rateLimitResult.retryAfter} seconds.` };
+    }
+
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     

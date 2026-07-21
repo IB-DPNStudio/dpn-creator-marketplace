@@ -196,6 +196,8 @@ The platform was engineered with a security-first posture, anticipating modern t
 | **CSRF (Cross-Site Request Forgery)** | Next.js Server Actions implement native Origin validation and anti-CSRF tokens. |
 | **IDOR / Privilege Escalation** | Ownership mutations (e.g., claiming a podcast) require out-of-band verification (Magic Link sent to the canonical channel email). Server actions explicitly validate the requesting user's `owner_id`. |
 | **Secrets Leakage** | Critical tokens (`SUPABASE_SERVICE_ROLE_KEY`, `YOUTUBE_API_KEY`) are isolated to server-side environments and never exposed to the client bundle (`NEXT_PUBLIC_` prefix is strictly avoided for sensitive keys). |
+| **DDoS & Spam (Feature Abuse)** | In-memory IP-based rate limiting is enforced on sensitive forms (e.g., `switchUserCategory` for creator applications) to prevent automated spam and exhaustion. |
+| **Clickjacking & MIME-Sniffing** | `next.config.ts` enforces `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, and `Strict-Transport-Security` headers on all responses. |
 
 > [!CAUTION]
 > **RLS Bypass Note:** Administrative functions purposefully utilize the Supabase `SERVICE_ROLE_KEY` to bypass Row Level Security. This is a design requirement for global admin actions. The security of this bypass relies entirely on the integrity of the `getAdminUser()` check at the entry point of the server action.
