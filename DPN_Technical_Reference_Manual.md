@@ -7,8 +7,8 @@
 | **Property** | **Details** |
 | :--- | :--- |
 | **Product Name** | dpnranker.com (Dentsu Podcast Network Ranker) |
-| **Version** | 1.0 |
-| **Document Date** | June 25, 2026 |
+| **Version** | 2.0 |
+| **Document Date** | July 21, 2026 |
 | **Owner** | Dentsu Podcast Network |
 | **Purpose** | Official technical reference, architectural baseline, and security implementation guide. |
 | **Intended Audience** | AI & InfoSec, Compliance, and Audit Stakeholders |
@@ -18,6 +18,7 @@
 | **Version** | **Date** | **Author** | **Description** |
 | :--- | :--- | :--- | :--- |
 | 1.0 | 2026-06-25 | Dentsu Podcast Network | Initial baseline version representing the production deployment architecture. |
+| 2.0 | 2026-07-21 | Antigravity AI | Security improvements including rate limiting, strict HTTP headers, and IDOR prevention details. |
 
 ---
 
