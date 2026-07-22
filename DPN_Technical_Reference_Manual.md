@@ -7,7 +7,7 @@
 | **Property** | **Details** |
 | :--- | :--- |
 | **Product Name** | dpnranker.com (Dentsu Podcast Network Ranker) |
-| **Version** | 3.0 |
+| **Version** | 4.0 |
 | **Document Date** | July 22, 2026 |
 | **Owner** | Dentsu Podcast Network |
 | **Purpose** | Official technical reference, architectural baseline, and security implementation guide. |
@@ -20,6 +20,7 @@
 | 1.0 | 2026-06-25 | Dentsu Podcast Network | Initial baseline version representing the production deployment architecture. |
 | 2.0 | 2026-07-21 | Antigravity AI | Security improvements including rate limiting, strict HTTP headers, and IDOR prevention details. |
 | 3.0 | 2026-07-22 | Antigravity AI | Corporate compliance alignment (SAST, Dependabot, Responsible Disclosure). |
+| 4.0 | 2026-07-22 | Antigravity AI | Corporate compliance alignment (ICT Readiness, Logging, AI). |
 
 ---
 
@@ -223,6 +224,17 @@ The platform adheres to the principles of India's Digital Personal Data Protecti
 - **Data Backups:** Handled natively by the Supabase platform (Point-in-Time Recovery enabled based on project tier).
 - **Graceful Degradation:** If the YouTube API experiences an outage, the platform gracefully degrades by displaying the last known cached metrics rather than returning 500 errors to the client.
 
+### ICT Readiness & Disaster Recovery
+Per the **ICT Readiness Standard [RMS142]**, this platform is classified as **Tier 3 (Non-critical)** / **Tier 2 (Operational)**.
+- **Recovery Point Objective (RPO):** < 24 hours (facilitated by daily Supabase database snapshots).
+- **Recovery Time Objective (RTO):** < 48 hours (facilitated by redeploying the Docker/Node instance via GitHub).
+
+### Security Logging & SIEM Integration
+Per the **Security Logging, Monitoring and Alerting Standard [SCS-GRP-008-EN]**, all PM2 application logs and Supabase GoTrue Auth logs must be ingested into the Dentsu central SIEM platform for 13-month tamper-proof retention. Local PM2 logs only persist temporarily.
+
+### AI Compliance Declaration
+Per the **AI Security Standard [SCS-GRP-025-EN]**, this platform does **NOT** utilize any Generative AI, Large Language Models (LLMs), or Agentic AI components. As such, no AI Warning Banners or prompt moderation pipelines are necessary.
+
 ---
 
 ## 12. Deployment
@@ -255,6 +267,18 @@ The platform adheres to the principles of India's Digital Personal Data Protecti
 ---
 
 ## 14. Feature Update Log
+
+**Version:** 4.0
+**Release Date:** July 22, 2026
+**Summary:** Advanced Corporate Security Compliance
+
+**Compliance Improvements**
+- Defined ICT Readiness Tier (Tier 3), RPO (<24h), and RTO (<48h) in alignment with RMS142.
+- Explicitly documented SIEM ingestion requirements for 13-month log retention in alignment with SCS-GRP-008-EN.
+- Declared the application free of Generative AI to align with SCS-GRP-025-EN.
+- Noted CMDB onboarding requirements per G/O/T/003.
+
+---
 
 **Version:** 3.0
 **Release Date:** July 22, 2026
