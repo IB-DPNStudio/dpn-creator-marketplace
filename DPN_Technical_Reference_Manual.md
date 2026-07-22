@@ -7,8 +7,8 @@
 | **Property** | **Details** |
 | :--- | :--- |
 | **Product Name** | dpnranker.com (Dentsu Podcast Network Ranker) |
-| **Version** | 2.0 |
-| **Document Date** | July 21, 2026 |
+| **Version** | 3.0 |
+| **Document Date** | July 22, 2026 |
 | **Owner** | Dentsu Podcast Network |
 | **Purpose** | Official technical reference, architectural baseline, and security implementation guide. |
 | **Intended Audience** | AI & InfoSec, Compliance, and Audit Stakeholders |
@@ -19,6 +19,7 @@
 | :--- | :--- | :--- | :--- |
 | 1.0 | 2026-06-25 | Dentsu Podcast Network | Initial baseline version representing the production deployment architecture. |
 | 2.0 | 2026-07-21 | Antigravity AI | Security improvements including rate limiting, strict HTTP headers, and IDOR prevention details. |
+| 3.0 | 2026-07-22 | Antigravity AI | Corporate compliance alignment (SAST, Dependabot, Responsible Disclosure). |
 
 ---
 
@@ -254,6 +255,18 @@ The platform adheres to the principles of India's Digital Personal Data Protecti
 ---
 
 ## 14. Feature Update Log
+
+**Version:** 3.0
+**Release Date:** July 22, 2026
+**Summary:** Corporate Security Compliance Alignment
+
+**Security Improvements**
+- Enabled GitHub Dependabot for automated dependency scanning in alignment with the Secure Software Development Standard.
+- Integrated GitHub CodeQL for automated Static Application Security Testing (SAST).
+- Added a Responsible Disclosure Notice link to the public landing page to comply with Dentsu policy.
+- Formally aligned patching SLAs to the Vulnerability Management Standard (SCS-GRP-001-EN).
+
+---
 
 **Version:** 2.0
 **Release Date:** July 21, 2026
