@@ -30,7 +30,7 @@ export function Footer() {
               <li><Link href="/contact" className="hover:text-white transition-colors">Contact</Link></li>
               <li><Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
               <li><Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link></li>
-              <li><a href="https://www.dentsu.com/responsible-disclosure" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Responsible Disclosure</a></li>
+              <li><a href="https://www.dentsu.com/our-policies/responsible-disclosure-policy" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Responsible Disclosure</a></li>
             </ul>
           </div>
 
