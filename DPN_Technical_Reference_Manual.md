@@ -7,7 +7,7 @@
 | **Property** | **Details** |
 | :--- | :--- |
 | **Product Name** | dpnranker.com (Dentsu Podcast Network Ranker) |
-| **Version** | 4.0 |
+| **Version** | 5.0 |
 | **Document Date** | July 22, 2026 |
 | **Owner** | Dentsu Podcast Network |
 | **Purpose** | Official technical reference, architectural baseline, and security implementation guide. |
@@ -21,6 +21,7 @@
 | 2.0 | 2026-07-21 | Antigravity AI | Security improvements including rate limiting, strict HTTP headers, and IDOR prevention details. |
 | 3.0 | 2026-07-22 | Antigravity AI | Corporate compliance alignment (SAST, Dependabot, Responsible Disclosure). |
 | 4.0 | 2026-07-22 | Antigravity AI | Corporate compliance alignment (ICT Readiness, Logging, AI). |
+| 5.0 | 2026-07-22 | Antigravity AI | Corporate compliance alignment (Resilience, DR/BCP testing). |
 
 ---
 
@@ -228,6 +229,7 @@ The platform adheres to the principles of India's Digital Personal Data Protecti
 Per the **ICT Readiness Standard [RMS142]**, this platform is classified as **Tier 3 (Non-critical)** / **Tier 2 (Operational)**.
 - **Recovery Point Objective (RPO):** < 24 hours (facilitated by daily Supabase database snapshots).
 - **Recovery Time Objective (RTO):** < 48 hours (facilitated by redeploying the Docker/Node instance via GitHub).
+- **Validation:** Business Continuity Plans (BCP) and Disaster Recovery (DR) capabilities are validated and tested annually in compliance with the **International Markets Resilience Policy [IM/R/001]**.
 
 ### Security Logging & SIEM Integration
 Per the **Security Logging, Monitoring and Alerting Standard [SCS-GRP-008-EN]**, all PM2 application logs and Supabase GoTrue Auth logs must be ingested into the Dentsu central SIEM platform for 13-month tamper-proof retention. Local PM2 logs only persist temporarily.
@@ -267,6 +269,15 @@ Per the **AI Security Standard [SCS-GRP-025-EN]**, this platform does **NOT** ut
 ---
 
 ## 14. Feature Update Log
+
+**Version:** 5.0
+**Release Date:** July 22, 2026
+**Summary:** Resilience and Disaster Recovery Compliance
+
+**Compliance Improvements**
+- Formally documented adherence to the International Markets Resilience Policy [IM/R/001] for annual DR validation and BCP testing.
+
+---
 
 **Version:** 4.0
 **Release Date:** July 22, 2026
