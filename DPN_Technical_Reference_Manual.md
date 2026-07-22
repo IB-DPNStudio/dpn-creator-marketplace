@@ -249,11 +249,26 @@ The platform adheres to the principles of India's Digital Personal Data Protecti
 - **Single Node Deployment:** The Next.js application runs on a single VPS. It assumes traffic patterns will remain within the vertical scaling limits of the instance.
 
 ### Potential Risks
-- **Rate Limiting Exposure:** Server Actions currently lack strict IP-based rate limiting. Malicious actors could theoretically trigger API exhaustion if public endpoints (like `adminSeedPodcast`) are abused, though this is mitigated by admin auth gates.
+- **Admin Gateway Exposure:** While server actions are heavily gated behind `getAdminUser()` checks, any compromise of the `studio@ideabrews.com` credentials could lead to broad system access.
 
 ---
 
 ## 14. Feature Update Log
+
+**Version:** 2.0
+**Release Date:** July 21, 2026
+**Summary:** Security Hardening and Top Gainers Logic
+
+**New Features**
+- Introduced "Top Gainers" and "Losers" filters on the main Labs Rankings, correctly isolating changes strictly within the Top 100.
+- Implemented "NEW" badge logic to clearly distinguish brand-new entries breaking into the Top 100 without prior historical data.
+
+**Security Improvements**
+- Implemented strict HTTP Security Headers (`X-Frame-Options`, `X-Content-Type-Options`, `Strict-Transport-Security`) via `next.config.ts`.
+- Introduced custom LRU in-memory IP-based rate limiting to protect public forms (e.g., Creator/Agency applications).
+- Addressed potential rendering bugs where UI layers incorrectly bypassed `calculateHistoricalMetrics` evaluations.
+
+---
 
 **Version:** 1.0
 **Release Date:** June 25, 2026
