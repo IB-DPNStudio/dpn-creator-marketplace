@@ -54,7 +54,9 @@ export async function inviteUser(email: string, role: string) {
     });
 
     if (error) {
-      if (error.message.includes("already been registered")) {
+      const errorMessage = error.message && typeof error.message === 'string' ? error.message : JSON.stringify(error);
+      
+      if (errorMessage.includes("already been registered")) {
         // Find existing user and just update their role
         const { data: allUsers } = await adminAuthClient.listUsers();
         const existingUser = allUsers?.users.find(u => u.email === email);
@@ -77,7 +79,10 @@ export async function inviteUser(email: string, role: string) {
         }
       }
       console.error("Invite Error:", error);
-      return { success: false, error: error.message };
+      return { 
+        success: false, 
+        error: errorMessage === '{}' ? 'Failed to send invitation. The user may have already been invited or the email rate limit was reached.' : errorMessage 
+      };
     }
 
     if (data?.user?.id) {

@@ -320,13 +320,16 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
 
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+    const ninetyDaysAgoStr = ninetyDaysAgo.toISOString();
     const isDisqualified = !latestEpisodeDate || new Date(latestEpisodeDate) < ninetyDaysAgo;
 
     const { count } = await adminDbClient
       .from("playlist_podcasts")
       .select("*", { count: 'exact', head: true })
       .gt("final_score", final_score)
-      .eq("is_included", true);
+      .eq("is_included", true)
+      .gte("latest_episode_date", ninetyDaysAgoStr)
+      .gte("total_episodes", 6);
 
     const calculatedRank = (count || 0) + 1;
 

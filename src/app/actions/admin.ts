@@ -90,7 +90,11 @@ export async function adminCreateCreator(data: any) {
     return { success: true };
   } catch (err: any) {
     console.error("Error in adminCreateCreator:", err);
-    return { success: false, error: err.message };
+    const errorMessage = err.message && typeof err.message === 'string' ? err.message : JSON.stringify(err);
+    return { 
+      success: false, 
+      error: errorMessage === '{}' ? 'Failed to send invitation. The user may have already been invited or the email rate limit was reached.' : errorMessage 
+    };
   }
 }
 
@@ -149,7 +153,11 @@ export async function adminCreateAgency(data: any) {
     return { success: true };
   } catch (err: any) {
     console.error("Error in adminCreateAgency:", err);
-    return { success: false, error: err.message };
+    const errorMessage = err.message && typeof err.message === 'string' ? err.message : JSON.stringify(err);
+    return { 
+      success: false, 
+      error: errorMessage === '{}' ? 'Failed to send invitation. The user may have already been invited or the email rate limit was reached.' : errorMessage 
+    };
   }
 }
 
