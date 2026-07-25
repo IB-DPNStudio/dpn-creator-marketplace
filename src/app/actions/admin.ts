@@ -54,41 +54,16 @@ export async function adminCreateCreator(data: any) {
           await adminDbClient.from("profiles").update({ role: 'creator', full_name: data.fullName }).eq("id", ownerId);
         }
       } else {
-        // Generate link without sending email via Supabase GoTrue
-        const inviteRes = await adminDbClient.auth.admin.generateLink({
-          type: 'invite',
-          email: data.ownerEmail,
-          options: {
-            redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://dpnranker.com'}/auth/callback`,
-            data: { role: 'creator' }
-          }
+        // User does not exist, send invite using existing users.ts function
+        const inviteRes = await adminDbClient.auth.admin.inviteUserByEmail(data.ownerEmail, {
+          data: { role: 'creator' }
         });
         if (inviteRes.error) throw inviteRes.error;
         ownerId = inviteRes.data.user.id;
         
-        await adminDbClient.from("profiles").upsert({ 
-          id: ownerId, 
-          email: data.ownerEmail,
-          role: 'creator', 
-          full_name: data.fullName,
-          updated_at: new Date().toISOString()
-        });
-
-        let emailSent = false;
-        let inviteLink = inviteRes.data?.properties?.action_link || null;
-        try {
-          if (inviteLink) {
-            await sendUserInviteEmail(data.ownerEmail, 'creator', inviteLink);
-            emailSent = true;
-          }
-        } catch (smtpErr) {
-          console.error("Nodemailer SMTP invite email failed in adminCreateCreator:", smtpErr);
-        }
-
-        revalidatePath("/dashboard");
-        revalidatePath("/admin/users");
-        revalidatePath("/admin/approvals");
-        return { success: true, inviteLink, emailSent };
+        // Wait for trigger to create profile
+        await new Promise(r => setTimeout(r, 1500));
+        await adminDbClient.from("profiles").update({ role: 'creator', full_name: data.fullName }).eq("id", ownerId);
       }
     }
 
@@ -148,40 +123,16 @@ export async function adminCreateAgency(data: any) {
           await adminDbClient.from("profiles").update({ role: 'agency_user', full_name: data.fullName }).eq("id", ownerId);
         }
       } else {
-        // Generate link without sending email via Supabase GoTrue
-        const inviteRes = await adminDbClient.auth.admin.generateLink({
-          type: 'invite',
-          email: data.ownerEmail,
-          options: {
-            redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://dpnranker.com'}/auth/callback`,
-            data: { role: 'agency_user' }
-          }
+        // User does not exist, send invite
+        const inviteRes = await adminDbClient.auth.admin.inviteUserByEmail(data.ownerEmail, {
+          data: { role: 'agency_user' }
         });
         if (inviteRes.error) throw inviteRes.error;
         ownerId = inviteRes.data.user.id;
         
-        await adminDbClient.from("profiles").upsert({ 
-          id: ownerId, 
-          email: data.ownerEmail,
-          role: 'agency_user', 
-          full_name: data.fullName,
-          updated_at: new Date().toISOString()
-        });
-
-        let emailSent = false;
-        let inviteLink = inviteRes.data?.properties?.action_link || null;
-        try {
-          if (inviteLink) {
-            await sendUserInviteEmail(data.ownerEmail, 'agency_user', inviteLink);
-            emailSent = true;
-          }
-        } catch (smtpErr) {
-          console.error("Nodemailer SMTP invite email failed in adminCreateAgency:", smtpErr);
-        }
-
-        revalidatePath("/admin/users");
-        revalidatePath("/admin/approvals");
-        return { success: true, inviteLink, emailSent };
+        // Wait for trigger to create profile
+        await new Promise(r => setTimeout(r, 1500));
+        await adminDbClient.from("profiles").update({ role: 'agency_user', full_name: data.fullName }).eq("id", ownerId);
       }
     }
 

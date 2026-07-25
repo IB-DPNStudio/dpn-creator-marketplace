@@ -46,71 +46,56 @@ export async function inviteUser(email: string, role: string) {
 
     const adminAuthClient = getAdminClient().auth.admin;
 
-    // Check if user already exists
-    const { data: allUsers } = await adminAuthClient.listUsers();
-    const existingUser = allUsers?.users.find(u => u.email?.toLowerCase() === email.toLowerCase());
-    
-    if (existingUser) {
-      await adminDbClient
-        .from("profiles")
-        .upsert({ 
-          id: existingUser.id, 
-          email: email, 
-          role: role,
-          updated_at: new Date().toISOString()
-        });
-        
-      await adminAuthClient.updateUserById(existingUser.id, {
-        user_metadata: { ...existingUser.user_metadata, role: role }
-      });
-      
-      revalidatePath("/admin/users");
-      return { success: true, userExists: true };
-    }
-
-    // Generate link without sending email via Supabase GoTrue
-    const { data, error } = await adminAuthClient.generateLink({
-      type: 'invite',
-      email: email,
-      options: {
-        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://dpnranker.com'}/auth/callback`,
-        data: { role: role }
+    // Send the invite
+    const { data, error } = await adminAuthClient.inviteUserByEmail(email, {
+      data: {
+        role: role
       }
     });
 
     if (error) {
       const errorMessage = error.message && typeof error.message === 'string' ? error.message : JSON.stringify(error);
-      console.error("Generate Link Error:", error);
-      return { success: false, error: errorMessage };
+      
+      if (errorMessage.includes("already been registered")) {
+        // Find existing user and just update their role
+        const { data: allUsers } = await adminAuthClient.listUsers();
+        const existingUser = allUsers?.users.find(u => u.email?.toLowerCase() === email.toLowerCase());
+        if (existingUser) {
+          await getAdminClient()
+            .from("profiles")
+            .upsert({ 
+              id: existingUser.id, 
+              email: email, 
+              role: role,
+              updated_at: new Date().toISOString()
+            });
+            
+          await adminAuthClient.updateUserById(existingUser.id, {
+            user_metadata: { ...existingUser.user_metadata, role: role }
+          });
+          
+          revalidatePath("/admin/users");
+          return { success: true };
+        }
+      }
+      console.error("Invite Error:", error);
+      return { 
+        success: false, 
+        error: errorMessage === '{}' ? 'Failed to send invitation. The user may have already been invited or the email rate limit was reached.' : errorMessage 
+      };
     }
 
     if (data?.user?.id) {
-      await adminDbClient
+      // Small delay to let the trigger run
+      await new Promise(r => setTimeout(r, 1000));
+      await getAdminClient()
         .from("profiles")
-        .upsert({ 
-          id: data.user.id, 
-          email: email, 
-          role: role,
-          updated_at: new Date().toISOString()
-        });
-    }
-
-    let emailSent = false;
-    try {
-      if (data?.properties?.action_link) {
-        await sendUserInviteEmail(email, role, data.properties.action_link);
-        emailSent = true;
-      }
-    } catch (smtpErr) {
-      console.error("Nodemailer SMTP invite email failed:", smtpErr);
+        .update({ role: role })
+        .eq("id", data.user.id);
     }
 
     revalidatePath("/admin/users");
-    return { 
-      success: true, 
-      emailSent, 
-      inviteLink: data?.properties?.action_link || null 
-    };
+    return { success: true };
 
   } catch (err: any) {
     console.error("Error inviting user:", err);

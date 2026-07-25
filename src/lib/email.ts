@@ -126,37 +126,3 @@ export async function sendApprovalNotification(applicantName: string, applicantT
     console.error("Error sending approval email:", err);
   }
 }
-
-export async function sendUserInviteEmail(toEmail: string, role: string, inviteUrl: string) {
-  const logoUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://dpnranker.com'}/dentsu-logo.png`;
-  const roleDisplay = role === 'agency_user' ? 'Agency Partner' : role === 'creator' ? 'Creator' : role;
-  
-  const htmlContent = `
-    <div style="font-family: 'Helvetica Neue', Arial, sans-serif; color: #1a1a1a; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #eaeaef; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-      <div style="background-color: #ffffff; padding: 30px; text-align: center; border-bottom: 1px solid #eaeaef;">
-        <img src="${logoUrl}" alt="dentsu podcast network" style="max-height: 80px; width: auto;" />
-      </div>
-      <div style="padding: 40px 30px;">
-        <h2 style="margin-top: 0; color: #000000; font-size: 22px;">You've been invited!</h2>
-        <p style="font-size: 16px; line-height: 1.6; color: #4a4a4a; margin-bottom: 24px;">
-          You have been invited to join the <strong>dentsu podcast network</strong> as an <strong>${roleDisplay}</strong>.
-        </p>
-        <p style="font-size: 16px; line-height: 1.6; color: #4a4a4a; margin-bottom: 24px;">
-          Click the link below to accept the invitation and set up your account:
-        </p>
-        <div style="text-align: center; margin: 40px 0;">
-          <a href="${inviteUrl}" style="background-color: #e60000; color: #ffffff; padding: 16px 32px; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 8px; display: inline-block;">
-            Accept Invitation
-          </a>
-        </div>
-      </div>
-    </div>
-  `;
-
-  return transporter.sendMail({
-    from: '"DPN Team" <studio@ideabrews.com>', 
-    to: toEmail,
-    subject: `Invitation to join DPN Network`,
-    html: htmlContent,
-  });
-}
