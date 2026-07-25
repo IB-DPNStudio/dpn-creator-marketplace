@@ -10,7 +10,7 @@ export function UsersTable({ profiles, currentUserRole }: { profiles: any[], cur
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("agency_user");
   const [isInviting, setIsInviting] = useState(false);
-  const [inviteMessage, setInviteMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [inviteMessage, setInviteMessage] = useState<{ type: 'success' | 'error' | 'warning', text: string, link?: string | null } | null>(null);
 
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [tempRole, setTempRole] = useState("");
@@ -27,7 +27,23 @@ export function UsersTable({ profiles, currentUserRole }: { profiles: any[], cur
 
     setIsInviting(false);
     if (result.success) {
-      setInviteMessage({ type: 'success', text: 'Invitation sent successfully!' });
+      if (result.userExists) {
+        setInviteMessage({ 
+          type: 'success', 
+          text: 'User already exists in the system. Their role has been updated successfully.' 
+        });
+      } else if (result.emailSent) {
+        setInviteMessage({ 
+          type: 'success', 
+          text: 'Invitation email sent successfully!' 
+        });
+      } else {
+        setInviteMessage({ 
+          type: 'warning', 
+          text: 'User added to network! However, the email invitation could not be sent (SMTP authentication error). Please copy and send this registration link to the user directly:',
+          link: result.inviteLink
+        });
+      }
       setInviteEmail("");
     } else {
       setInviteMessage({ type: 'error', text: result.error || 'Failed to send invitation.' });
@@ -109,8 +125,34 @@ export function UsersTable({ profiles, currentUserRole }: { profiles: any[], cur
           </Button>
         </form>
         {inviteMessage && (
-          <div className={`mt-4 p-3 rounded text-sm ${inviteMessage.type === 'success' ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600'}`}>
-            {inviteMessage.text}
+          <div className={`mt-4 p-3 rounded-lg text-sm ${
+            inviteMessage.type === 'success' ? 'bg-green-500/10 text-green-600 border border-green-500/20' : 
+            inviteMessage.type === 'warning' ? 'bg-yellow-500/10 text-yellow-600 border border-yellow-500/20 font-medium' : 
+            'bg-red-500/10 text-red-600 border border-red-500/20'
+          }`}>
+            <div>{inviteMessage.text}</div>
+            {inviteMessage.link && (
+              <div className="mt-2 flex items-center gap-2">
+                <input 
+                  type="text" 
+                  readOnly 
+                  value={inviteMessage.link} 
+                  className="flex-1 text-xs px-2 py-1 bg-background border border-input rounded text-foreground focus:outline-none"
+                  onClick={(e) => (e.target as HTMLInputElement).select()}
+                />
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="h-7 text-xs bg-background text-foreground border border-input hover:bg-muted"
+                  onClick={() => {
+                    navigator.clipboard.writeText(inviteMessage.link || "");
+                    alert("Link copied to clipboard!");
+                  }}
+                >
+                  Copy Link
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -12,7 +12,7 @@ import { PODCAST_GENRES } from "@/lib/constants";
 export default function AdminDataEntryPage() {
   const [activeTab, setActiveTab] = useState<'creator' | 'agency' | 'seed'>('creator');
   const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState<{type: 'success' | 'error' | 'info', text: string} | null>(null);
+  const [message, setMessage] = useState<{type: 'success' | 'error' | 'info' | 'warning', text: string, link?: string | null} | null>(null);
 
   const handleCreatorSubmit = async (formData: FormData) => {
     setIsLoading(true);
@@ -42,7 +42,15 @@ export default function AdminDataEntryPage() {
     const result = await adminCreateCreator(data);
     setIsLoading(false);
     if (result.success) {
-      setMessage({ type: 'success', text: 'Creator successfully added and invited!' });
+      if (result.inviteLink && !result.emailSent) {
+        setMessage({ 
+          type: 'warning', 
+          text: 'Creator successfully added! However, the invite email could not be sent (SMTP error). Please copy and share this registration link directly: ',
+          link: result.inviteLink
+        });
+      } else {
+        setMessage({ type: 'success', text: 'Creator successfully added and invited!' });
+      }
       (document.getElementById("creator-form") as HTMLFormElement).reset();
     } else {
       setMessage({ type: 'error', text: result.error || 'Failed to add creator.' });
@@ -65,7 +73,15 @@ export default function AdminDataEntryPage() {
     const result = await adminCreateAgency(data);
     setIsLoading(false);
     if (result.success) {
-      setMessage({ type: 'success', text: 'Agency successfully added and invited!' });
+      if (result.inviteLink && !result.emailSent) {
+        setMessage({ 
+          type: 'warning', 
+          text: 'Agency successfully added! However, the invite email could not be sent (SMTP error). Please copy and share this registration link directly: ',
+          link: result.inviteLink
+        });
+      } else {
+        setMessage({ type: 'success', text: 'Agency successfully added and invited!' });
+      }
       (document.getElementById("agency-form") as HTMLFormElement).reset();
     } else {
       setMessage({ type: 'error', text: result.error || 'Failed to add agency.' });
@@ -116,13 +132,38 @@ export default function AdminDataEntryPage() {
       </div>
 
       {message && (
-        <div className={`p-4 rounded-xl font-medium flex items-center gap-3 ${
+        <div className={`p-4 rounded-xl font-medium flex flex-col gap-2 ${
           message.type === 'success' ? 'bg-green-500/10 text-green-600 border border-green-500/20' : 
+          message.type === 'warning' ? 'bg-yellow-500/10 text-yellow-600 border border-yellow-500/20' : 
           message.type === 'info' ? 'bg-blue-500/10 text-blue-600 border border-blue-500/20' :
           'bg-red-500/10 text-red-600 border border-red-500/20'
         }`}>
-          {message.type === 'info' && <Loader2 className="w-5 h-5 animate-spin" />}
-          {message.text}
+          <div className="flex items-center gap-3">
+            {message.type === 'info' && <Loader2 className="w-5 h-5 animate-spin" />}
+            <span>{message.text}</span>
+          </div>
+          {message.link && (
+            <div className="mt-2 flex items-center gap-2 max-w-lg">
+              <input 
+                type="text" 
+                readOnly 
+                value={message.link} 
+                className="flex-1 text-xs px-2 py-1 bg-background border border-input rounded text-foreground focus:outline-none"
+                onClick={(e) => (e.target as HTMLInputElement).select()}
+              />
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="h-7 text-xs bg-background text-foreground border border-input hover:bg-muted"
+                onClick={() => {
+                  navigator.clipboard.writeText(message.link || "");
+                  alert("Link copied to clipboard!");
+                }}
+              >
+                Copy Link
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
