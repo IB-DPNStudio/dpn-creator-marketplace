@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { inviteUser, updateUserRole, deleteUser } from "@/app/actions/users";
 import { Loader2, Mail, Shield, User, UserPlus, Check, X, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export function UsersTable({ profiles, currentUserRole }: { profiles: any[], currentUserRole: string }) {
+  const [localProfiles, setLocalProfiles] = useState(profiles);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("agency_user");
   const [isInviting, setIsInviting] = useState(false);
@@ -15,6 +16,10 @@ export function UsersTable({ profiles, currentUserRole }: { profiles: any[], cur
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [tempRole, setTempRole] = useState("");
   const [isUpdatingRole, setIsUpdatingRole] = useState(false);
+
+  useEffect(() => {
+    setLocalProfiles(profiles);
+  }, [profiles]);
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,10 +60,17 @@ export function UsersTable({ profiles, currentUserRole }: { profiles: any[], cur
   const handleDelete = async (userId: string, role: string) => {
     if (confirm("Are you sure you want to delete this user? Their account will be permanently removed. For creators, their podcast will be un-linked but remain in the ranker. For agencies, their EOIs will be deleted.")) {
       setIsDeleting(userId);
+      
+      // Optimistically remove the user from local state to prevent visual glitch
+      setLocalProfiles(prev => prev.filter(p => p.id !== userId));
+      
       const result = await deleteUser(userId, role);
       setIsDeleting(null);
+      
       if (!result.success) {
         alert("Failed to delete user: " + result.error);
+        // Restore profiles on failure
+        setLocalProfiles(profiles);
       }
     }
   };
@@ -145,7 +157,7 @@ export function UsersTable({ profiles, currentUserRole }: { profiles: any[], cur
       <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
         <div className="p-6 border-b border-border flex items-center justify-between">
           <h2 className="text-xl font-bold font-heading">Network Users</h2>
-          <div className="text-sm text-muted-foreground">{profiles.length} total users</div>
+          <div className="text-sm text-muted-foreground">{localProfiles.length} total users</div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -157,7 +169,7 @@ export function UsersTable({ profiles, currentUserRole }: { profiles: any[], cur
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {profiles.map(profile => (
+              {localProfiles.map(profile => (
                 <tr key={profile.id} className="hover:bg-muted/30 transition-colors">
                   <td className="p-4">
                     <div className="flex items-center gap-3">
@@ -229,7 +241,7 @@ export function UsersTable({ profiles, currentUserRole }: { profiles: any[], cur
                   </td>
                 </tr>
               ))}
-              {profiles.length === 0 && (
+              {localProfiles.length === 0 && (
                 <tr>
                   <td colSpan={3} className="p-8 text-center text-muted-foreground">
                     No users found.
