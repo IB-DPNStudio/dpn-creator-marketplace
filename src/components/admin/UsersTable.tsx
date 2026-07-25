@@ -35,7 +35,8 @@ export function UsersTable({ profiles, currentUserRole }: { profiles: any[], cur
       } else if (result.emailSent) {
         setInviteMessage({ 
           type: 'success', 
-          text: 'Invitation email sent successfully!' 
+          text: 'Invitation email sent successfully! You can also manually copy and share this registration link in case it gets filtered by corporate firewalls:',
+          link: result.inviteLink
         });
       } else {
         setInviteMessage({ 

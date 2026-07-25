@@ -42,14 +42,16 @@ export default function AdminDataEntryPage() {
     const result = await adminCreateCreator(data);
     setIsLoading(false);
     if (result.success) {
-      if (result.inviteLink && !result.emailSent) {
+      if (result.inviteLink) {
         setMessage({ 
-          type: 'warning', 
-          text: 'Creator successfully added! However, the invite email could not be sent (SMTP error). Please copy and share this registration link directly: ',
+          type: result.emailSent ? 'success' : 'warning', 
+          text: result.emailSent 
+            ? 'Creator successfully added and invited! You can also copy and share this registration link directly in case the email is filtered:'
+            : 'Creator successfully added! However, the invite email could not be sent (SMTP error). Please copy and share this registration link directly: ',
           link: result.inviteLink
         });
       } else {
-        setMessage({ type: 'success', text: 'Creator successfully added and invited!' });
+        setMessage({ type: 'success', text: 'Creator successfully added!' });
       }
       (document.getElementById("creator-form") as HTMLFormElement).reset();
     } else {
@@ -73,14 +75,16 @@ export default function AdminDataEntryPage() {
     const result = await adminCreateAgency(data);
     setIsLoading(false);
     if (result.success) {
-      if (result.inviteLink && !result.emailSent) {
+      if (result.inviteLink) {
         setMessage({ 
-          type: 'warning', 
-          text: 'Agency successfully added! However, the invite email could not be sent (SMTP error). Please copy and share this registration link directly: ',
+          type: result.emailSent ? 'success' : 'warning', 
+          text: result.emailSent 
+            ? 'Agency successfully added and invited! You can also copy and share this registration link directly in case the email is filtered:'
+            : 'Agency successfully added! However, the invite email could not be sent (SMTP error). Please copy and share this registration link directly: ',
           link: result.inviteLink
         });
       } else {
-        setMessage({ type: 'success', text: 'Agency successfully added and invited!' });
+        setMessage({ type: 'success', text: 'Agency successfully added!' });
       }
       (document.getElementById("agency-form") as HTMLFormElement).reset();
     } else {
