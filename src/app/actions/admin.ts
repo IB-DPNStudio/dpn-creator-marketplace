@@ -4,7 +4,6 @@ import { createClient } from "@/utils/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { calculateDPNScoreBreakdown } from "@/lib/score";
-import { sendUserInviteEmail } from "@/lib/email";
 
 // Admin client using service role key
 const getAdminClient = () => {

@@ -5,7 +5,7 @@ import { addOrUpdatePlaylistRank } from "./labs";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
-import { sendApprovalNotification, sendUserInviteEmail } from "@/lib/email";
+import { sendApprovalNotification } from "@/lib/email";
 import { rateLimit } from "@/lib/rate-limit";
 
 // Admin client using service role key to bypass RLS and use Auth Admin API
