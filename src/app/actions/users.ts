@@ -48,6 +48,7 @@ export async function inviteUser(email: string, role: string) {
 
     // Send the invite
     const { data, error } = await adminAuthClient.inviteUserByEmail(email, {
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://dpnranker.com'}/auth/callback`,
       data: {
         role: role
       }

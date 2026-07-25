@@ -55,6 +55,7 @@ export async function adminCreateCreator(data: any) {
       } else {
         // User does not exist, send invite using existing users.ts function
         const inviteRes = await adminDbClient.auth.admin.inviteUserByEmail(data.ownerEmail, {
+          redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://dpnranker.com'}/auth/callback`,
           data: { role: 'creator' }
         });
         if (inviteRes.error) throw inviteRes.error;
@@ -124,6 +125,7 @@ export async function adminCreateAgency(data: any) {
       } else {
         // User does not exist, send invite
         const inviteRes = await adminDbClient.auth.admin.inviteUserByEmail(data.ownerEmail, {
+          redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://dpnranker.com'}/auth/callback`,
           data: { role: 'agency_user' }
         });
         if (inviteRes.error) throw inviteRes.error;
