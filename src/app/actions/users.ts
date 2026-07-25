@@ -86,6 +86,23 @@ export async function inviteUser(email: string, role: string) {
       };
     }
 
+    // Generate a fallback invite link
+    let inviteLink = "";
+    try {
+      const linkRes = await adminAuthClient.generateLink({
+        type: 'invite',
+        email: email,
+        options: {
+          redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://dpnranker.com'}/auth/callback`
+        }
+      });
+      if (linkRes.data?.properties?.action_link) {
+        inviteLink = linkRes.data.properties.action_link;
+      }
+    } catch (linkErr) {
+      console.error("Failed to generate fallback link:", linkErr);
+    }
+
     if (data?.user?.id) {
       // Small delay to let the trigger run
       await new Promise(r => setTimeout(r, 1000));
@@ -96,7 +113,7 @@ export async function inviteUser(email: string, role: string) {
     }
 
     revalidatePath("/admin/users");
-    return { success: true };
+    return { success: true, inviteLink };
 
   } catch (err: any) {
     console.error("Error inviting user:", err);

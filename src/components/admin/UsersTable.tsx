@@ -10,7 +10,7 @@ export function UsersTable({ profiles, currentUserRole }: { profiles: any[], cur
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("agency_user");
   const [isInviting, setIsInviting] = useState(false);
-  const [inviteMessage, setInviteMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [inviteMessage, setInviteMessage] = useState<{ type: 'success' | 'error', text: string, link?: string } | null>(null);
 
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [tempRole, setTempRole] = useState("");
@@ -27,7 +27,11 @@ export function UsersTable({ profiles, currentUserRole }: { profiles: any[], cur
 
     setIsInviting(false);
     if (result.success) {
-      setInviteMessage({ type: 'success', text: 'Invitation sent successfully!' });
+      setInviteMessage({ 
+        type: 'success', 
+        text: 'Invitation sent successfully!',
+        link: (result as any).inviteLink
+      });
       setInviteEmail("");
     } else {
       setInviteMessage({ type: 'error', text: result.error || 'Failed to send invitation.' });
@@ -110,7 +114,29 @@ export function UsersTable({ profiles, currentUserRole }: { profiles: any[], cur
         </form>
         {inviteMessage && (
           <div className={`mt-4 p-3 rounded text-sm ${inviteMessage.type === 'success' ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600'}`}>
-            {inviteMessage.text}
+            <div>{inviteMessage.text}</div>
+            {inviteMessage.link && (
+              <div className="mt-3 pt-3 border-t border-green-500/20 flex flex-col gap-2">
+                <span className="text-xs text-muted-foreground font-bold">Fallback Invite Link:</span>
+                <div className="flex gap-2">
+                  <input 
+                    readOnly 
+                    value={inviteMessage.link} 
+                    className="flex-1 text-xs p-1.5 rounded border border-green-500/30 bg-background/50 select-all focus:outline-none text-foreground"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(inviteMessage.link!);
+                      alert("Invite link copied to clipboard!");
+                    }}
+                    className="px-3 py-1 rounded bg-green-600 hover:bg-green-700 text-white text-xs font-semibold whitespace-nowrap transition-colors"
+                  >
+                    Copy Link
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
