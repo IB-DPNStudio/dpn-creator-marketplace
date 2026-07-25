@@ -36,9 +36,9 @@ function VerifyContent() {
         setError(verifyErr.message);
       } else {
         setSuccess(true);
-        // Small delay before redirecting to dashboard
+        // Small delay before redirecting to homepage
         setTimeout(() => {
-          router.push('/dashboard');
+          window.location.href = '/';
         }, 1500);
       }
     } catch (err: any) {
