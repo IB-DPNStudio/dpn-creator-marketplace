@@ -39,7 +39,6 @@ export async function adminCreateCreator(data: any) {
     
     // 1. Ensure the user exists or invite them
     let ownerId = null;
-    let inviteLink = "";
     if (data.ownerEmail) {
       // Check if user exists in profiles
       const { data: existingProfiles } = await adminDbClient
@@ -61,21 +60,6 @@ export async function adminCreateCreator(data: any) {
         });
         if (inviteRes.error) throw inviteRes.error;
         ownerId = inviteRes.data.user.id;
-        
-        try {
-          const linkRes = await adminDbClient.auth.admin.generateLink({
-            type: 'invite',
-            email: data.ownerEmail,
-            options: {
-              redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://dpnranker.com'}/auth/callback`
-            }
-          });
-          if (linkRes.data?.properties?.action_link) {
-            inviteLink = linkRes.data.properties.action_link;
-          }
-        } catch (linkErr) {
-          console.error("Failed to generate fallback link:", linkErr);
-        }
 
         // Wait for trigger to create profile
         await new Promise(r => setTimeout(r, 1500));
@@ -107,7 +91,7 @@ export async function adminCreateCreator(data: any) {
     revalidatePath("/dashboard");
     revalidatePath("/admin/users");
     revalidatePath("/admin/approvals");
-    return { success: true, inviteLink };
+    return { success: true };
   } catch (err: any) {
     console.error("Error in adminCreateCreator:", err);
     const errorMessage = err.message && typeof err.message === 'string' ? err.message : JSON.stringify(err);
@@ -125,7 +109,6 @@ export async function adminCreateAgency(data: any) {
     
     // 1. Ensure the user exists or invite them
     let ownerId = null;
-    let inviteLink = "";
     if (data.ownerEmail) {
       // Check if user exists in profiles
       const { data: existingProfiles } = await adminDbClient
@@ -147,21 +130,6 @@ export async function adminCreateAgency(data: any) {
         });
         if (inviteRes.error) throw inviteRes.error;
         ownerId = inviteRes.data.user.id;
-        
-        try {
-          const linkRes = await adminDbClient.auth.admin.generateLink({
-            type: 'invite',
-            email: data.ownerEmail,
-            options: {
-              redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://dpnranker.com'}/auth/callback`
-            }
-          });
-          if (linkRes.data?.properties?.action_link) {
-            inviteLink = linkRes.data.properties.action_link;
-          }
-        } catch (linkErr) {
-          console.error("Failed to generate fallback link:", linkErr);
-        }
 
         // Wait for trigger to create profile
         await new Promise(r => setTimeout(r, 1500));
@@ -187,7 +155,7 @@ export async function adminCreateAgency(data: any) {
     if (agencyErr) throw agencyErr;
     revalidatePath("/admin/users");
     revalidatePath("/admin/approvals");
-    return { success: true, inviteLink };
+    return { success: true };
   } catch (err: any) {
     console.error("Error in adminCreateAgency:", err);
     const errorMessage = err.message && typeof err.message === 'string' ? err.message : JSON.stringify(err);

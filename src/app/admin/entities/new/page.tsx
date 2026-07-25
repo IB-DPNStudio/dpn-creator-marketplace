@@ -12,7 +12,7 @@ import { PODCAST_GENRES } from "@/lib/constants";
 export default function AdminDataEntryPage() {
   const [activeTab, setActiveTab] = useState<'creator' | 'agency' | 'seed'>('creator');
   const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState<{type: 'success' | 'error' | 'info', text: string, link?: string} | null>(null);
+  const [message, setMessage] = useState<{type: 'success' | 'error' | 'info', text: string} | null>(null);
 
   const handleCreatorSubmit = async (formData: FormData) => {
     setIsLoading(true);
@@ -42,11 +42,7 @@ export default function AdminDataEntryPage() {
     const result = await adminCreateCreator(data);
     setIsLoading(false);
     if (result.success) {
-      setMessage({ 
-        type: 'success', 
-        text: 'Creator successfully added and invited!',
-        link: (result as any).inviteLink
-      });
+      setMessage({ type: 'success', text: 'Creator successfully added and invited!' });
       (document.getElementById("creator-form") as HTMLFormElement).reset();
     } else {
       setMessage({ type: 'error', text: result.error || 'Failed to add creator.' });
@@ -69,11 +65,7 @@ export default function AdminDataEntryPage() {
     const result = await adminCreateAgency(data);
     setIsLoading(false);
     if (result.success) {
-      setMessage({ 
-        type: 'success', 
-        text: 'Agency successfully added and invited!',
-        link: (result as any).inviteLink
-      });
+      setMessage({ type: 'success', text: 'Agency successfully added and invited!' });
       (document.getElementById("agency-form") as HTMLFormElement).reset();
     } else {
       setMessage({ type: 'error', text: result.error || 'Failed to add agency.' });
@@ -124,37 +116,13 @@ export default function AdminDataEntryPage() {
       </div>
 
       {message && (
-        <div className={`p-4 rounded-xl font-medium flex flex-col gap-3 ${
+        <div className={`p-4 rounded-xl font-medium flex items-center gap-3 ${
           message.type === 'success' ? 'bg-green-500/10 text-green-600 border border-green-500/20' : 
           message.type === 'info' ? 'bg-blue-500/10 text-blue-600 border border-blue-500/20' :
           'bg-red-500/10 text-red-600 border border-red-500/20'
         }`}>
-          <div className="flex items-center gap-3">
-            {message.type === 'info' && <Loader2 className="w-5 h-5 animate-spin" />}
-            {message.text}
-          </div>
-          {message.type === 'success' && message.link && (
-            <div className="mt-2 pt-3 border-t border-green-500/20 flex flex-col gap-2 w-full">
-              <span className="text-xs text-muted-foreground font-bold">Fallback Invite Link:</span>
-              <div className="flex gap-2">
-                <input 
-                  readOnly 
-                  value={message.link} 
-                  className="flex-1 text-xs p-1.5 rounded border border-green-500/30 bg-background/50 select-all focus:outline-none text-foreground"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard.writeText(message.link!);
-                    alert("Invite link copied to clipboard!");
-                  }}
-                  className="px-3 py-1 rounded bg-green-600 hover:bg-green-700 text-white text-xs font-semibold whitespace-nowrap transition-colors"
-                >
-                  Copy Link
-                </button>
-              </div>
-            </div>
-          )}
+          {message.type === 'info' && <Loader2 className="w-5 h-5 animate-spin" />}
+          {message.text}
         </div>
       )}
 
