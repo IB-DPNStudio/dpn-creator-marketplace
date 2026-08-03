@@ -4,6 +4,7 @@ import Link from "next/link";
 import { LayoutDashboard, Users, FileText, Activity, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MobileAdminNav } from "@/components/admin/MobileAdminNav";
+import { isSuperAdmin } from "@/utils/admin";
 
 export default async function AdminLayout({
   children,
@@ -22,7 +23,7 @@ export default async function AdminLayout({
     .eq("id", user.id)
     .single();
 
-  if (profile?.role !== 'super_admin' && profile?.role !== 'dpn_sales') {
+  if (profile?.role !== 'super_admin' && profile?.role !== 'dpn_sales' && !isSuperAdmin(user.email)) {
     redirect("/dashboard");
   }
 

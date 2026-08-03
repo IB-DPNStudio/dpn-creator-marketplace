@@ -2,6 +2,7 @@ import { createClient, createAdminClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { LayoutDashboard, Mic2, FileText, Settings, LogOut, User } from "lucide-react";
+import { isSuperAdmin } from "@/utils/admin";
 
 import { DashboardMobileNav } from "@/components/dashboard/DashboardMobileNav";
 
@@ -33,7 +34,7 @@ export default async function DashboardLayout({
   }
 
   const isAgency = profile?.role === 'agency_user';
-  const isAdmin = profile?.role === 'dpn_sales' || profile?.role === 'super_admin';
+  const isAdmin = profile?.role === 'dpn_sales' || profile?.role === 'super_admin' || isSuperAdmin(user.email);
   console.log("DASHBOARD LAYOUT DEBUG:", { userId: user.id, profileRole: profile?.role, isAdmin });
 
   return (
