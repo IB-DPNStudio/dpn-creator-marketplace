@@ -46,7 +46,7 @@ export async function getLabsPlaylists(statusIn?: string[]) {
   while (hasMore) {
     let query = adminDbClient
       .from("playlist_podcasts")
-      .select("*, podcast_history(id, created_at, final_score, average_views_per_episode, efficiency_ratio, playlist_podcast_id)")
+      .select("*, podcast_history(*)")
       .eq("is_included", true)
       .order("final_score", { ascending: false })
       .range(from, from + step);
