@@ -30,7 +30,7 @@ export default async function AdminPodcastsPage() {
   // Fetch approved/featured playlists using adminClient
   const { data: podcasts } = await adminClient
     .from("playlist_podcasts")
-    .select("*")
+    .select("id, created_at, playlist_id, channel_id, show_name, description, thumbnail_url, view_count, subscriber_count, video_count, final_score, average_views_per_episode, efficiency_ratio, owner_id, status, is_included, contact_email, genre, primary_language, claim_emails_sent, profiles(email)")
     .in("status", ["seeded", "verified", "approved_partner", "featured_partner"])
     .order("final_score", { ascending: false });
 
