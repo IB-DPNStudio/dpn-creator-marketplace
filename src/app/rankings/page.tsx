@@ -1,4 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
+import { isSuperAdmin } from "@/utils/admin";
 import { NewShowsCarousel } from "@/components/rankings/NewShowsCarousel";
 import LabsClient from "@/app/labs/LabsClient";
 import { getLabsPlaylists } from "@/app/actions/labs";
@@ -10,7 +11,7 @@ export const dynamic = 'force-dynamic';
 export default async function RankingsPage() {
   const supabase = await createClient();
   const { data: { session } } = await supabase.auth.getSession();
-  const isAdmin = session?.user?.email === 'studio@ideabrews.com';
+  const isAdmin = isSuperAdmin(session?.user?.email);
   const isSignedIn = !!session?.user;
   
   // Fetch all approved playlists

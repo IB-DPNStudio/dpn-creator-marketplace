@@ -4,6 +4,7 @@ import { HowItWorks } from "@/components/home/HowItWorks";
 import LabsClient from "@/app/labs/LabsClient";
 import { getLabsPlaylists } from "@/app/actions/labs";
 import { createClient } from "@/utils/supabase/server";
+import { isSuperAdmin } from "@/utils/admin";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
@@ -13,7 +14,7 @@ export const revalidate = 3600;
 export default async function Home() {
   const supabase = await createClient();
   const { data: { session } } = await supabase.auth.getSession();
-  const isAdmin = session?.user?.email === 'studio@ideabrews.com';
+  const isAdmin = isSuperAdmin(session?.user?.email);
   const isSignedIn = !!session?.user;
   
   // Fetch top 20 playlists instead of podcasts

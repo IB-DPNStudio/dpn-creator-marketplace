@@ -4,6 +4,7 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { calculatePlaylistScore, PlaylistScoreInput } from "@/lib/score_playlist";
 import { createClient } from "@/utils/supabase/server";
+import { isSuperAdmin } from "@/utils/admin";
 
 // Admin client using service role key
 const getAdminClient = () => {
@@ -358,7 +359,7 @@ export async function deleteLabsPlaylist(playlistId: string) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     
-    if (user?.email !== "studio@ideabrews.com") {
+    if (!isSuperAdmin(user?.email)) {
       throw new Error("Unauthorized: Only super admins can delete playlists.");
     }
 
@@ -434,7 +435,7 @@ export async function updateLabsPlaylistGenre(playlistId: string, genre: string)
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     
-    if (user?.email !== "studio@ideabrews.com") {
+    if (!isSuperAdmin(user?.email)) {
       throw new Error("Unauthorized");
     }
 
@@ -458,7 +459,7 @@ export async function updateLabsPlaylistLanguage(playlistId: string, language: s
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     
-    if (user?.email !== "studio@ideabrews.com") {
+    if (!isSuperAdmin(user?.email)) {
       throw new Error("Unauthorized");
     }
 
@@ -483,7 +484,7 @@ export async function updateLabsPlaylistBoost(playlistId: string, boost: number,
     try {
       const supabase = await createClient();
       const { data: { session } } = await supabase.auth.getSession();
-      isAdmin = session?.user?.email === 'studio@ideabrews.com';
+      isAdmin = isSuperAdmin(session?.user?.email);
     } catch (e) {
       isAdmin = true;
     }

@@ -21,6 +21,11 @@ function LoginContent() {
     e.preventDefault();
     if (!email) return;
     
+    if (email.toLowerCase().endsWith("@dentsu.com")) {
+      handleOktaLogin();
+      return;
+    }
+
     if (email.toLowerCase().endsWith("@gmail.com")) {
       handleGoogleLogin();
       return;
@@ -61,6 +66,22 @@ function LoginContent() {
       if (error) throw error;
     } catch (error) {
       console.error("Error logging in:", error);
+      setIsLoading(false);
+    }
+  };
+
+  const handleOktaLogin = async () => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "okta" as any,
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+        },
+      });
+      if (error) throw error;
+    } catch (error) {
+      console.error("Error logging in with Okta:", error);
       setIsLoading(false);
     }
   };
@@ -146,6 +167,23 @@ function LoginContent() {
               </svg>
             )}
             Continue with Google
+          </Button>
+
+          <Button 
+            type="button"
+            variant="outline" 
+            className="w-full h-12 relative flex items-center justify-center font-medium mt-3" 
+            onClick={handleOktaLogin}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin mr-2" />
+            ) : (
+              <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 18.5C8.41 18.5 5.5 15.59 5.5 12C5.5 8.41 8.41 5.5 12 5.5C15.59 5.5 18.5 8.41 18.5 12C18.5 15.59 15.59 18.5 12 18.5Z" fill="#007DC1"/>
+              </svg>
+            )}
+            Continue with Dentsu SSO
           </Button>
           
           <div className="pt-6 border-t border-border/50 text-center space-y-2">

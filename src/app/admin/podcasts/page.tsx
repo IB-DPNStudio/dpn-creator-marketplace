@@ -1,4 +1,5 @@
 import { createClient, createAdminClient } from "@/utils/supabase/server";
+import { isSuperAdmin } from "@/utils/admin";
 import { redirect } from "next/navigation";
 import { Star, StarOff, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,7 +25,7 @@ export default async function AdminPodcastsPage() {
     redirect("/dashboard");
   }
 
-  const isSuperUser = user.email === 'studio@ideabrews.com';
+  const isSuperUser = isSuperAdmin(user.email);
 
   // Fetch approved/featured playlists using adminClient
   const { data: podcasts } = await adminClient
