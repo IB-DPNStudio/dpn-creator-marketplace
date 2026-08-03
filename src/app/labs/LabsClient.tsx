@@ -119,15 +119,7 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
       const inGenre = p.genre?.toLowerCase().includes(lowerSearch);
       const inLang = p.primary_language?.toLowerCase().includes(lowerSearch);
       
-      let inSampleVideos = false;
-      if (p.explanations?.sample_videos && Array.isArray(p.explanations.sample_videos)) {
-        inSampleVideos = p.explanations.sample_videos.some((v: any) => 
-          v.title?.toLowerCase().includes(lowerSearch) || 
-          v.description?.toLowerCase().includes(lowerSearch)
-        );
-      }
-
-      return inShowName || inDesc || inChannelDesc || inGenre || inLang || inSampleVideos;
+      return inShowName || inDesc || inChannelDesc || inGenre || inLang;
     });
 
   let filteredAndRankedPlaylists = baseFilteredAndRankedPlaylists;
