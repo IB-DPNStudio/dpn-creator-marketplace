@@ -77,7 +77,7 @@ export default async function AdminPodcastsPage() {
                   <td className="p-4 align-top pt-4">
                     <PodcastEmailActions 
                       podcastId={podcast.id}
-                      currentEmail={podcast.profiles?.email || podcast.contact_email}
+                      currentEmail={((podcast.profiles as any)?.email || (Array.isArray(podcast.profiles) ? (podcast.profiles as any)[0]?.email : undefined)) || podcast.contact_email}
                       isClaimed={!!podcast.owner_id}
                       emailsSentCount={podcast.claim_emails_sent || 0}
                     />
