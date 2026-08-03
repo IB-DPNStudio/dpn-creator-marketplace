@@ -21,11 +21,6 @@ function LoginContent() {
     e.preventDefault();
     if (!email) return;
     
-    if (email.toLowerCase().endsWith("@gmail.com")) {
-      handleGoogleLogin();
-      return;
-    }
-
     setIsEmailLoading(true);
     setRateLimitMessage("");
     try {
