@@ -30,7 +30,7 @@ export default async function AdminPodcastsPage() {
   // Fetch approved/featured playlists using adminClient
   const { data: podcasts } = await adminClient
     .from("playlist_podcasts")
-    .select("id, created_at, playlist_id, channel_id, show_name, description, thumbnail_url, primary_language, country, genre, total_episodes, latest_episode_date, average_days_between_episodes, total_views, average_views_per_episode, average_likes_per_episode, average_comments_per_episode, manual_boost, manual_penalty, is_included, notes, final_score, status, owner_id, contact_email, channel_name, channel_description, dpn_score, claim_emails_sent, profiles(email)")
+    .select("id, playlist_id, channel_id, show_name, description, primary_language, country, genre, total_episodes, latest_episode_date, average_days_between_episodes, total_views, average_views_per_episode, average_likes_per_episode, average_comments_per_episode, manual_boost, manual_penalty, is_included, notes, final_score, score_breakdown, created_at, updated_at, thumbnail_url, owner_id, status, contact_email, manager_name, manager_email, manager_phone, profiles(email)")
     .in("status", ["seeded", "verified", "approved_partner", "featured_partner"])
     .order("final_score", { ascending: false });
 
@@ -79,7 +79,7 @@ export default async function AdminPodcastsPage() {
                       podcastId={podcast.id}
                       currentEmail={((podcast.profiles as any)?.email || (Array.isArray(podcast.profiles) ? (podcast.profiles as any)[0]?.email : undefined)) || podcast.contact_email}
                       isClaimed={!!podcast.owner_id}
-                      emailsSentCount={podcast.claim_emails_sent || 0}
+                      emailsSentCount={(podcast as any).claim_emails_sent || 0}
                     />
                   </td>
                   <td className="p-4">
