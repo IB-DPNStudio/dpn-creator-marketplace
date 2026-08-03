@@ -348,6 +348,29 @@ export async function refreshSevenDayViews() {
       }
     }
     
+    // Re-score all approved playlists using fastRefresh (optimizing quota usage)
+    const { data: playlists } = await adminDbClient
+      .from("playlist_podcasts")
+      .select("playlist_id")
+      .in("status", ["seeded", "verified", "approved_partner", "featured_partner"])
+      .eq("is_included", true);
+      
+    if (playlists && playlists.length > 0) {
+      const { addOrUpdatePlaylistRank } = await import("./labs");
+      
+      const batchSize = 10;
+      for (let i = 0; i < playlists.length; i += batchSize) {
+        const batch = playlists.slice(i, i + batchSize);
+        await Promise.all(batch.map(p => 
+          addOrUpdatePlaylistRank({
+            playlistUrlOrId: p.playlist_id,
+            isIncluded: true,
+            fastRefresh: true
+          })
+        ));
+      }
+    }
+    
     revalidatePath("/admin/podcasts");
     revalidatePath("/rankings");
     return { success: true };

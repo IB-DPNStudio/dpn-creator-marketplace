@@ -201,21 +201,41 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
     let pageCount = 0;
     const MAX_PAGES = 50; // Max 2500 items to avoid rate limits and capture the end of large playlists
     
-    while (pageCount < MAX_PAGES) {
-      const pageTokenParam = pageToken ? `&pageToken=${pageToken}` : '';
-      const itemsRes = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails,snippet&playlistId=${playlistId}&maxResults=50${pageTokenParam}&key=${apiKey}`);
-      const itemsData = await itemsRes.json();
-      
-      if (!itemsData.items || itemsData.items.length === 0) break;
-      
-      allPlaylistItems = allPlaylistItems.concat(itemsData.items);
-      totalEpisodes = itemsData.pageInfo?.totalResults || allPlaylistItems.length;
-      
-      if (itemsData.nextPageToken) {
-        pageToken = itemsData.nextPageToken;
-        pageCount++;
-      } else {
-        break;
+    if (inputData.fastRefresh && channelId) {
+      try {
+        const tRes = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=id&playlistId=${playlistId}&maxResults=1&key=${apiKey}`);
+        const tData = await tRes.json();
+        totalEpisodes = tData.pageInfo?.totalResults || 0;
+        
+        const uploadsPlaylistId = "UU" + channelId.substring(2);
+        const itemsRes = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails,snippet&playlistId=${uploadsPlaylistId}&maxResults=50&key=${apiKey}`);
+        const itemsData = await itemsRes.json();
+        
+        if (itemsData.items) {
+          allPlaylistItems = itemsData.items;
+        }
+      } catch (err) {
+         console.error("Fast refresh failed, falling back to full fetch", err);
+      }
+    }
+    
+    if (allPlaylistItems.length === 0) {
+      while (pageCount < MAX_PAGES) {
+        const pageTokenParam = pageToken ? `&pageToken=${pageToken}` : '';
+        const itemsRes = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails,snippet&playlistId=${playlistId}&maxResults=50${pageTokenParam}&key=${apiKey}`);
+        const itemsData = await itemsRes.json();
+        
+        if (!itemsData.items || itemsData.items.length === 0) break;
+        
+        allPlaylistItems = allPlaylistItems.concat(itemsData.items);
+        totalEpisodes = itemsData.pageInfo?.totalResults || allPlaylistItems.length;
+        
+        if (itemsData.nextPageToken) {
+          pageToken = itemsData.nextPageToken;
+          pageCount++;
+        } else {
+          break;
+        }
       }
     }
 
@@ -385,15 +405,31 @@ export async function fetchPlaylistSampleVideos(playlistId: string) {
     if (!apiKey) throw new Error("Missing YouTube API Key");
 
     const adminDbClient = getAdminClient();
-    const { data } = await adminDbClient.from("playlist_podcasts").select("explanations").eq("playlist_id", playlistId).single();
+    const { data } = await adminDbClient.from("playlist_podcasts").select("explanations, channel_id").eq("playlist_id", playlistId).single();
     
     let videoIdsStr = "";
     
-    // Check if we already computed latest_video_ids during ingestion
-    if (data?.explanations?.latest_video_ids && data.explanations.latest_video_ids.length > 0) {
+    // 1. Live Fetch: Try to get the channel's actual latest uploads (this is guaranteed to be newest first)
+    if (data?.channel_id) {
+      try {
+        const uploadsPlaylistId = "UU" + data.channel_id.substring(2);
+        const itemsRes = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${uploadsPlaylistId}&maxResults=5&key=${apiKey}`);
+        const itemsData = await itemsRes.json();
+        if (itemsData.items && itemsData.items.length > 0) {
+          videoIdsStr = itemsData.items.map((item: any) => item.contentDetails.videoId).join(',');
+        }
+      } catch (e) {
+        // Fallback below
+      }
+    }
+    
+    // 2. Cache Fallback: If live fetch failed, use cached ids from ingestion
+    if (!videoIdsStr && data?.explanations?.latest_video_ids && data.explanations.latest_video_ids.length > 0) {
       videoIdsStr = data.explanations.latest_video_ids.join(',');
-    } else {
-      // Fallback: fetch playlist items (will be oldest if not reverse chronological)
+    } 
+    
+    // 3. Absolute Fallback: Fetch playlist items (often returns oldest first depending on creator sorting)
+    if (!videoIdsStr) {
       const itemsRes = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${playlistId}&maxResults=5&key=${apiKey}`);
       const itemsData = await itemsRes.json();
       
