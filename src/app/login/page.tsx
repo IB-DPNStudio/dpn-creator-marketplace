@@ -21,11 +21,6 @@ function LoginContent() {
     e.preventDefault();
     if (!email) return;
     
-    if (email.toLowerCase().endsWith("@dentsu.com")) {
-      handleOktaLogin();
-      return;
-    }
-
     if (email.toLowerCase().endsWith("@gmail.com")) {
       handleGoogleLogin();
       return;
@@ -70,21 +65,7 @@ function LoginContent() {
     }
   };
 
-  const handleOktaLogin = async () => {
-    setIsLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "okta" as any,
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
-        },
-      });
-      if (error) throw error;
-    } catch (error) {
-      console.error("Error logging in with Okta:", error);
-      setIsLoading(false);
-    }
-  };
+
 
   return (
     <div className="flex flex-col min-h-[80vh] items-center justify-center bg-background px-4">
