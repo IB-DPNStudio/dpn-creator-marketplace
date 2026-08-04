@@ -24,5 +24,7 @@ export const PODCAST_GENRES = [
   "Horror",
   "True Stories",
   "Movie Review",
+  "Agriculture and Forestry",
+  "ESG",
   "General",
 ];
