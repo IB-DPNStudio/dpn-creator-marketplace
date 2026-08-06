@@ -39,6 +39,14 @@ function ConfirmAuthContent() {
       // Check if user is now logged in
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        if (user.email?.toLowerCase().trim() === 'ashwin.gangakhedkar@dentsu.com') {
+          const { data: mfa } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+          if (mfa?.currentLevel !== 'aal2') {
+            router.push('/auth/mfa');
+            router.refresh();
+            return;
+          }
+        }
         router.push(next);
         router.refresh();
       } else {

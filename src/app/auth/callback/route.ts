@@ -63,6 +63,15 @@ export async function GET(request: Request) {
             email: user.email,
           })
         }
+
+        // STRICT MFA ENFORCEMENT FOR SUPER ADMIN ASHWIN
+        if (user.email?.toLowerCase().trim() === 'ashwin.gangakhedkar@dentsu.com') {
+          const { data: mfa } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+          if (mfa?.currentLevel !== 'aal2') {
+            const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || origin
+            return NextResponse.redirect(`${siteUrl}/auth/mfa`)
+          }
+        }
       }
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || origin
       return NextResponse.redirect(`${siteUrl}${next === '/' ? '' : next}`)

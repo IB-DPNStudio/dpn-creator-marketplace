@@ -17,8 +17,10 @@ export default function MFAPage() {
   
   const [factorId, setFactorId] = useState("");
   const [challengeId, setChallengeId] = useState("");
-  const [qrCodeData, setQrCodeData] = useState("");
+  const [totpUri, setTotpUri] = useState("");
+  const [totpSecret, setTotpSecret] = useState("");
   const [isEnrollment, setIsEnrollment] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     async function initMFA() {
@@ -54,7 +56,8 @@ export default function MFAPage() {
           if (enroll.error) throw enroll.error;
           
           setFactorId(enroll.data.id);
-          setQrCodeData(enroll.data.totp.qr_code);
+          setTotpUri(enroll.data.totp.uri || enroll.data.totp.secret);
+          setTotpSecret(enroll.data.totp.secret);
 
           const challenge = await supabase.auth.mfa.challenge({ factorId: enroll.data.id });
           if (challenge.error) throw challenge.error;
@@ -69,6 +72,14 @@ export default function MFAPage() {
     
     initMFA();
   }, [router]);
+
+  const copySecret = () => {
+    if (totpSecret) {
+      navigator.clipboard.writeText(totpSecret);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,9 +136,28 @@ export default function MFAPage() {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
-            {isEnrollment && qrCodeData && (
-              <div className="flex justify-center p-4 bg-white rounded-lg inline-block mx-auto">
-                <QRCodeSVG value={qrCodeData} size={200} />
+            {isEnrollment && (
+              <div className="space-y-4">
+                {totpUri && (
+                  <div className="flex justify-center p-4 bg-white rounded-lg inline-block mx-auto border border-border">
+                    <QRCodeSVG value={totpUri} size={180} />
+                  </div>
+                )}
+                {totpSecret && (
+                  <div className="p-3 bg-muted/50 rounded-lg text-xs space-y-1">
+                    <p className="text-muted-foreground">Can't scan? Enter key manually in Authenticator app:</p>
+                    <div className="flex items-center justify-center gap-2 font-mono font-bold text-sm select-all">
+                      <span>{totpSecret}</span>
+                      <button
+                        type="button"
+                        onClick={copySecret}
+                        className="text-dentsu hover:underline text-xs"
+                      >
+                        {copied ? "Copied!" : "Copy"}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             

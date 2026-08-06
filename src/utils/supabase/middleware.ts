@@ -43,8 +43,18 @@ export async function updateSession(request: NextRequest) {
       
       // If the user hasn't passed the TOTP challenge for this session (aal2)
       if (mfa?.currentLevel !== 'aal2') {
-        // Force redirect to MFA challenge screen
-        return NextResponse.redirect(new URL('/auth/mfa', request.url))
+        const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || request.nextUrl.host
+        const protocol = request.headers.get('x-forwarded-proto') || 'https'
+        const origin = `${protocol}://${host}`
+        
+        const redirectResponse = NextResponse.redirect(new URL('/auth/mfa', origin))
+        
+        // Preserve all cookies from supabaseResponse onto redirectResponse
+        supabaseResponse.cookies.getAll().forEach((c) => {
+          redirectResponse.cookies.set(c.name, c.value, c)
+        })
+        
+        return redirectResponse
       }
     }
   }
