@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, ShieldCheck, AlertCircle } from "lucide-react";
+import { Loader2, ShieldCheck, AlertCircle, Copy, Check } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
 export default function MFAPage() {
@@ -16,7 +16,6 @@ export default function MFAPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [factorId, setFactorId] = useState("");
-  const [challengeId, setChallengeId] = useState("");
   const [totpUri, setTotpUri] = useState("");
   const [totpSecret, setTotpSecret] = useState("");
   const [isEnrollment, setIsEnrollment] = useState(false);
@@ -25,14 +24,15 @@ export default function MFAPage() {
   useEffect(() => {
     async function initMFA() {
       setIsLoading(true);
+      setError("");
       const supabase = createClient();
       
       try {
-        const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-        if (error) throw error;
+        const { data: aalData, error: aalError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (aalError) throw aalError;
 
-        // If already at aal2, redirect to admin
-        if (data?.currentLevel === "aal2") {
+        // If user already passed 2FA for this session
+        if (aalData?.currentLevel === "aal2") {
           router.push("/admin");
           return;
         }
@@ -40,16 +40,19 @@ export default function MFAPage() {
         const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors();
         if (factorsError) throw factorsError;
 
-        const totpFactor = factorsData?.totp[0];
+        const verifiedFactor = factorsData?.totp?.find((f) => f.status === "verified");
 
-        if (totpFactor && totpFactor.status === "verified") {
+        if (verifiedFactor) {
           // ALREADY ENROLLED -> CHALLENGE MODE
-          setFactorId(totpFactor.id);
+          setFactorId(verifiedFactor.id);
           setIsEnrollment(false);
-          const challenge = await supabase.auth.mfa.challenge({ factorId: totpFactor.id });
-          if (challenge.error) throw challenge.error;
-          setChallengeId(challenge.data.id);
         } else {
+          // Clean up any stale unverified TOTP factors first to avoid limits
+          const unverifiedFactors = factorsData?.totp?.filter((f: any) => f.status === "unverified") || [];
+          for (const f of unverifiedFactors) {
+            await supabase.auth.mfa.unenroll({ factorId: f.id });
+          }
+
           // NOT ENROLLED -> ENROLLMENT MODE
           setIsEnrollment(true);
           const enroll = await supabase.auth.mfa.enroll({ factorType: "totp" });
@@ -58,13 +61,10 @@ export default function MFAPage() {
           setFactorId(enroll.data.id);
           setTotpUri(enroll.data.totp.uri || enroll.data.totp.secret);
           setTotpSecret(enroll.data.totp.secret);
-
-          const challenge = await supabase.auth.mfa.challenge({ factorId: enroll.data.id });
-          if (challenge.error) throw challenge.error;
-          setChallengeId(challenge.data.id);
         }
       } catch (err: any) {
-        setError(err.message || "Failed to initialize MFA. Please refresh the page.");
+        console.error("MFA INIT ERROR:", err);
+        setError(err.message || "Failed to initialize 2FA. Please try refreshing.");
       } finally {
         setIsLoading(false);
       }
@@ -83,25 +83,25 @@ export default function MFAPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (code.length < 6) return;
+    if (code.length < 6 || !factorId) return;
     
     setIsSubmitting(true);
     setError("");
     const supabase = createClient();
     
     try {
-      const verify = await supabase.auth.mfa.verify({
+      const verifyRes = await supabase.auth.mfa.challengeAndVerify({
         factorId,
-        challengeId,
-        code
+        code: code.trim(),
       });
       
-      if (verify.error) throw verify.error;
+      if (verifyRes.error) throw verifyRes.error;
       
       // Successfully authenticated at AAL2!
       router.push("/admin");
       router.refresh();
     } catch (err: any) {
+      console.error("MFA VERIFY ERROR:", err);
       setError(err.message || "Invalid authentication code. Please try again.");
       setIsSubmitting(false);
     }
@@ -118,7 +118,7 @@ export default function MFAPage() {
           <h1 className="font-heading text-2xl font-bold">Two-Factor Authentication</h1>
           <p className="text-muted-foreground text-sm">
             {isEnrollment 
-              ? "Since this is your first time, please scan this QR code using Microsoft Authenticator or Google Authenticator." 
+              ? "Scan the QR code or copy the key below into Microsoft Authenticator or Google Authenticator." 
               : "Please enter the 6-digit code from your Authenticator app."}
           </p>
         </div>
@@ -151,8 +151,9 @@ export default function MFAPage() {
                       <button
                         type="button"
                         onClick={copySecret}
-                        className="text-dentsu hover:underline text-xs"
+                        className="inline-flex items-center text-dentsu hover:underline text-xs font-sans font-bold"
                       >
+                        {copied ? <Check className="w-3.5 h-3.5 mr-1" /> : <Copy className="w-3.5 h-3.5 mr-1" />}
                         {copied ? "Copied!" : "Copy"}
                       </button>
                     </div>
@@ -170,6 +171,7 @@ export default function MFAPage() {
                 className="text-center text-2xl tracking-[0.5em] h-14"
                 maxLength={6}
                 required
+                autoFocus
               />
               <Button 
                 type="submit"
