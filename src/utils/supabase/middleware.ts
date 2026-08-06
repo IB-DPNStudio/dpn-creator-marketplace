@@ -31,8 +31,22 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // refreshing the auth token
-  await supabase.auth.getUser()
+  // refreshing the auth token and getting user
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // STRICT ENFORCEMENT: Only intercept ashwin.gangakhedkar@dentsu.com
+  if (user && user.email === 'ashwin.gangakhedkar@dentsu.com') {
+    // Exclude auth routes from intercept to prevent infinite loops
+    if (!request.nextUrl.pathname.startsWith('/auth/')) {
+      const { data: mfa, error: mfaError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+      
+      // If the user hasn't passed the TOTP challenge for this session (aal2)
+      if (!mfaError && mfa?.currentLevel !== 'aal2') {
+        // Force redirect to MFA challenge screen
+        return NextResponse.redirect(new URL('/auth/mfa', request.url))
+      }
+    }
+  }
 
   return supabaseResponse
 }
