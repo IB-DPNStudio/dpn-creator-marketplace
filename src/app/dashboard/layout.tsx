@@ -20,6 +20,13 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
+  // SUPER ADMIN MFA ENFORCEMENT
+  if (user.email?.toLowerCase() === 'ashwin.gangakhedkar@dentsu.com') {
+    const { data: mfa, error: mfaError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (!mfaError && mfa?.currentLevel !== 'aal2') {
+      redirect("/auth/mfa");
+    }
+  }
   // Get user profile using admin client to bypass RLS blocks
   const adminClient = createAdminClient();
   const { data: profile, error } = await adminClient

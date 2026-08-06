@@ -16,6 +16,13 @@ export default async function AdminLayout({
 
   if (!user) redirect("/login");
 
+  // SUPER ADMIN MFA ENFORCEMENT
+  if (user.email?.toLowerCase() === 'ashwin.gangakhedkar@dentsu.com') {
+    const { data: mfa, error: mfaError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (!mfaError && mfa?.currentLevel !== 'aal2') {
+      redirect("/auth/mfa");
+    }
+  }
   const adminClient = createAdminClient();
   const { data: profile } = await adminClient
     .from("profiles")
