@@ -21,9 +21,10 @@ export default async function DashboardLayout({
   }
 
   // SUPER ADMIN MFA ENFORCEMENT
-  if (user.email?.toLowerCase() === 'ashwin.gangakhedkar@dentsu.com') {
-    const { data: mfa, error: mfaError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-    if (!mfaError && mfa?.currentLevel !== 'aal2') {
+  if (user.email?.toLowerCase().trim() === 'ashwin.gangakhedkar@dentsu.com') {
+    const { data: { session } } = await supabase.auth.getSession();
+    const { data: mfa } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel(session?.access_token);
+    if (mfa?.currentLevel !== 'aal2') {
       redirect("/auth/mfa");
     }
   }
