@@ -34,8 +34,13 @@ export async function updateSession(request: NextRequest) {
   // refreshing the auth token and getting user
   const { data: { user } } = await supabase.auth.getUser()
 
-  // STRICT ENFORCEMENT: Only intercept ashwin.gangakhedkar@dentsu.com
-  if (user && user.email?.toLowerCase().trim() === 'ashwin.gangakhedkar@dentsu.com') {
+  // STRICT ENFORCEMENT: ashwin.gangakhedkar@dentsu.com OR user_metadata.mfa_required
+  const is2FARequired = user && (
+    user.email?.toLowerCase().trim() === 'ashwin.gangakhedkar@dentsu.com' ||
+    user.user_metadata?.mfa_required === true
+  );
+
+  if (is2FARequired) {
     // Exclude auth routes from intercept to prevent infinite loops
     if (!request.nextUrl.pathname.startsWith('/auth/')) {
       const { data: { session } } = await supabase.auth.getSession()

@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { inviteUser, updateUserRole, deleteUser } from "@/app/actions/users";
-import { Loader2, Mail, Shield, User, UserPlus, Check, X, Trash2 } from "lucide-react";
+import { inviteUser, updateUserRole, deleteUser, toggleUser2FA } from "@/app/actions/users";
+import { Loader2, Mail, Shield, User, UserPlus, Check, X, Trash2, ShieldCheck, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -16,10 +16,32 @@ export function UsersTable({ profiles, currentUserRole }: { profiles: any[], cur
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [tempRole, setTempRole] = useState("");
   const [isUpdatingRole, setIsUpdatingRole] = useState(false);
+  const [toggling2FAUserId, setToggling2FAUserId] = useState<string | null>(null);
 
   useEffect(() => {
     setLocalProfiles(profiles);
   }, [profiles]);
+
+  const handleToggle2FA = async (userId: string, currentMfaRequired: boolean, isAshwin: boolean) => {
+    if (isAshwin) {
+      alert("2FA Security is permanently required for Super Admin Ashwin.");
+      return;
+    }
+
+    const newMfaState = !currentMfaRequired;
+    setToggling2FAUserId(userId);
+
+    // Optimistically update UI
+    setLocalProfiles(prev => prev.map(p => p.id === userId ? { ...p, mfa_required: newMfaState } : p));
+
+    const result = await toggleUser2FA(userId, newMfaState);
+    setToggling2FAUserId(null);
+
+    if (!result.success) {
+      alert("Failed to update 2FA status: " + result.error);
+      setLocalProfiles(profiles);
+    }
+  };
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,6 +164,7 @@ export function UsersTable({ profiles, currentUserRole }: { profiles: any[], cur
               <tr className="bg-muted/30 border-b border-border text-xs uppercase tracking-wider text-muted-foreground">
                 <th className="p-4 font-bold">User</th>
                 <th className="p-4 font-bold">Role</th>
+                <th className="p-4 font-bold">2FA Security</th>
                 <th className="p-4 font-bold text-right">Joined</th>
               </tr>
             </thead>
@@ -213,6 +236,36 @@ export function UsersTable({ profiles, currentUserRole }: { profiles: any[], cur
                       </div>
                     )}
                   </td>
+                  <td className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                        profile.mfa_required
+                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                          : 'bg-zinc-500/10 text-zinc-500 border border-zinc-500/20'
+                      }`}>
+                        {profile.mfa_required ? <ShieldCheck className="w-3.5 h-3.5 mr-1" /> : <Lock className="w-3.5 h-3.5 mr-1" />}
+                        {profile.mfa_required ? 'Required' : 'Not Required'}
+                      </div>
+
+                      {canManageRoles && profile.id && (
+                        <button
+                          type="button"
+                          disabled={profile.is_ashwin || toggling2FAUserId === profile.id}
+                          onClick={() => handleToggle2FA(profile.id, profile.mfa_required, profile.is_ashwin)}
+                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                            profile.is_ashwin ? 'opacity-60 cursor-not-allowed' : ''
+                          } ${profile.mfa_required ? 'bg-emerald-500' : 'bg-zinc-600'}`}
+                          title={profile.is_ashwin ? 'Permanently required for Ashwin' : 'Toggle 2FA requirement for this user'}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                              profile.mfa_required ? 'translate-x-4' : 'translate-x-0'
+                            }`}
+                          />
+                        </button>
+                      )}
+                    </div>
+                  </td>
                   <td className="p-4 text-right text-sm text-muted-foreground">
                     {profile.created_at ? new Date(profile.created_at).toLocaleDateString() : 'Unknown'}
                   </td>
@@ -220,7 +273,7 @@ export function UsersTable({ profiles, currentUserRole }: { profiles: any[], cur
               ))}
               {localProfiles.length === 0 && (
                 <tr>
-                  <td colSpan={3} className="p-8 text-center text-muted-foreground">
+                  <td colSpan={4} className="p-8 text-center text-muted-foreground">
                     No users found.
                   </td>
                 </tr>

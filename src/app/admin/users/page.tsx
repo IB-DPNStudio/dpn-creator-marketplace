@@ -36,12 +36,18 @@ export default async function UsersAdminPage() {
 
   const mergedProfiles = (authUsersResponse?.users || []).map(authUser => {
     const profile = profilesData?.find(p => p.id === authUser.id);
+    const email = (authUser.email || profile?.email || '').toLowerCase().trim();
+    const isAshwin = email === 'ashwin.gangakhedkar@dentsu.com';
+    const isMfaRequired = isAshwin || authUser.user_metadata?.mfa_required === true;
+
     return {
       id: authUser.id,
       email: authUser.email || profile?.email,
       full_name: profile?.full_name || authUser.user_metadata?.full_name || '',
       role: profile?.role || authUser.user_metadata?.role || 'general_user',
-      created_at: authUser.created_at
+      created_at: authUser.created_at,
+      mfa_required: isMfaRequired,
+      is_ashwin: isAshwin
     };
   });
 

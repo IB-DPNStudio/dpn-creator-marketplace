@@ -39,7 +39,8 @@ function ConfirmAuthContent() {
       // Check if user is now logged in
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        if (user.email?.toLowerCase().trim() === 'ashwin.gangakhedkar@dentsu.com') {
+        const is2FARequired = user.email?.toLowerCase().trim() === 'ashwin.gangakhedkar@dentsu.com' || user.user_metadata?.mfa_required === true;
+        if (is2FARequired) {
           const { data: mfa } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
           if (mfa?.currentLevel !== 'aal2') {
             router.push('/auth/mfa');

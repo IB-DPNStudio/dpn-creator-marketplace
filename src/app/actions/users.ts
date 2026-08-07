@@ -418,3 +418,51 @@ export async function deleteUser(targetUserId: string, role: string) {
     return { success: false, error: err.message };
   }
 }
+
+export async function toggleUser2FA(targetUserId: string, mfaRequired: boolean) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) throw new Error("Unauthorized");
+
+    const adminDbClient = getAdminClient();
+    const { data: profile } = await adminDbClient
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (profile?.role !== 'super_admin' && profile?.role !== 'dpn_sales') {
+      throw new Error("Unauthorized: Only admins can manage 2FA settings");
+    }
+
+    const adminAuthClient = getAdminClient().auth.admin;
+    
+    // Get existing user metadata
+    const { data: targetUserResponse, error: getUserErr } = await adminAuthClient.getUserById(targetUserId);
+    if (getUserErr || !targetUserResponse.user) {
+      throw new Error(getUserErr?.message || "User not found");
+    }
+
+    const currentMetadata = targetUserResponse.user.user_metadata || {};
+    
+    const { error: updateErr } = await adminAuthClient.updateUserById(targetUserId, {
+      user_metadata: {
+        ...currentMetadata,
+        mfa_required: mfaRequired
+      }
+    });
+
+    if (updateErr) {
+      return { success: false, error: updateErr.message };
+    }
+
+    revalidatePath("/admin/users");
+    return { success: true };
+
+  } catch (err: any) {
+    console.error("Error toggling 2FA:", err);
+    return { success: false, error: err.message };
+  }
+}
