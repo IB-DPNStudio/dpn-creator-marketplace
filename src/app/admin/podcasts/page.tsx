@@ -29,8 +29,8 @@ export default async function AdminPodcastsPage() {
 
   // Fetch approved/featured podcasts using adminClient
   const { data: podcasts } = await adminClient
-    .from("podcasts")
-    .select("id, handle, show_name, description, primary_language, country, genre, total_episodes, latest_episode_date, average_days_between_episodes, total_views, average_views_per_episode, average_likes_per_episode, average_comments_per_episode, manual_boost, manual_penalty, is_included, notes, final_score, score_breakdown, created_at, updated_at, thumbnail_url, owner_id, status, contact_email, manager_name, manager_email, manager_phone, profiles(email)")
+    .from("playlist_podcasts")
+    .select("id, playlist_id, channel_id, show_name, description, primary_language, country, genre, total_episodes, latest_episode_date, average_days_between_episodes, total_views, average_views_per_episode, average_likes_per_episode, average_comments_per_episode, manual_boost, manual_penalty, is_included, notes, final_score, score_breakdown, created_at, updated_at, thumbnail_url, owner_id, status, contact_email, manager_name, manager_email, manager_phone")
     .in("status", ["seeded", "verified", "approved_partner", "featured_partner"])
     .order("final_score", { ascending: false });
 
@@ -61,7 +61,7 @@ export default async function AdminPodcastsPage() {
           <tbody className="divide-y divide-border">
             {podcasts?.map((podcast, index) => {
               const isFeatured = podcast.status === 'featured_partner';
-              const handle = podcast.handle;
+              const handle = podcast.playlist_id;
               
               return (
                 <tr key={podcast.id} className="hover:bg-muted/30 transition-colors">
