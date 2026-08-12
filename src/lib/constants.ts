@@ -26,5 +26,10 @@ export const PODCAST_GENRES = [
   "Movie Review",
   "Agriculture and Forestry",
   "ESG",
+  "Politics",
+  "Astrology",
+  "History",
+  "Cinema",
+  "Defence",
   "General",
 ];
