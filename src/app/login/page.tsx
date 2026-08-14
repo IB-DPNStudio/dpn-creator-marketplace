@@ -72,26 +72,30 @@ function LoginContent() {
         
         <div className="space-y-4">
           <form onSubmit={handleEmailLogin} className="space-y-4">
-            <div className="space-y-2 text-left">
-              <label htmlFor="email" className="text-sm font-medium">Email Address</label>
+            <div className="space-y-1.5 text-left">
+              <label htmlFor="email" className="text-sm font-semibold text-foreground">Email Address</label>
               <input
                 id="email"
                 type="email"
                 placeholder="name@example.com"
-                className="flex h-12 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="flex h-12 w-full rounded-lg border border-input bg-background px-4 py-2 text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dentsu focus-visible:border-dentsu"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
             {rateLimitMessage && (
-              <div className="text-sm font-medium text-destructive bg-destructive/10 p-3 rounded-md text-left leading-relaxed">
+              <div className="text-sm font-medium text-destructive bg-destructive/10 p-3 rounded-lg text-left leading-relaxed border border-destructive/20">
                 {rateLimitMessage}
               </div>
             )}
             <Button 
               type="submit" 
-              className="w-full h-12 bg-foreground text-background hover:bg-foreground/90 font-medium"
+              className={`w-full h-12 rounded-lg font-bold transition-all ${
+                emailSent 
+                  ? "bg-green-500/15 text-green-600 hover:bg-green-500/20 border border-green-500/30 disabled:opacity-100" 
+                  : "bg-dentsu text-white hover:bg-dentsu/90"
+              }`}
               disabled={isEmailLoading || emailSent}
             >
               {isEmailLoading ? (
