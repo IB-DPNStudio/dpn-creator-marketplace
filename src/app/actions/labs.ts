@@ -354,6 +354,9 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
 
     try {
       revalidatePath("/labs");
+      revalidatePath("/");
+      revalidatePath("/rankings");
+      revalidatePath("/dashboard");
     } catch (e) {
       // Ignore static generation store missing error during ingestion scripts
     }
@@ -390,6 +393,9 @@ export async function deleteLabsPlaylist(playlistId: string) {
     if (error) throw error;
     
     revalidatePath("/labs");
+    revalidatePath("/");
+    revalidatePath("/rankings");
+    revalidatePath("/dashboard");
     return { success: true };
   } catch (err: any) {
     console.error("Error deleting playlist:", err);
@@ -571,6 +577,9 @@ export async function updateLabsPlaylistBoost(playlistId: string, boost: number,
 
     try {
       revalidatePath("/labs");
+      revalidatePath("/");
+      revalidatePath("/rankings");
+      revalidatePath("/dashboard");
     } catch (e) {}
 
     return { success: true };
