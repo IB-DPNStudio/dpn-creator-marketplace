@@ -172,16 +172,43 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
         console.error("Failed to fetch/upsert channel stats:", err);
       }
 
-      const { data: pod } = await adminDbClient
-        .from("podcasts")
+      const { data: existingPlaylist } = await adminDbClient
+        .from("playlist_podcasts")
         .select("primary_language, country, genre")
-        .eq("channel_id", channelId)
+        .eq("playlist_id", playlistId)
         .maybeSingle();
 
-      if (pod) {
-        if (pod.primary_language) defaultLanguage = pod.primary_language;
-        if (pod.country) defaultCountry = pod.country;
-        if (pod.genre) defaultGenre = normalizeGenre(pod.genre);
+      if (existingPlaylist && existingPlaylist.genre && existingPlaylist.genre !== 'General') {
+        defaultGenre = normalizeGenre(existingPlaylist.genre);
+      } else {
+        const { data: pod } = await adminDbClient
+          .from("podcasts")
+          .select("primary_language, country, genre")
+          .eq("channel_id", channelId)
+          .maybeSingle();
+        if (pod && pod.genre) defaultGenre = normalizeGenre(pod.genre);
+      }
+
+      if (existingPlaylist && existingPlaylist.primary_language && existingPlaylist.primary_language !== 'Unknown') {
+        defaultLanguage = existingPlaylist.primary_language;
+      } else {
+        const { data: pod } = await adminDbClient
+          .from("podcasts")
+          .select("primary_language, country, genre")
+          .eq("channel_id", channelId)
+          .maybeSingle();
+        if (pod && pod.primary_language) defaultLanguage = pod.primary_language;
+      }
+
+      if (existingPlaylist && existingPlaylist.country && existingPlaylist.country !== 'Unknown') {
+        defaultCountry = existingPlaylist.country;
+      } else {
+        const { data: pod } = await adminDbClient
+          .from("podcasts")
+          .select("primary_language, country, genre")
+          .eq("channel_id", channelId)
+          .maybeSingle();
+        if (pod && pod.country) defaultCountry = pod.country;
       }
     }
 
