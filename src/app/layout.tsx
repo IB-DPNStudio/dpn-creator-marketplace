@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { IdleTimer } from "@/components/auth/IdleTimer";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -19,6 +20,7 @@ export default function RootLayout({
       className={`h-full antialiased dark`}
     >
       <body className="min-h-full flex flex-col font-sans">
+        <IdleTimer />
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />
