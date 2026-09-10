@@ -27,6 +27,9 @@ function LoginContent() {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
+          data: {
+            full_name: email.split('@')[0].replace(/\./g, ' '),
+          },
           emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
         },
       });
@@ -34,10 +37,20 @@ function LoginContent() {
       setEmailSent(true);
     } catch (error: any) {
       console.error("Error sending magic link:", error);
-      if (error.status === 429 || error.message?.toLowerCase().includes("rate limit") || error.message?.toLowerCase().includes("limit exceeded")) {
+      let errMsg = "An error occurred. Please try again.";
+      if (typeof error === "object" && error !== null) {
+        if (error.message) errMsg = error.message;
+        else if (error.msg) errMsg = error.msg;
+        else if (Object.keys(error).length === 0) errMsg = "Account could not be created. Please try again.";
+        else errMsg = JSON.stringify(error);
+      } else if (typeof error === "string") {
+        errMsg = error;
+      }
+      
+      if (error?.status === 429 || errMsg.toLowerCase().includes("rate limit") || errMsg.toLowerCase().includes("limit exceeded")) {
         setRateLimitMessage("We are experiencing high traffic. Please try again after some time to join the waitlist.");
       } else {
-        setRateLimitMessage(error.message || "An error occurred. Please try again.");
+        setRateLimitMessage(errMsg);
       }
     } finally {
       setIsEmailLoading(false);
