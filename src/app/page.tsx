@@ -14,8 +14,16 @@ export const revalidate = 3600;
 export default async function Home() {
   const supabase = await createClient();
   const { data: { session } } = await supabase.auth.getSession();
-  const isAdmin = isSuperAdmin(session?.user?.email);
   const isSignedIn = !!session?.user;
+  
+  let isAdmin = isSuperAdmin(session?.user?.email);
+  if (!isAdmin && session?.user) {
+    const adminClient = require("@/utils/supabase/server").createAdminClient();
+    const { data: profile } = await adminClient.from("profiles").select("role").eq("id", session.user.id).single();
+    if (profile?.role === 'super_admin' || profile?.role === 'dpn_sales') {
+      isAdmin = true;
+    }
+  }
   
   // Fetch top 20 playlists instead of podcasts
   const allPlaylists = await getLabsPlaylists(["seeded", "verified", "approved_partner", "featured_partner"]);
