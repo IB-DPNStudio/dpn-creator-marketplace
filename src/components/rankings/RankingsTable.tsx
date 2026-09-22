@@ -190,6 +190,7 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
   }, [podcasts]);
 
   // First, calculate the global display rank for the filtered set (Language/Genre/Search)
+  // Limited to Top 500 visibility as per requirements.
   const baseFilteredAndRanked = useMemo(() => {
     return podcasts
       .filter((p) => {
@@ -199,6 +200,7 @@ export function RankingsTable({ podcasts, isAuthenticated = false, isSuperAdmin 
         return matchesSearch && matchesLanguage && matchesGenre;
       })
       .sort((a, b) => (b.dpn_score || 0) - (a.dpn_score || 0))
+      .slice(0, 500)
       .map((p, index) => ({ ...p, displayRank: index + 1 }));
   }, [podcasts, searchTerm, languageFilter, genreFilter, gravitonData]);
 

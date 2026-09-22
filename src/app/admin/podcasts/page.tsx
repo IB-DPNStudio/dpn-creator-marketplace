@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { togglePodcastFeatured, deletePodcast, refreshSevenDayViews } from "@/app/actions/admin";
 import { DeletePodcastButton } from "@/components/admin/DeletePodcastButton";
 import { PodcastEmailActions } from "@/components/admin/PodcastEmailActions";
-import { RefreshSevenDayViewsButton } from "@/components/admin/RefreshSevenDayViewsButton";
+import { RefreshCycleStatusCard } from "@/components/admin/RefreshCycleStatusCard";
+import { getRefreshCycleStatus } from "@/app/actions/admin_refresh";
 
 export default async function AdminPodcastsPage() {
   const supabase = await createClient();
@@ -34,17 +35,17 @@ export default async function AdminPodcastsPage() {
     .in("status", ["seeded", "verified", "approved_partner", "featured_partner"])
     .order("final_score", { ascending: false });
 
+  // Get current active refresh cycle if any
+  const { cycle } = await getRefreshCycleStatus();
+
   return (
     <div className="space-y-8 max-w-5xl">
-      <div className="flex justify-between items-start">
+      <div className="flex justify-between items-start gap-8">
         <div>
           <h1 className="text-3xl font-bold font-heading">Manage Podcasts</h1>
           <p className="text-muted-foreground mt-2">Manage all active podcasts on the platform and set Featured status.</p>
         </div>
-        <RefreshSevenDayViewsButton onRefresh={async () => {
-          "use server";
-          await refreshSevenDayViews();
-        }} />
+        <RefreshCycleStatusCard cycle={cycle} />
       </div>
 
       <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
