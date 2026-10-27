@@ -81,6 +81,7 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
   const [languageFilter, setLanguageFilter] = useState("All");
   const [genreFilter, setGenreFilter] = useState("All");
   const [trendFilter, setTrendFilter] = useState<"All" | "Gainers" | "Losers">("All");
+  const [activeTier, setActiveTier] = useState<"All" | "Heavyweights" | "Mainstream" | "Rising Stars">("All");
 
   const uniqueLanguages = Array.from(new Set(initialPlaylists.map(p => p.primary_language || 'Unknown'))).filter(Boolean);
   const uniqueGenres = Array.from(new Set(initialPlaylists.map(p => p.genre || 'General'))).filter(Boolean);
@@ -98,12 +99,19 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
     .sort((a, b) => (b.final_score || 0) - (a.final_score || 0))
     .map((p, index) => ({ ...p, globalRank: index + 1 }));
 
-  // Filter by category and language first to establish the contextual rank
+  // Filter by tier, category and language first to establish the contextual rank
   const categorizedPlaylists = playlistsWithGlobalRank
     .filter(p => {
       const matchesLanguage = languageFilter === "All" || (p.primary_language || 'Unknown') === languageFilter;
       const matchesGenre = genreFilter === "All" || (p.genre || 'General') === genreFilter;
-      return matchesLanguage && matchesGenre;
+      
+      let matchesTier = true;
+      const avgViews = p.average_views_per_episode || 0;
+      if (activeTier === "Heavyweights") matchesTier = avgViews >= 500000;
+      else if (activeTier === "Mainstream") matchesTier = avgViews >= 100000 && avgViews < 500000;
+      else if (activeTier === "Rising Stars") matchesTier = avgViews < 100000;
+
+      return matchesLanguage && matchesGenre && matchesTier;
     })
     .map((p, index) => ({ ...p, displayRank: index + 1 }));
 
@@ -360,6 +368,26 @@ export default function LabsClient({ initialPlaylists, isAdmin, isLabs = false, 
             )}
           </div>
         )}
+
+        {/* Tiered Navigation Tabs */}
+        <div className="flex w-full border-b border-border bg-card/60 backdrop-blur-sm rounded-xl overflow-x-auto shadow-sm">
+          {(["All", "Heavyweights", "Mainstream", "Rising Stars"] as const).map((tier) => (
+            <button
+              key={tier}
+              onClick={() => setActiveTier(tier)}
+              className={`flex-1 min-w-[140px] py-3.5 px-4 text-xs md:text-sm font-semibold transition-all border-b-2 whitespace-nowrap cursor-pointer ${
+                activeTier === tier 
+                  ? 'border-dentsu text-dentsu bg-dentsu/5' 
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40'
+              }`}
+            >
+              {tier === "All" && "🌐 All Podcasts"}
+              {tier === "Heavyweights" && "🏆 Heavyweights (500k+)"}
+              {tier === "Mainstream" && "🚀 Mainstream (100k-500k)"}
+              {tier === "Rising Stars" && "🌟 Rising Stars (<100k)"}
+            </button>
+          ))}
+        </div>
 
         {/* Filters Bar */}
         <div className="flex flex-col md:flex-row gap-4 mb-4 bg-card border border-border p-4 rounded-xl shadow-sm">
@@ -684,8 +712,40 @@ function PlaylistTableRow({ rank, p, handleDelete, isAdmin, isBlurred = false, o
               <div className="font-bold text-base text-foreground group-hover:text-dentsu transition-colors flex items-center gap-2">
                 {decodeHTML(p.show_name)}
               </div>
-              <div className="text-xs text-muted-foreground mt-0.5 flex flex-col items-start gap-1">
-                {p.channel_name || 'YouTube Channel'}
+              <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2">
+                <span>{p.channel_name || 'YouTube Channel'}</span>
+                
+                {/* Smart Spotify Badge */}
+                {p.spotify_url && (
+                  <a 
+                    href={p.spotify_url} 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    title="Listen on Spotify"
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center justify-center text-[#1DB954] hover:scale-110 transition-transform"
+                  >
+                    <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                      <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+                    </svg>
+                  </a>
+                )}
+
+                {/* Smart Apple Podcasts Badge */}
+                {p.apple_url && (
+                  <a 
+                    href={p.apple_url} 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    title="Listen on Apple Podcasts"
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center justify-center text-[#B150E2] hover:scale-110 transition-transform"
+                  >
+                    <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.61-.75 1.04-1.8 1.01-2.87-.96.04-2.07.65-2.73 1.42-.56.64-1.06 1.7-1 2.76 1.07.08 2.11-.56 2.72-1.31z"/>
+                    </svg>
+                  </a>
+                )}
               </div>
             </div>
           </div>
@@ -1098,8 +1158,40 @@ function PlaylistMobileTile({ rank, p, handleDelete, isAdmin, isBlurred = false,
               <div className="font-bold text-sm md:text-base text-foreground line-clamp-2 leading-tight">
                 {decodeHTML(p.show_name)}
               </div>
-              <div className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                {p.channel_name || 'YouTube Channel'}
+              <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
+                <span className="line-clamp-1">{p.channel_name || 'YouTube Channel'}</span>
+                
+                {/* Smart Spotify Badge */}
+                {p.spotify_url && (
+                  <a 
+                    href={p.spotify_url} 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    title="Listen on Spotify"
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center justify-center text-[#1DB954] hover:scale-110 transition-transform flex-shrink-0"
+                  >
+                    <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                      <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+                    </svg>
+                  </a>
+                )}
+
+                {/* Smart Apple Podcasts Badge */}
+                {p.apple_url && (
+                  <a 
+                    href={p.apple_url} 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    title="Listen on Apple Podcasts"
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center justify-center text-[#B150E2] hover:scale-110 transition-transform flex-shrink-0"
+                  >
+                    <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.61-.75 1.04-1.8 1.01-2.87-.96.04-2.07.65-2.73 1.42-.56.64-1.06 1.7-1 2.76 1.07.08 2.11-.56 2.72-1.31z"/>
+                    </svg>
+                  </a>
+                )}
               </div>
             </div>
           </div>
