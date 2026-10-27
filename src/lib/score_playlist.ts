@@ -69,18 +69,35 @@ export function calculatePlaylistScore(input: PlaylistScoreInput): ScoreOutput {
     commentsScore = Math.min(1, Math.log1p(input.average_comments_per_episode) / Math.log1p(1000));
   }
 
-  // 4. Audience Efficiency Score (15%)
+  // 4. Audience Efficiency Score (20%) - Tier-calibrated for fair recognition across scale
   let effScore = 0;
   let engagementRate = 0;
   if (input.average_views_per_episode > 0) {
     engagementRate = (input.average_likes_per_episode + input.average_comments_per_episode) / input.average_views_per_episode;
   }
-  if (engagementRate <= 0.0) effScore = 0;
-  else if (engagementRate <= 0.01) effScore = (engagementRate / 0.01) * 0.25;
-  else if (engagementRate <= 0.02) effScore = 0.25 + ((engagementRate - 0.01) / 0.01) * 0.25;
-  else if (engagementRate <= 0.03) effScore = 0.50 + ((engagementRate - 0.02) / 0.01) * 0.25;
-  else if (engagementRate <= 0.05) effScore = 0.75 + ((engagementRate - 0.03) / 0.02) * 0.25;
-  else effScore = 1.00;
+
+  if (input.average_views_per_episode >= 500000) {
+    // Heavyweights: 1.5% engagement is exceptional for mega-scale recommendation traffic
+    if (engagementRate <= 0.0) effScore = 0;
+    else if (engagementRate <= 0.005) effScore = (engagementRate / 0.005) * 0.40;
+    else if (engagementRate <= 0.010) effScore = 0.40 + ((engagementRate - 0.005) / 0.005) * 0.30;
+    else if (engagementRate <= 0.018) effScore = 0.70 + ((engagementRate - 0.010) / 0.008) * 0.20;
+    else effScore = 0.90 + Math.min(0.10, ((engagementRate - 0.018) / 0.01) * 0.10);
+  } else if (input.average_views_per_episode >= 100000) {
+    // Mainstream: 2.5% is top tier
+    if (engagementRate <= 0.0) effScore = 0;
+    else if (engagementRate <= 0.010) effScore = (engagementRate / 0.010) * 0.50;
+    else if (engagementRate <= 0.025) effScore = 0.50 + ((engagementRate - 0.010) / 0.015) * 0.40;
+    else effScore = 0.90 + Math.min(0.10, ((engagementRate - 0.025) / 0.015) * 0.10);
+  } else {
+    // Rising Stars: standard curve for niche/indie shows
+    if (engagementRate <= 0.0) effScore = 0;
+    else if (engagementRate <= 0.01) effScore = (engagementRate / 0.01) * 0.25;
+    else if (engagementRate <= 0.02) effScore = 0.25 + ((engagementRate - 0.01) / 0.01) * 0.25;
+    else if (engagementRate <= 0.03) effScore = 0.50 + ((engagementRate - 0.02) / 0.01) * 0.25;
+    else if (engagementRate <= 0.05) effScore = 0.75 + ((engagementRate - 0.03) / 0.02) * 0.25;
+    else effScore = 1.00;
+  }
   
   if (effScore > 0.8) explanations.positive.push("Highly engaged community (high likes/comments ratio).");
   else if (effScore < 0.2) explanations.negative.push("Low audience efficiency (low interaction relative to views).");
@@ -101,50 +118,62 @@ export function calculatePlaylistScore(input: PlaylistScoreInput): ScoreOutput {
   if (depthScore === 1) explanations.positive.push("Deep and robust catalog of episodes.");
   else if (depthScore < 0.2) explanations.negative.push("Very shallow catalog, requires more episodes to build authority.");
 
-  // 7. Consistency Score (10%)
+  // 7. Consistency Score (10%) - With long-form roundtable grace period for mega-shows
   let consistencyScore = 0;
   if (input.average_days_between_episodes !== null && input.average_days_between_episodes > 0) {
     const gap = input.average_days_between_episodes;
-    if (gap >= 1 && gap <= 14) consistencyScore = 1.0;
-    else if (gap > 14 && gap <= 21) consistencyScore = 0.8;
-    else if (gap > 21 && gap <= 30) consistencyScore = 0.4;
-    else consistencyScore = 0.0;
+    if (input.average_views_per_episode >= 500000) {
+      if (gap >= 1 && gap <= 21) consistencyScore = 1.0;
+      else if (gap > 21 && gap <= 45) consistencyScore = 0.85;
+      else if (gap > 45 && gap <= 65) consistencyScore = 0.65;
+      else consistencyScore = 0.2;
+    } else {
+      if (gap >= 1 && gap <= 14) consistencyScore = 1.0;
+      else if (gap > 14 && gap <= 21) consistencyScore = 0.8;
+      else if (gap > 21 && gap <= 30) consistencyScore = 0.4;
+      else consistencyScore = 0.0;
+    }
     
-    if (consistencyScore === 1.0) explanations.positive.push("Consistent and healthy publishing cadence.");
+    if (consistencyScore >= 0.8) explanations.positive.push("Consistent and healthy publishing cadence.");
     else if (consistencyScore <= 0.4) explanations.negative.push("Inconsistent or overly erratic publishing schedule.");
   }
 
-  // 8. Confidence Score (10%)
-  const textToSearch = `${input.show_name} ${input.description}`.toLowerCase();
-  const keywords = ['podcast', 'episode', 'show', 'host', 'season', 'listen', 'audio', 'interview', 'talk', 'discussion', 'guest'];
-  let matches = 0;
-  
-  // 1. Keyword matching
-  for (const keyword of keywords) {
-    if (textToSearch.includes(keyword)) matches++;
-  }
-  
-  // 2. Sequential episode numbering check (e.g. Ep 1, #12, Episode 4)
-  if (input.sample_video_titles && input.sample_video_titles.length > 0) {
-    let hasSequential = false;
-    for (const title of input.sample_video_titles) {
-      if (/(ep|episode|#)\s*\d+/i.test(title)) {
-        hasSequential = true;
-        break;
-      }
-    }
-    if (hasSequential) matches += 2; // Treat numbering as strong signal
-  }
-
-  let confidenceScore = Math.min(matches, 5) / 5;
-  
-  // Override: If views score is 95 or above and audience efficiency is 60 or above, confidence can be ignored
-  if (viewsScore * 100 >= 95 && effScore * 100 >= 60) {
+  // 8. Confidence Score (5%) - Auto-pass established shows with >= 100k views
+  let confidenceScore = 0;
+  if (input.average_views_per_episode >= 100000) {
     confidenceScore = 1.0;
-    explanations.positive.push("High viewership and audience efficiency overrides confidence checks.");
+    explanations.positive.push("High viewership confirms established dedicated show authority.");
   } else {
-    if (confidenceScore >= 0.8) explanations.positive.push("High confidence this is a dedicated podcast show based on metadata.");
-    else if (confidenceScore < 0.5) explanations.negative.push("Low metadata confidence; may be a generic playlist rather than a podcast.");
+    const textToSearch = `${input.show_name} ${input.description}`.toLowerCase();
+    const keywords = ['podcast', 'episode', 'show', 'host', 'season', 'listen', 'audio', 'interview', 'talk', 'discussion', 'guest'];
+    let matches = 0;
+    
+    // Keyword matching
+    for (const keyword of keywords) {
+      if (textToSearch.includes(keyword)) matches++;
+    }
+    
+    // Sequential episode numbering check
+    if (input.sample_video_titles && input.sample_video_titles.length > 0) {
+      let hasSequential = false;
+      for (const title of input.sample_video_titles) {
+        if (/(ep|episode|#)\s*\d+/i.test(title)) {
+          hasSequential = true;
+          break;
+        }
+      }
+      if (hasSequential) matches += 2;
+    }
+
+    confidenceScore = Math.min(matches, 5) / 5;
+    
+    if (viewsScore * 100 >= 95 && effScore * 100 >= 60) {
+      confidenceScore = 1.0;
+      explanations.positive.push("High viewership and audience efficiency overrides confidence checks.");
+    } else {
+      if (confidenceScore >= 0.8) explanations.positive.push("High confidence this is a dedicated podcast show based on metadata.");
+      else if (confidenceScore < 0.5) explanations.negative.push("Low metadata confidence; may be a generic playlist rather than a podcast.");
+    }
   }
 
   // Convert raw 0-1 scores to 0-100 for the breakdown UI

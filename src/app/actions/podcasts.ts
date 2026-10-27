@@ -152,3 +152,28 @@ export async function swapPodcastRanks(podcast1: { id: string, rank: number }, p
     return { success: false, error: err.message };
   }
 }
+
+export async function updatePodcastPlatformLinks(channelId: string, links: { spotify_url?: string, apple_url?: string }) {
+  try {
+    const { getAdminUser } = await import("./admin");
+    await getAdminUser();
+    const supabase = await createClient();
+
+    const { error } = await supabase
+      .from("podcasts")
+      .update(links)
+      .eq("channel_id", channelId);
+
+    if (error) {
+      console.error("Failed to update podcast platform links:", error);
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath("/rankings");
+    revalidatePath("/admin/podcasts");
+    return { success: true };
+  } catch (err: any) {
+    console.error("Error updating platform links:", err);
+    return { success: false, error: err.message };
+  }
+}

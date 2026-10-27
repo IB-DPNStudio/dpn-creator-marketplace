@@ -99,6 +99,93 @@ export async function processRefreshPhase() {
   }
 }
 
+export async function purgeAllExistingShorts() {
+  const adminDbClient = createAdminClient();
+  try {
+    const { data: updated, error } = await adminDbClient
+      .from("playlist_podcasts")
+      .update({
+        status: 'rejected_shorts',
+        is_included: false,
+        updated_at: new Date().toISOString()
+      })
+      .or("show_name.ilike.%Shorts%,description.ilike.%#shorts%")
+      .select("playlist_id, show_name");
+
+    if (error) throw error;
+
+    const { revalidatePath } = await import("next/cache");
+    revalidatePath("/admin/podcasts");
+    revalidatePath("/rankings");
+
+    return { success: true, count: updated ? updated.length : 0 };
+  } catch (err: any) {
+    console.error("Error in purgeAllExistingShorts:", err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function batchRefreshAllPodcasts() {
+  const adminDbClient = createAdminClient();
+  try {
+    // 1. Purge shorts first
+    await purgeAllExistingShorts();
+
+    // 2. Fetch all eligible playlists
+    const { data: allPlaylists, error } = await adminDbClient
+      .from("playlist_podcasts")
+      .select("playlist_id, show_name, description")
+      .in("status", ["seeded", "verified", "approved_partner", "featured_partner"])
+      .eq("is_included", true)
+      .order("final_score", { ascending: false });
+
+    if (error) throw error;
+    if (!allPlaylists || allPlaylists.length === 0) {
+      return { success: true, message: "No podcasts to refresh." };
+    }
+
+    const { addOrUpdatePlaylistRank, discoverPodcastPlatformLinks } = await import("./labs");
+
+    // Process in batches of 5 to protect memory and rate limits
+    const batchSize = 5;
+    let refreshedCount = 0;
+
+    for (let i = 0; i < allPlaylists.length; i += batchSize) {
+      const batch = allPlaylists.slice(i, i + batchSize);
+      await Promise.all(batch.map(async (p) => {
+        try {
+          await addOrUpdatePlaylistRank({
+            playlistUrlOrId: p.playlist_id,
+            isIncluded: true,
+            fastRefresh: false
+          });
+          
+          // Auto-discover Spotify and Apple platform links if missing
+          const { spotifyUrl, appleUrl } = await discoverPodcastPlatformLinks(p.show_name, p.description);
+          if (spotifyUrl || appleUrl) {
+            const updates: any = {};
+            if (spotifyUrl) updates.spotify_url = spotifyUrl;
+            if (appleUrl) updates.apple_url = appleUrl;
+            await adminDbClient.from("podcasts").update(updates).eq("show_name", p.show_name);
+          }
+          refreshedCount++;
+        } catch (e) {
+          console.error(`Failed refreshing show ${p.show_name}:`, e);
+        }
+      }));
+    }
+
+    const { revalidatePath } = await import("next/cache");
+    revalidatePath("/admin/podcasts");
+    revalidatePath("/rankings");
+
+    return { success: true, refreshed: refreshedCount };
+  } catch (err: any) {
+    console.error("Error in batchRefreshAllPodcasts:", err);
+    return { success: false, error: err.message };
+  }
+}
+
 export async function getRefreshCycleStatus() {
   const adminDbClient = createAdminClient();
   const { data: cycle, error } = await adminDbClient
@@ -114,3 +201,4 @@ export async function getRefreshCycleStatus() {
   }
   return { success: true, cycle };
 }
+

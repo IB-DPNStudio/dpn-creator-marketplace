@@ -40,7 +40,22 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Generated Docs
+# Generated Docs & Internal Methodology
 *.docx
 *.pdf
 DPN_Technical_Reference_Manual.md
+docs/internal/
+*.scratch.*
+scratch_*
+simulate_*
+mock_*
+check_*
+run_*
+rescore_*
+append_*
+test_*
+fetch_stats.js
+find_target_creators.js
+
+
+

@@ -82,6 +82,8 @@ export async function getLabsPlaylists(statusIn?: string[]) {
   let channelDescMap = new Map();
   let channelThumbMap = new Map();
   let channelSubMap = new Map();
+  let channelSpotifyMap = new Map();
+  let channelAppleMap = new Map();
   
   if (channelIds.length > 0) {
     // Chunk the requests to avoid URL length limits or PostgREST constraints
@@ -90,7 +92,7 @@ export async function getLabsPlaylists(statusIn?: string[]) {
       const chunk = channelIds.slice(i, i + chunkSize);
       const { data: podData } = await adminDbClient
         .from("podcasts")
-        .select("channel_id, show_name, description, thumbnail_url, subscriber_count")
+        .select("channel_id, show_name, description, thumbnail_url, subscriber_count, spotify_url, apple_url")
         .in("channel_id", chunk);
         
       if (podData) {
@@ -102,6 +104,8 @@ export async function getLabsPlaylists(statusIn?: string[]) {
             if (p.subscriber_count !== undefined && p.subscriber_count !== null) {
               channelSubMap.set(p.channel_id, p.subscriber_count);
             }
+            if (p.spotify_url) channelSpotifyMap.set(p.channel_id, p.spotify_url);
+            if (p.apple_url) channelAppleMap.set(p.channel_id, p.apple_url);
           }
         });
       }
@@ -114,6 +118,8 @@ export async function getLabsPlaylists(statusIn?: string[]) {
     channel_description: channelDescMap.get(p.channel_id) || "",
     channel_thumbnail_url: channelThumbMap.get(p.channel_id) || null,
     subscriber_count: channelSubMap.get(p.channel_id) || 0,
+    spotify_url: (p as any).spotify_url || channelSpotifyMap.get(p.channel_id) || null,
+    apple_url: (p as any).apple_url || (p as any).apple_podcasts_url || channelAppleMap.get(p.channel_id) || null,
     podcast_history: p.podcast_history || []
   }));
 }
@@ -144,6 +150,21 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
     const description = inputData.description || snippet.description;
     const channelId = inputData.channelId || snippet.channelId;
     const thumbnailUrl = snippet.thumbnails?.maxres?.url || snippet.thumbnails?.standard?.url || snippet.thumbnails?.high?.url || snippet.thumbnails?.medium?.url || snippet.thumbnails?.default?.url || null;
+
+    // Immediate Shorts Title Check: Avoid consuming quota if obviously a shorts playlist
+    if (/shorts/i.test(showName) || /#shorts/i.test(description)) {
+      await adminDbClient.from("playlist_podcasts").upsert({
+        playlist_id: playlistId,
+        channel_id: channelId,
+        show_name: showName,
+        description: description,
+        thumbnail_url: thumbnailUrl,
+        status: 'rejected_shorts',
+        is_included: false,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'playlist_id' });
+      return { success: true, is_shorts_playlist: true, playlistId };
+    }
 
     let defaultLanguage = 'Unknown';
     let defaultCountry = 'Unknown';
@@ -274,16 +295,48 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
       latestEpisodeDate = recentItems[0].snippet.publishedAt;
       
       const videoIds = recentItems.map((i: any) => i.contentDetails.videoId).join(',');
-      const vRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${videoIds}&key=${apiKey}`);
+      const vRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=statistics,contentDetails&id=${videoIds}&key=${apiKey}`);
       const vData = await vRes.json();
       vDataLength = vData.items ? vData.items.length : 0;
+
+      let shortsCount = 0;
 
       if (vData.items) {
         for (const v of vData.items) {
           totalViews += parseInt(v.statistics?.viewCount || '0');
           totalLikes += parseInt(v.statistics?.likeCount || '0');
           totalComments += parseInt(v.statistics?.commentCount || '0');
+
+          // Parse duration for Shorts detection
+          const duration = v.contentDetails?.duration || '';
+          const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
+          if (match) {
+            const h = (parseInt(match[1]) || 0) * 3600;
+            const m = (parseInt(match[2]) || 0) * 60;
+            const s = (parseInt(match[3]) || 0);
+            const totalSeconds = h + m + s;
+            // A short is typically <= 60s. Give a small buffer (65s) for YT parsing anomalies
+            if (totalSeconds <= 65) {
+              shortsCount++;
+            }
+          }
         }
+      }
+
+      // Check if > 50% are Shorts
+      if (vDataLength > 0 && (shortsCount / vDataLength) > 0.5) {
+        // Intercept: this is a Shorts playlist
+        await adminDbClient.from("playlist_podcasts").upsert({
+          playlist_id: playlistId,
+          channel_id: channelId,
+          show_name: showName,
+          description: description,
+          thumbnail_url: thumbnailUrl,
+          status: 'rejected_shorts', // Flag as rejected
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'playlist_id' });
+        
+        return { success: true, is_shorts_playlist: true, playlistId };
       }
 
       // Calculate average days between episodes (up to 50 recent)
@@ -615,4 +668,34 @@ export async function updateLabsPlaylistBoost(playlistId: string, boost: number,
     return { success: false, error: err.message };
   }
 }
+
+export async function discoverPodcastPlatformLinks(showName: string, channelDescription: string = '') {
+  let appleUrl: string | null = null;
+  let spotifyUrl: string | null = null;
+
+  // 1. Scan channel description for Spotify link
+  const spotifyMatch = (channelDescription || '').match(/https?:\/\/(open\.spotify\.com\/show\/[a-zA-Z0-9]+)/i);
+  if (spotifyMatch) {
+    spotifyUrl = `https://${spotifyMatch[1]}`;
+  }
+
+  // 2. Discover Apple Podcasts via iTunes Search API
+  try {
+    const cleanName = showName.replace(/podcast|show|hindi|all episodes/gi, '').trim() || showName;
+    const itunesRes = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(cleanName)}&entity=podcast&limit=1`, {
+      headers: { 'User-Agent': 'DPN-Ranker/1.0' }
+    });
+    if (itunesRes.ok) {
+      const itunesData = await itunesRes.json();
+      if (itunesData.results && itunesData.results.length > 0) {
+        appleUrl = itunesData.results[0].trackViewUrl || null;
+      }
+    }
+  } catch (err) {
+    console.error("iTunes discovery failed:", err);
+  }
+
+  return { spotifyUrl, appleUrl };
+}
+
 
