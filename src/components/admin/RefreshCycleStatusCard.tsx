@@ -47,7 +47,7 @@ export function RefreshCycleStatusCard({
     try {
       const res = await batchRefreshAllPodcasts();
       if (res.success) {
-        alert(`Refresh complete! Successfully updated ${res.refreshed || 'all'} podcasts.`);
+        alert(res.message || "Batch refresh started successfully in background!");
         window.location.reload();
       } else {
         alert("Refresh error: " + res.error);
