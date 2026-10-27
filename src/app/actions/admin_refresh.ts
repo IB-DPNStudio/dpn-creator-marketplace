@@ -144,42 +144,42 @@ export async function batchRefreshAllPodcasts() {
       return { success: true, message: "No podcasts to refresh." };
     }
 
-    const { addOrUpdatePlaylistRank, discoverPodcastPlatformLinks } = await import("./labs");
-
-    // Process in batches of 5 to protect memory and rate limits
-    const batchSize = 5;
-    let refreshedCount = 0;
-
-    for (let i = 0; i < allPlaylists.length; i += batchSize) {
-      const batch = allPlaylists.slice(i, i + batchSize);
-      await Promise.all(batch.map(async (p) => {
-        try {
-          await addOrUpdatePlaylistRank({
-            playlistUrlOrId: p.playlist_id,
-            isIncluded: true,
-            fastRefresh: false
-          });
-          
-          // Auto-discover Spotify and Apple platform links if missing
-          const { spotifyUrl, appleUrl } = await discoverPodcastPlatformLinks(p.show_name, p.description);
-          if (spotifyUrl || appleUrl) {
-            const updates: any = {};
-            if (spotifyUrl) updates.spotify_url = spotifyUrl;
-            if (appleUrl) updates.apple_url = appleUrl;
-            await adminDbClient.from("podcasts").update(updates).eq("show_name", p.show_name);
-          }
-          refreshedCount++;
-        } catch (e) {
-          console.error(`Failed refreshing show ${p.show_name}:`, e);
+    // Launch background batch execution so HTTP gateway does not time out
+    (async () => {
+      try {
+        const { addOrUpdatePlaylistRank, discoverPodcastPlatformLinks } = await import("./labs");
+        const batchSize = 5;
+        for (let i = 0; i < allPlaylists.length; i += batchSize) {
+          const batch = allPlaylists.slice(i, i + batchSize);
+          await Promise.all(batch.map(async (p) => {
+            try {
+              await addOrUpdatePlaylistRank({
+                playlistUrlOrId: p.playlist_id,
+                isIncluded: true,
+                fastRefresh: false
+              });
+              
+              const { spotifyUrl, appleUrl } = await discoverPodcastPlatformLinks(p.show_name, p.description);
+              if (spotifyUrl || appleUrl) {
+                const updates: any = {};
+                if (spotifyUrl) updates.spotify_url = spotifyUrl;
+                if (appleUrl) updates.apple_url = appleUrl;
+                await adminDbClient.from("podcasts").update(updates).eq("show_name", p.show_name);
+              }
+            } catch (e) {
+              console.error(`Error refreshing ${p.show_name}:`, e);
+            }
+          }));
         }
-      }));
-    }
+        const { revalidatePath } = await import("next/cache");
+        revalidatePath("/admin/podcasts");
+        revalidatePath("/rankings");
+      } catch (err) {
+        console.error("Background batch refresh error:", err);
+      }
+    })();
 
-    const { revalidatePath } = await import("next/cache");
-    revalidatePath("/admin/podcasts");
-    revalidatePath("/rankings");
-
-    return { success: true, refreshed: refreshedCount };
+    return { success: true, message: "Batch refresh started in background for " + allPlaylists.length + " podcasts." };
   } catch (err: any) {
     console.error("Error in batchRefreshAllPodcasts:", err);
     return { success: false, error: err.message };
