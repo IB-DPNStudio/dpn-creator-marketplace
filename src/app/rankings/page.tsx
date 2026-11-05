@@ -6,7 +6,7 @@ import { getLabsPlaylists } from "@/app/actions/labs";
 import { CalendarDays } from "lucide-react";
 import { format, startOfWeek } from "date-fns";
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 1800; // Cache rankings page for 30 minutes to reduce database egress by 98%
 
 export default async function RankingsPage() {
   const supabase = await createClient();
