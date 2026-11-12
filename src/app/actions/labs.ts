@@ -166,6 +166,24 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
       return { success: true, is_shorts_playlist: true, playlistId };
     }
 
+    // Immediate Music / Songs / Jukebox Check: Disqualify music tracks and movie songs to preserve podcast authenticity
+    const isMusicChannel = channelId === 'UCFFbwnve3yF62-tVXkTyHqg'; // Zee Music Company, etc.
+    const musicTitleRegex = /\b(movie songs?|video songs?|audio songs?|full album|jukebox|soundtrack|song promo|official song|lyrical video|audio tracks?|full movie songs?|bhojpuri songs?|punjabi songs?|tamil songs?|telugu songs?|hindi songs?|marathi songs?|devotional songs?|dj remix|bhajan jukebox|aarti sangrah|romantic songs?|patriotic songs?|new bollywood songs?|lofi songs?)\b/i;
+
+    if (isMusicChannel || musicTitleRegex.test(showName)) {
+      await adminDbClient.from("playlist_podcasts").upsert({
+        playlist_id: playlistId,
+        channel_id: channelId,
+        show_name: showName,
+        description: description,
+        thumbnail_url: thumbnailUrl,
+        status: 'rejected_music',
+        is_included: false,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'playlist_id' });
+      return { success: true, is_music_playlist: true, playlistId };
+    }
+
     let defaultLanguage = 'Unknown';
     let defaultCountry = 'Unknown';
     let defaultGenre = 'General';

@@ -99,30 +99,46 @@ export async function processRefreshPhase() {
   }
 }
 
-export async function purgeAllExistingShorts() {
+export async function purgeAllNonPodcasts() {
   const adminDbClient = createAdminClient();
   try {
-    const { data: updated, error } = await adminDbClient
+    // 1. Purge shorts
+    await adminDbClient
       .from("playlist_podcasts")
       .update({
         status: 'rejected_shorts',
         is_included: false,
         updated_at: new Date().toISOString()
       })
-      .or("show_name.ilike.%Shorts%,description.ilike.%#shorts%")
+      .or("show_name.ilike.%Shorts%,description.ilike.%#shorts%");
+
+    // 2. Purge music channels and movie song playlists
+    const { data: updatedMusic, error: musicErr } = await adminDbClient
+      .from("playlist_podcasts")
+      .update({
+        status: 'rejected_music',
+        is_included: false,
+        updated_at: new Date().toISOString()
+      })
+      .or("channel_id.eq.UCFFbwnve3yF62-tVXkTyHqg,show_name.ilike.%movie songs%,show_name.ilike.%video songs%,show_name.ilike.%audio songs%,show_name.ilike.%bollywood songs%,show_name.ilike.%jukebox%,show_name.ilike.%full album%")
       .select("playlist_id, show_name");
 
-    if (error) throw error;
+    if (musicErr) throw musicErr;
 
     const { revalidatePath } = await import("next/cache");
     revalidatePath("/admin/podcasts");
     revalidatePath("/rankings");
+    revalidatePath("/");
 
-    return { success: true, count: updated ? updated.length : 0 };
+    return { success: true, count: updatedMusic ? updatedMusic.length : 0 };
   } catch (err: any) {
-    console.error("Error in purgeAllExistingShorts:", err);
+    console.error("Error in purgeAllNonPodcasts:", err);
     return { success: false, error: err.message };
   }
+}
+
+export async function purgeAllExistingShorts() {
+  return purgeAllNonPodcasts();
 }
 
 export async function batchRefreshAllPodcasts() {
