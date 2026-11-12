@@ -265,23 +265,14 @@ export async function addOrUpdatePlaylistRank(inputData: any) {
       }
     }
     
+    // Fetch up to 50 most recent playlist items to strictly preserve YouTube API daily quota (1 quota unit instead of up to 50)
     if (allPlaylistItems.length === 0) {
-      while (pageCount < MAX_PAGES) {
-        const pageTokenParam = pageToken ? `&pageToken=${pageToken}` : '';
-        const itemsRes = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails,snippet&playlistId=${playlistId}&maxResults=50${pageTokenParam}&key=${apiKey}`);
-        const itemsData = await itemsRes.json();
-        
-        if (!itemsData.items || itemsData.items.length === 0) break;
-        
-        allPlaylistItems = allPlaylistItems.concat(itemsData.items);
+      const itemsRes = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails,snippet&playlistId=${playlistId}&maxResults=50&key=${apiKey}`);
+      const itemsData = await itemsRes.json();
+      
+      if (itemsData.items && itemsData.items.length > 0) {
+        allPlaylistItems = itemsData.items;
         totalEpisodes = itemsData.pageInfo?.totalResults || allPlaylistItems.length;
-        
-        if (itemsData.nextPageToken) {
-          pageToken = itemsData.nextPageToken;
-          pageCount++;
-        } else {
-          break;
-        }
       }
     }
 
